@@ -1,6 +1,7 @@
 #include "doctest/doctest.h"
 #include "tta/RunRecorder.h"
 
+#include <algorithm>
 #include <stdexcept>
 
 using namespace tta;
@@ -55,4 +56,35 @@ TEST_CASE("timeout smites unfinished runners exactly once") {
 
 TEST_CASE("bad run length is rejected") {
     CHECK_THROWS_AS(RunRecorder({0}, 0.0), std::invalid_argument);
+}
+
+TEST_CASE("roundInput turns hits into wipeouts and scores with the Core rules") {
+    RunRecorder rec({0, 1, 2}, 2.0);
+    rec.advance(0.5);
+    Placement banana;
+    banana.id = 3;
+    banana.owner = 2;
+    banana.trap = TrapType::Banana;
+    rec.recordHit(banana, 0);
+    rec.recordHit(banana, 1);
+    rec.advance(2.0);
+    rec.takeSmites({0});
+
+    const RoundInput round = rec.roundInput({1});
+    CHECK(round.players == std::set<int>{0, 1, 2});
+    CHECK(round.finishers == std::set<int>{1});
+    REQUIRE(round.wipeouts.size() == 2); // the smite is not a wipeout
+    CHECK(round.wipeouts[0].victim == 0);
+    CHECK(round.wipeouts[0].trapOwner == 2);
+    CHECK(round.wipeouts[0].trap == TrapType::Banana);
+
+    const auto pts = scoreRound(round);
+    CHECK(pts.at(1) == kGatePoints);
+    CHECK(pts.at(2) == 2 * std::max(kMinTrapPoints, double(trapSpec(TrapType::Banana).cost)));
+    CHECK(pts.at(0) == 0.0);
+}
+
+TEST_CASE("roundInput rejects a finisher who didn't run") {
+    RunRecorder rec({0, 1}, 1.0);
+    CHECK_THROWS_AS(scoreRound(rec.roundInput({5})), std::invalid_argument);
 }

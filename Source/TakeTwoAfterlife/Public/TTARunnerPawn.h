@@ -5,7 +5,10 @@
 #include "tta/PawnLife.h"
 #include "TTARunnerPawn.generated.h"
 
+class UCameraComponent;
 class UCameraShakeBase;
+class USoundAttenuation;
+class UVOIPTalker;
 class UMaterialInstanceDynamic;
 class USoundBase;
 class UStaticMeshComponent;
@@ -57,14 +60,24 @@ public:
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> Wings;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> Halo;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> Hat;
+	// Content Warning-style handheld: hold [RMB] to look (and later edit) through it.
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UCameraComponent> Handheld;
+	UPROPERTY(EditAnywhere, Category = "TTA") float VoiceFalloffCm = 2500.f;
+
+	UFUNCTION(BlueprintCallable) void SetFilming(bool bOn);
+	bool IsFilming() const;
 
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* Input) override;
 
 protected:
 	virtual void BeginPlay() override;
+	// Proximity voice: other players' voices play from their runner, fading with distance.
+	virtual void OnPlayerStateChanged(APlayerState* NewPlayerState, APlayerState* OldPlayerState) override;
 
 private:
+	void RaiseCamera() { SetFilming(true); }
+	void LowerCamera() { SetFilming(false); }
 	void MoveForward(float Value);
 	void MoveRight(float Value);
 	void SetFlash(float Value);
@@ -77,4 +90,6 @@ private:
 	ETTAForm Form = ETTAForm::Human;
 	float Flash = 0.f;
 	UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> FlashMaterials;
+	UPROPERTY() TObjectPtr<UVOIPTalker> Talker;
+	UPROPERTY() TObjectPtr<USoundAttenuation> VoiceAttenuation;
 };

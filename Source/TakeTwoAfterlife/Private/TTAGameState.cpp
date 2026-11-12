@@ -4,12 +4,18 @@
 
 static_assert(static_cast<int>(ETTAPhase::Podium) == static_cast<int>(tta::Phase::Podium), "ETTAPhase must mirror tta::Phase");
 
-void ATTAGameState::SetPhase(ETTAPhase NewPhase, int32 NewRound)
+void ATTAGameState::SetPhase(ETTAPhase NewPhase, int32 NewRound, int32 PhaseSeconds)
 {
 	check(HasAuthority());
 	Phase = NewPhase;
 	Round = NewRound;
+	PhaseEndsAt = PhaseSeconds > 0 ? GetServerWorldTimeSeconds() + PhaseSeconds : -1.0;
 	NotifyPhaseChanged();
+}
+
+int32 ATTAGameState::GetSecondsLeft() const
+{
+	return PhaseEndsAt < 0.0 ? 0 : FMath::Max(0, FMath::CeilToInt32(PhaseEndsAt - GetServerWorldTimeSeconds()));
 }
 
 void ATTAGameState::OnRep_Phase()
@@ -28,4 +34,5 @@ void ATTAGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ATTAGameState, Phase);
 	DOREPLIFETIME(ATTAGameState, Round);
+	DOREPLIFETIME(ATTAGameState, PhaseEndsAt);
 }

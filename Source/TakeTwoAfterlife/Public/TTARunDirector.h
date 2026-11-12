@@ -28,6 +28,10 @@ public:
 	void RecordHit(const tta::Placement& Trap, ATTARunnerPawn* Victim);
 
 	bool IsRunning() const { return Recorder.IsValid(); }
+	bool IsTimedOut() const { return IsRunning() && Recorder->timedOut(); }
+	bool AllFinished() const { return IsRunning() && Finished.Num() == Runners.Num(); }
+	// This round for Core scoring, in replay ids (runner indices). Valid only after StartRun.
+	tta::RoundInput GetRoundInput() const;
 	bool HasFinished(const ATTARunnerPawn* Runner) const { return Finished.Contains(Runner); }
 	// Valid only after StartRun.
 	const tta::Replay& GetReplay() const { return Recorder->replay(); }

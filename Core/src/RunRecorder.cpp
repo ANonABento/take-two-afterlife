@@ -29,6 +29,17 @@ int RunRecorder::advance(double deltaSeconds) {
 void RunRecorder::recordHit(const Placement& trap, int victim) {
     if (trap.isCamera) throw std::invalid_argument("a camera can't hit a runner");
     replay_.addEvent({ReplayEventType::Hit, elapsedMs_, victim, trap.id, trap.owner});
+    trapTypes_[trap.id] = trap.trap;
+}
+
+RoundInput RunRecorder::roundInput(const std::set<int>& finishers) const {
+    RoundInput round;
+    round.players.insert(replay_.players().begin(), replay_.players().end());
+    round.finishers = finishers;
+    for (const ReplayEvent& e : replay_.events()) {
+        if (e.type == ReplayEventType::Hit) round.wipeouts.push_back({e.victim, e.trapOwner, trapTypes_.at(e.trapId)});
+    }
+    return round;
 }
 
 std::vector<int> RunRecorder::takeSmites(const std::vector<int>& unfinished) {
