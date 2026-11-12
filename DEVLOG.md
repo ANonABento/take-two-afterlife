@@ -2,6 +2,21 @@
 
 Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prompt, what the agent did, what failed, what was fixed by hand.
 
+## Task 1 — Asset sourcing research
+- **Prompt:** find human-made, jam-legal asset sources for UE5 with at least 15 cited sources and a shortlist.
+- **Agent did:** browser research; wrote `assets-ue5.md` with sources and a shortlist (Kenney, Quaternius, KayKit, Poly Haven, Freesound, Fab free).
+- **Failed / fixed by hand:** nothing.
+
+## Task 2 — Party-game UI reference board
+- **Prompt:** Jackbox / Fall Guys style UI reference: palette hex list, fonts, per-screen spec.
+- **Agent did:** browser research; wrote `ui-party-games.md`.
+- **Failed / fixed by hand:** its palette later lost to the repo's `toon_spec.py` palette (task 24).
+
+## Task 3 — EOS join codes + voice + mic research
+- **Prompt:** EOS lobby join codes, P2P voice and mic capture in UE5, with setup checklist and fallback.
+- **Agent did:** browser research; wrote `eos-ue5.md` (setup checklist, direct-IP fallback).
+- **Failed / fixed by hand:** nothing.
+
 ## Task 4 — Core scaffold + state machine
 - **Prompt:** engine-free C++17 `Core/` with CMake + doctest, root `make test`, match state machine (Lobby → Build → Run → Edit → Premiere → next round or Podium) with rounds/timers from settings JSON.
 - **Agent did:** added `Core/` (library + doctest tests), vendored doctest 2.4.11, a small flat-JSON settings parser, the state machine, and the `Makefile`.
@@ -50,6 +65,21 @@ Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prom
 - **Failed:** UE build not runnable in the sandbox; untested until Kevin builds.
 - **Fixed by hand:** nothing yet.
 
+## Task 11b — Toon shader + outline
+- **Prompt:** one master `M_TTA_Toon` material, post-process outline, `MPC_TTA_World` presets, swap script, Automation TTA.Art.AllToon.
+- **Agent did:** editor Python that builds the palette texture, MPC, toon + outline materials and an art-test map; `swap_to_toon.py`; `toon_spec` Python tests.
+- **Failed / fixed by hand:** no UE in the sandbox: material HLSL and editor Python untested until Kevin's run.
+
+## Task 12 — Angel character
+- **Prompt:** 1.2 m big-head angel with painted face, nub hands/feet, wings and halo, palette UVs.
+- **Agent did:** scripted Blender build (`models/build_angel.py`) exporting `SK_Angel`, wings, halo, default face and palette textures, plus turnaround renders.
+- **Failed / fixed by hand:** proportions checked from renders; import into UE by hand.
+
+## Task 13 — Hats + faces kit
+- **Prompt:** hats and swappable face textures so human forms are distinguishable.
+- **Agent did:** scripted Blender build of 6 hats (chef, cowboy, firefighter, hard hat, pilot, police) and 6 faces, plus lineup renders.
+- **Failed / fixed by hand:** first hat script replaced by `build_hats2.py`.
+
 ## Task 14 — Ragdoll pawn + impact frame
 - **Prompt:** walk/jump/dive, ragdoll on hit, victim-only 0.12 s freeze with M_TTA_Toon flash, shake, SFX hook, respawn at start, wings off in human form; Automation TTA.Pawn.Ragdoll.
 - **Agent did:** added engine-free `PawnLife` timing + doctest cases, `ATTARunnerPawn`, `TTA.Pawn.Ragdoll`, input mappings.
@@ -90,6 +120,11 @@ Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prom
 - **Agent did:** Core `MicTrack` (+ doctest), `UTTAMicRecorder`, `UTTAMicPlayer`, replicated phase start for the client replay clock, `TTA.Audio.MicSync`.
 - **Failed / fixed by hand:** `make test` needed cmake installed in the sandbox; UE code not compiled here, pending Kevin's build.
 
+## Task 21 — Editor screen
+- **Prompt:** trim, reorder, multi-angle, slow-mo, zoom, stickers, captions; 30 s cap; auto-edit fallback.
+- **Agent did:** Core `CutPlayback` (maps cut time to replay time and camera) + doctest, UE editor widget and preview playback.
+- **Failed / fixed by hand:** UE code not compiled here, pending Kevin's build.
+
 ## Task 22 — Heaven cinema + ratings
 - **Prompt:** walkable heaven cloud, MPC heaven preset, 4-seat couch, big screen, random order, narrator intro, playback with runner mic, 10 s rating, reveal, podium; Automation TTA.Cinema.Sequence.
 - **Agent did:** Core `Premiere` sequence (+ doctest), `RatingBook::averages`, `ATTACinema` actor, `TTA.Cinema.Sequence`.
@@ -100,7 +135,17 @@ Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prom
 - **Agent did:** Core MatchFlow (join rule, leaver trap owners, id mapping) + absent-owner scoring + `addRatings` (doctest), host settings file + replication, timer auto-advance, `EndPremiere`, `TTA.Match.ThreeRounds`.
 - **Failed / fixed by hand:** UE code not compiled here, pending Kevin's build.
 
+## Task 24 — Menus + UI skin
+- **Prompt:** Title → Host/Join → Lobby → Match menus, settings, how-to-play, Fall Guys-style skin; Automation TTA.UI.MenuFlow.
+- **Agent did:** Core `MenuFlow` screen stack + customization + settings clamp (doctest), C++-built `UTTAMenuWidget`, `TTA.UI.MenuFlow`.
+- **Failed / fixed by hand:** fonts to import by hand; widget animations not done. UE code not compiled here.
+
 ## Task 25 — Narrator + music + SFX
 - **Prompt:** ~60 ElevenLabs line slots with a phase trigger table, WeLoveIndies music per phase, SFX hookups, attributions in CREDITS.md; Automation TTA.Audio.TriggerTable.
 - **Agent did:** Core `AudioCues` table (60 narrator lines with script, 6 music, 10 SFX; round-robin picks; asset paths) + doctest, `tta_vo_script` CSV export for ElevenLabs, `UTTAAudioDirector` world subsystem (phase music crossfade + phase lines, `PlayEvent`), hooks for wipeout/gate/smite, `TTA.Audio.TriggerTable`, CREDITS rows.
 - **Failed / fixed by hand:** audio files can't be generated or downloaded from the sandbox (ElevenLabs account, WeLoveIndies licence); Kevin imports them. UE code not compiled here.
+
+## Task 26 — Release package + devlog
+- **Prompt:** final Win64 zip under 1 GB, DEVLOG.md complete and exported for the itch devlog, submission tools list.
+- **Agent did:** added Backyard to the cooked maps, back-filled devlog entries for every plan task, `Scripts/export_devlog.py` (fails if a plan task has no entry, writes itch-ready HTML) with tests, `SUBMISSION.md` checklist and filled the CREDITS tools table.
+- **Failed / fixed by hand:** packaging and the launch-to-Title check need Kevin's Windows machine.
