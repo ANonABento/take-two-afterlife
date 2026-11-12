@@ -61,7 +61,8 @@ public:
     PlaceResult placeTrap(int owner, TrapType type, double xMeters, double yMeters, double degrees, int* outId = nullptr);
     PlaceResult placeCamera(int owner, CameraType type, double xMeters, double yMeters, double degrees, int* outId = nullptr);
     // Would place* succeed right now? Same snapping and rules, changes nothing (ghost preview).
-    PlaceResult canPlace(int owner, bool isCamera, TrapType trap, double xMeters, double yMeters) const;
+    PlaceResult canPlace(int owner, bool isCamera, TrapType trap, double xMeters, double yMeters,
+                          CameraType camera = CameraType::Fixed) const;
     PlaceResult setTrapSetting(int id, int index, int value);
     bool remove(int id);
 

@@ -49,14 +49,22 @@ TEST_CASE("budget is 100 per owner") {
     CHECK(l.spent(1) == 95);
 }
 
-TEST_CASE("cameras are free and capped at 12 per owner") {
+TEST_CASE("cameras are free and capped at 12 per type per owner") {
     Layout l;
     for (int i = 0; i < kCameraCap; ++i)
         CHECK(l.placeCamera(1, static_cast<CameraType>(i % 4), i, 0, 0) == PlaceResult::Ok);
     CHECK(l.spent(1) == 0);
     CHECK(l.cameraCount(1, CameraType::TrapCam) == 3);
-    CHECK(l.placeCamera(1, CameraType::Follow, 20, 0, 0) == PlaceResult::CameraCapReached);
+    CHECK(l.placeCamera(1, CameraType::Follow, 20, 0, 0) == PlaceResult::Ok);
     CHECK(l.placeCamera(2, CameraType::Follow, 20, 0, 0) == PlaceResult::Ok);
+}
+
+TEST_CASE("the camera cap counts only cameras of the type being placed") {
+    Layout l;
+    for (int i = 0; i < kCameraCap; ++i) REQUIRE(l.placeCamera(1, CameraType::Pan, i, 0, 0) == PlaceResult::Ok);
+    CHECK(l.placeCamera(1, CameraType::Pan, 20, 0, 0) == PlaceResult::CameraCapReached);
+    CHECK(l.cameraCount(1, CameraType::Pan) == kCameraCap);
+    CHECK(l.placeCamera(1, CameraType::Fixed, 20, 0, 0) == PlaceResult::Ok);
 }
 
 TEST_CASE("trap settings are range checked") {
@@ -111,6 +119,7 @@ TEST_CASE("canPlace previews the place rules without placing") {
     CHECK(l.canPlace(1, false, TrapType::Banana, 30.0, 0.0) == PlaceResult::OverBudget);
     CHECK(l.canPlace(2, false, TrapType::Banana, 30.0, 0.0) == PlaceResult::Ok);
     for (int i = 0; i < kCameraCap; ++i) REQUIRE(l.placeCamera(1, CameraType::Pan, i, 1.0, 0.0) == PlaceResult::Ok);
-    CHECK(l.canPlace(1, true, TrapType::Hammer, 30.0, 0.0) == PlaceResult::CameraCapReached);
+    CHECK(l.canPlace(1, true, TrapType::Hammer, 30.0, 0.0, CameraType::Pan) == PlaceResult::CameraCapReached);
+    CHECK(l.canPlace(1, true, TrapType::Hammer, 30.0, 0.0, CameraType::Fixed) == PlaceResult::Ok);
     CHECK(l.all().size() == 4 + kCameraCap);
 }
