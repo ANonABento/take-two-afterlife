@@ -2,8 +2,11 @@
 
 #include "tta/Placement.h"
 #include "tta/Replay.h"
+#include "tta/Scoring.h"
 
 #include <cstdint>
+#include <map>
+#include <set>
 #include <vector>
 
 namespace tta {
@@ -30,6 +33,10 @@ public:
     // runner and returns them. Returns nothing before the timeout or the second time.
     std::vector<int> takeSmites(const std::vector<int>& unfinished);
 
+    // The round for scoring: every recorded hit is a wipeout paid to the trap's
+    // owner; smites score nothing. Ratings are added later (Premiere).
+    RoundInput roundInput(const std::set<int>& finishers) const;
+
     std::uint32_t elapsedMs() const { return elapsedMs_; }
     const Replay& replay() const { return replay_; }
 
@@ -40,6 +47,7 @@ private:
     double elapsedSeconds_ = 0.0;
     int framesDue_ = 0;
     bool smitten_ = false;
+    std::map<int, TrapType> trapTypes_; // placement id -> type, from recorded hits
 };
 
 } // namespace tta

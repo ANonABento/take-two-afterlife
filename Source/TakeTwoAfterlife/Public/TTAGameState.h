@@ -30,9 +30,12 @@ class TAKETWOAFTERLIFE_API ATTAGameState : public AGameStateBase
 public:
 	UFUNCTION(BlueprintPure) ETTAPhase GetPhase() const { return Phase; }
 	UFUNCTION(BlueprintPure) int32 GetRound() const { return Round; }
+	// Whole seconds left in a timed phase (Build/Run/Edit), 0 when untimed or over.
+	UFUNCTION(BlueprintPure) int32 GetSecondsLeft() const;
 
 	// Server only. Notifies locally; clients notify in OnRep_Phase.
-	void SetPhase(ETTAPhase NewPhase, int32 NewRound);
+	// PhaseSeconds 0 = untimed.
+	void SetPhase(ETTAPhase NewPhase, int32 NewRound, int32 PhaseSeconds = 0);
 
 	// Blueprint/UI listeners.
 	UPROPERTY(BlueprintAssignable) FTTAPhaseChangedSignature OnPhaseChanged;
@@ -46,6 +49,8 @@ protected:
 
 	UPROPERTY(ReplicatedUsing = OnRep_Phase) ETTAPhase Phase = ETTAPhase::Lobby;
 	UPROPERTY(ReplicatedUsing = OnRep_Phase) int32 Round = 0;
+	// Server world time when the current phase's timer runs out; < 0 when untimed.
+	UPROPERTY(Replicated) double PhaseEndsAt = -1.0;
 
 private:
 	void NotifyPhaseChanged();

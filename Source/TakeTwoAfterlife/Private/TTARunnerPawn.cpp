@@ -1,5 +1,6 @@
 #include "TTARunnerPawn.h"
 
+#include "Camera/CameraComponent.h"
 #include "Camera/CameraShakeBase.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
@@ -9,6 +10,8 @@
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Net/VoiceConfig.h"
+#include "Sound/SoundAttenuation.h"
 
 namespace
 {
@@ -23,6 +26,12 @@ ATTARunnerPawn::ATTARunnerPawn()
 	Halo = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Halo"));
 	Halo->SetupAttachment(GetMesh());
 	Hat = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Hat"));
+	Handheld = CreateDefaultSubobject<UCameraComponent>(TEXT("Handheld"));
+	Handheld->SetupAttachment(RootComponent);
+	Handheld->SetRelativeLocation(FVector(40.f, 20.f, 50.f)); // held at chest height, right hand
+	Handheld->bUsePawnControlRotation = true;
+	Handheld->FieldOfView = 70.f;
+	Handheld->SetAutoActivate(false);
 	Hat->SetupAttachment(GetMesh());
 	for (UStaticMeshComponent* Part : {Wings.Get(), Halo.Get(), Hat.Get()})
 	{
@@ -61,6 +70,8 @@ void ATTARunnerPawn::SetupPlayerInputComponent(UInputComponent* Input)
 	Input->BindAction(TEXT("Jump"), IE_Pressed, this, &ACharacter::Jump);
 	Input->BindAction(TEXT("Jump"), IE_Released, this, &ACharacter::StopJumping);
 	Input->BindAction(TEXT("Dive"), IE_Pressed, this, &ATTARunnerPawn::Dive);
+	Input->BindAction(TEXT("RaiseCamera"), IE_Pressed, this, &ATTARunnerPawn::RaiseCamera);
+	Input->BindAction(TEXT("RaiseCamera"), IE_Released, this, &ATTARunnerPawn::LowerCamera);
 }
 
 void ATTARunnerPawn::MoveForward(float Value)
@@ -168,4 +179,27 @@ void ATTARunnerPawn::Respawn()
 	SetActorLocation(StartLocation, false, nullptr, ETeleportType::TeleportPhysics);
 	GetCharacterMovement()->StopMovementImmediately();
 	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+}
+
+void ATTARunnerPawn::SetFilming(bool bOn)
+{
+	Handheld->SetActive(bOn);
+}
+
+bool ATTARunnerPawn::IsFilming() const
+{
+	return Handheld->IsActive();
+}
+
+void ATTARunnerPawn::OnPlayerStateChanged(APlayerState* NewPlayerState, APlayerState* OldPlayerState)
+{
+	Super::OnPlayerStateChanged(NewPlayerState, OldPlayerState);
+	if (!NewPlayerState || Talker || IsLocallyControlled() || GetNetMode() == NM_DedicatedServer) return;
+	VoiceAttenuation = NewObject<USoundAttenuation>(this);
+	VoiceAttenuation->Attenuation.bAttenuate = true;
+	VoiceAttenuation->Attenuation.bSpatialize = true;
+	VoiceAttenuation->Attenuation.FalloffDistance = VoiceFalloffCm;
+	Talker = UVOIPTalker::CreateTalkerForPlayer(NewPlayerState);
+	Talker->Settings.ComponentToAttachTo = GetMesh();
+	Talker->Settings.AttenuationSettings = VoiceAttenuation;
 }

@@ -2,10 +2,17 @@
 
 #include "Engine/Engine.h"
 #include "TTABuildPawn.h"
+#include "TTAGameState.h"
 
 void ATTABuildHUD::DrawHUD()
 {
 	Super::DrawHUD();
+	if (const ATTAGameState* State = GetWorld()->GetGameState<ATTAGameState>(); State && State->GetPhase() == ETTAPhase::Run)
+	{
+		const int32 Left = State->GetSecondsLeft();
+		DrawText(FString::Printf(TEXT("%d:%02d"), Left / 60, Left % 60), Left <= 10 ? FLinearColor::Red : FLinearColor::White, 40.f, 40.f, GEngine->GetLargeFont(), 2.f);
+		DrawText(TEXT("[RMB] hold to film"), FLinearColor::White, 40.f, 100.f, GEngine->GetLargeFont());
+	}
 	const ATTABuildPawn* Pawn = Cast<ATTABuildPawn>(GetOwningPawn());
 	if (!Pawn) return;
 

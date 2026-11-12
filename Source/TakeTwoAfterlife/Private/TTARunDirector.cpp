@@ -82,6 +82,13 @@ void ATTARunDirector::CaptureFrame()
 	Recorder->addFrame(Poses);
 }
 
+tta::RoundInput ATTARunDirector::GetRoundInput() const
+{
+	std::set<int> FinishedIds;
+	for (const ATTARunnerPawn* Runner : Finished) FinishedIds.insert(PlayerId(Runner));
+	return Recorder->roundInput(FinishedIds);
+}
+
 void ATTARunDirector::MarkFinished(ATTARunnerPawn* Runner)
 {
 	if (Runners.Contains(Runner)) Finished.AddUnique(Runner);
