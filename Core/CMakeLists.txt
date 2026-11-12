@@ -19,6 +19,7 @@ add_library(tta_core
   src/RunRecorder.cpp
   src/MicTrack.cpp
   src/Premiere.cpp
+  src/MenuFlow.cpp
 )
 target_include_directories(tta_core PUBLIC include)
 if(MSVC)
@@ -43,6 +44,7 @@ add_executable(tta_core_tests
   tests/RunRecorderTests.cpp
   tests/MicTrackTests.cpp
   tests/PremiereTests.cpp
+  tests/MenuFlowTests.cpp
 )
 target_include_directories(tta_core_tests PRIVATE third_party)
 target_link_libraries(tta_core_tests PRIVATE tta_core)

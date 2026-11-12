@@ -24,6 +24,12 @@ class PaletteTests(unittest.TestCase):
         self.assertEqual(tuple(raw[1:4]), toon_spec.palette_rgb()[0])
         self.assertEqual(tuple(raw[-3:]), toon_spec.palette_rgb()[11])
 
+    def test_core_menu_palette_matches(self):
+        header = (Path(__file__).resolve().parents[2] / "Core/include/tta/MenuFlow.h").read_text()
+        start = header.index("kPaletteHex")
+        positions = [header.index(f'"{code}"', start) for _, code in toon_spec.PALETTE]
+        self.assertEqual(positions, sorted(positions))
+
     def test_palette_u_hits_texel_centres(self):
         self.assertAlmostEqual(toon_spec.palette_u(0), 1 / 24)
         self.assertAlmostEqual(toon_spec.palette_u(11), 23 / 24)
