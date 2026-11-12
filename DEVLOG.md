@@ -37,3 +37,9 @@ Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prom
 - **Agent did:** added `EditList.h/.cpp` (copy-validate-commit ops, auto-edit from replay events) and doctest cases for each op, the cap and auto-edit on fixture replays.
 - **Failed:** first check ran without cmake in the sandbox (false PASS); reran with cmake installed.
 - **Fixed by hand:** nothing yet.
+
+## Task 10 — Ratings
+- **Prompt:** Funny→editor and Evil→builder 1–5, self-rating rejected, averages feed match score; `make test` incl. self-rating rejection and aggregation.
+- **Agent did:** added `Ratings.h/.cpp` (`RatingBook`) and doctest cases for self-rating, bad input, per-player aggregation and feeding `scoreRound`.
+- **Failed:** nothing.
+- **Fixed by hand:** nothing yet.

@@ -13,6 +13,7 @@ add_library(tta_core
   src/Scoring.cpp
   src/Replay.cpp
   src/EditList.cpp
+  src/Ratings.cpp
 )
 target_include_directories(tta_core PUBLIC include)
 if(MSVC)
@@ -31,6 +32,7 @@ add_executable(tta_core_tests
   tests/ScoringTests.cpp
   tests/ReplayTests.cpp
   tests/EditListTests.cpp
+  tests/RatingsTests.cpp
 )
 target_include_directories(tta_core_tests PRIVATE third_party)
 target_link_libraries(tta_core_tests PRIVATE tta_core)
