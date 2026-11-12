@@ -19,3 +19,9 @@ Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prom
 - **Agent did:** added `TrapTimeline.h/.cpp` (integer-ms phase, no randomness) and doctest cases covering every setting combination.
 - **Failed:** nothing.
 - **Fixed by hand:** nothing yet.
+
+## Task 7 — Scoring
+- **Prompt:** gate +1, trap wipeout = cost (min 1) to owner, all/none-finish voids trap points, round and match totals.
+- **Agent did:** added `Scoring.h/.cpp` and doctest cases for every rule, including all-finish, none-finish, own-trap, unknown players and match totals/podium.
+- **Failed:** nothing.
+- **Fixed by hand:** nothing yet.
