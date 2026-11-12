@@ -17,6 +17,9 @@ Every third-party asset, library and tool used in Take Two Afterlife. Human-made
 ## Audio
 | Asset | Author | License | Source |
 |---|---|---|---|
+| Narrator voice, 60 lines `VO_*` (script: `build/tta_vo_script`; voice/model: fill in) | ElevenLabs text-to-speech, script by Kevin | ElevenLabs Free tier: attribution required ("Voice generated with ElevenLabs, elevenlabs.io") | https://elevenlabs.io |
+| Music `MUS_Lobby`, `MUS_Build`, `MUS_Run`, `MUS_Edit`, `MUS_Premiere`, `MUS_Podium` (one track per phase; fill in track titles/artists) | WeLoveIndies artists | WeLoveIndies licence (check terms on download) | https://www.weloveindies.com |
+| SFX `SFX_TrapPlace`, `SFX_CountdownBeep`, `SFX_ClockTick`, `SFX_ImpactBonk`, `SFX_Thunder`, `SFX_GateChime`, `SFX_ProjectorStart`, `SFX_RatingDing`, `SFX_Applause`, `SFX_Fanfare` (fill in each Freesound sound id/author; CC0 preferred, CC-BY credited here) | Freesound / Kenney audio packs | CC0 1.0 / CC-BY 4.0 per sound | https://freesound.org, https://kenney.nl/assets/category:Audio |
 
 ## Tools
 | Tool | Use |

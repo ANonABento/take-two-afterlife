@@ -3,6 +3,7 @@
 #include "Camera/CameraActor.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/PlayerController.h"
+#include "TTAAudioDirector.h"
 #include "TTARunnerPawn.h"
 
 namespace
@@ -98,7 +99,9 @@ tta::RoundInput ATTARunDirector::GetRoundInput() const
 
 void ATTARunDirector::MarkFinished(ATTARunnerPawn* Runner)
 {
-	if (Runners.Contains(Runner)) Finished.AddUnique(Runner);
+	if (!Runners.Contains(Runner) || Finished.Contains(Runner)) return;
+	Finished.Add(Runner);
+	GetWorld()->GetSubsystem<UTTAAudioDirector>()->PlayEvent(tta::AudioEvent::GateReached);
 }
 
 void ATTARunDirector::RecordHit(const tta::Placement& Trap, ATTARunnerPawn* Victim)
@@ -107,10 +110,12 @@ void ATTARunDirector::RecordHit(const tta::Placement& Trap, ATTARunnerPawn* Vict
 	const int32 Id = PlayerId(Victim);
 	check(Id != INDEX_NONE);
 	Recorder->recordHit(Trap, Id);
+	GetWorld()->GetSubsystem<UTTAAudioDirector>()->PlayEvent(tta::AudioEvent::Wipeout);
 }
 
 void ATTARunDirector::Smite(ATTARunnerPawn* Victim)
 {
+	GetWorld()->GetSubsystem<UTTAAudioDirector>()->PlayEvent(tta::AudioEvent::Smite);
 	const FRotator Yaw(0.f, Victim->GetActorRotation().Yaw, 0.f);
 	const FVector Target = Victim->GetActorLocation();
 	const FVector CamLocation = Target + Yaw.RotateVector(HeavenCamOffset);
