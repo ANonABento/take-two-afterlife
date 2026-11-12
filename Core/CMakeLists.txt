@@ -11,6 +11,7 @@ add_library(tta_core
   src/Placement.cpp
   src/TrapTimeline.cpp
   src/Scoring.cpp
+  src/Replay.cpp
 )
 target_include_directories(tta_core PUBLIC include)
 if(MSVC)
@@ -27,6 +28,7 @@ add_executable(tta_core_tests
   tests/PlacementTests.cpp
   tests/TrapTimelineTests.cpp
   tests/ScoringTests.cpp
+  tests/ReplayTests.cpp
 )
 target_include_directories(tta_core_tests PRIVATE third_party)
 target_link_libraries(tta_core_tests PRIVATE tta_core)
