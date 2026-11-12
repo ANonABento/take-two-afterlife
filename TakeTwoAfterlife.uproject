@@ -1,0 +1,27 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "5.5",
+	"Category": "",
+	"Description": "Take Two Afterlife - Epic AI MegaJam 2026",
+	"Modules": [
+		{
+			"Name": "TakeTwoAfterlife",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [ "Engine", "TTACore" ]
+		},
+		{
+			"Name": "TTACore",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{ "Name": "PythonScriptPlugin", "Enabled": true, "TargetAllowList": [ "Editor" ] },
+		{ "Name": "OnlineSubsystem", "Enabled": true },
+		{ "Name": "OnlineSubsystemUtils", "Enabled": true },
+		{ "Name": "OnlineSubsystemEOS", "Enabled": true },
+		{ "Name": "EOSShared", "Enabled": true },
+		{ "Name": "EOSVoiceChat", "Enabled": true }
+	]
+}
