@@ -14,6 +14,12 @@ void ATTAGameState::SetPhase(ETTAPhase NewPhase, int32 NewRound, int32 PhaseSeco
 	NotifyPhaseChanged();
 }
 
+void ATTAGameState::SetSettingsJson(const FString& Json)
+{
+	check(HasAuthority());
+	SettingsJson = Json;
+}
+
 int32 ATTAGameState::GetSecondsLeft() const
 {
 	return PhaseEndsAt < 0.0 ? 0 : FMath::Max(0, FMath::CeilToInt32(PhaseEndsAt - GetServerWorldTimeSeconds()));
@@ -37,4 +43,5 @@ void ATTAGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME(ATTAGameState, Round);
 	DOREPLIFETIME(ATTAGameState, PhaseEndsAt);
 	DOREPLIFETIME(ATTAGameState, PhaseStartedAt);
+	DOREPLIFETIME(ATTAGameState, SettingsJson);
 }

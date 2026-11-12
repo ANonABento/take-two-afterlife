@@ -21,7 +21,7 @@ ATTARunDirector::ATTARunDirector()
 	PrimaryActorTick.bCanEverTick = true;
 }
 
-void ATTARunDirector::StartRun(const TArray<ATTARunnerPawn*>& InRunners, float RunSeconds)
+void ATTARunDirector::StartRun(const TArray<ATTARunnerPawn*>& InRunners, float RunSeconds, int32 InAbsentOwners)
 {
 	check(HasAuthority());
 	Runners.Reset();
@@ -31,6 +31,12 @@ void ATTARunDirector::StartRun(const TArray<ATTARunnerPawn*>& InRunners, float R
 	for (ATTARunnerPawn* Runner : InRunners)
 	{
 		Ids.push_back(Runners.Add(Runner));
+	}
+	check(InAbsentOwners >= 0);
+	AbsentOwners = InAbsentOwners;
+	for (int32 i = 0; i < AbsentOwners; ++i)
+	{
+		Ids.push_back(Runners.Num() + i);
 	}
 	Recorder = MakeUnique<tta::RunRecorder>(std::move(Ids), RunSeconds);
 	AdvanceRun(0.f); // frame 0
@@ -79,6 +85,7 @@ void ATTARunDirector::CaptureFrame()
 		}
 		Poses.push_back(Pose);
 	}
+	Poses.resize(Poses.size() + AbsentOwners); // not on the course: identity poses, never shown
 	Recorder->addFrame(Poses);
 }
 

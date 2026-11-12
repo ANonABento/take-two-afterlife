@@ -22,7 +22,8 @@ public:
 	ATTARunDirector();
 
 	// Server only. Trap owners must be among the runners' ids.
-	void StartRun(const TArray<ATTARunnerPawn*>& InRunners, float RunSeconds);
+	// InAbsentOwners: players who left but whose traps stay; replay ids Runners.Num() onward, no pose.
+	void StartRun(const TArray<ATTARunnerPawn*>& InRunners, float RunSeconds, int32 InAbsentOwners = 0);
 	void AdvanceRun(float DeltaSeconds);
 	void MarkFinished(ATTARunnerPawn* Runner);
 	void RecordHit(const tta::Placement& Trap, ATTARunnerPawn* Victim);
@@ -48,6 +49,7 @@ private:
 	void Smite(ATTARunnerPawn* Victim);
 
 	TUniquePtr<tta::RunRecorder> Recorder;
+	int32 AbsentOwners = 0;
 	UPROPERTY() TArray<TObjectPtr<ATTARunnerPawn>> Runners;
 	UPROPERTY() TArray<TObjectPtr<ATTARunnerPawn>> Finished;
 	UPROPERTY() TObjectPtr<ACameraActor> HeavenCam;
