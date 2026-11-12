@@ -37,6 +37,8 @@ class MatchScore {
 public:
     // Scores the round, adds it to the totals and returns the round's points.
     std::map<int, double> addRound(const RoundInput& round);
+    // Premiere rating averages for the round just played (doesn't count a round).
+    void addRatings(const std::map<int, double>& points);
     double total(int player) const;
     const std::map<int, double>& totals() const { return totals_; }
     int roundsPlayed() const { return rounds_; }

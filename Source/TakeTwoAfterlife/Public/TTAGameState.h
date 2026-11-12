@@ -39,6 +39,11 @@ public:
 	// PhaseSeconds 0 = untimed.
 	void SetPhase(ETTAPhase NewPhase, int32 NewRound, int32 PhaseSeconds = 0);
 
+	// Host settings as JSON (tta::MatchSettings), for lobby UI on every client.
+	UFUNCTION(BlueprintPure) const FString& GetSettingsJson() const { return SettingsJson; }
+	// Server only.
+	void SetSettingsJson(const FString& Json);
+
 	// Blueprint/UI listeners.
 	UPROPERTY(BlueprintAssignable) FTTAPhaseChangedSignature OnPhaseChanged;
 	// C++ listeners.
@@ -55,6 +60,7 @@ protected:
 	UPROPERTY(Replicated) double PhaseEndsAt = -1.0;
 	// Server world time when the current phase started.
 	UPROPERTY(Replicated) double PhaseStartedAt = 0.0;
+	UPROPERTY(Replicated) FString SettingsJson;
 
 private:
 	void NotifyPhaseChanged();

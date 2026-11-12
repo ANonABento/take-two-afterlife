@@ -4,8 +4,12 @@
 #include "GameFramework/GameModeBase.h"
 #include "TTAGameState.h"
 #include "TTAPlacementMarker.h"
+#include "tta/MatchFlow.h"
 #include "tta/MatchStateMachine.h"
 #include "tta/Scoring.h"
+
+#include <map>
+#include <vector>
 #include "TTAGameMode.generated.h"
 
 class ATTABuildPawn;
@@ -27,7 +31,24 @@ public:
 	// Entering Build gives every player an ATTABuildPawn. Entering Run reveals all placements,
 	// gives every player a runner at the PlayerStart, spawns the traps and starts the recording.
 	// Run ends (scored, then Edit) when everyone is through the gate or SmiteHoldSeconds after the timer.
+	// Build and Edit move on (to Run / Premiere) when their timer runs out.
 	UFUNCTION(BlueprintCallable) bool RequestPhase(ETTAPhase To);
+
+	// The cinema finished this round's Premiere: adds its rating points (PlayerState ids),
+	// then starts the next round's Build, or the Podium after the last round. False outside Premiere.
+	bool EndPremiere(const std::map<int, double>& RatingPoints);
+
+	// Host settings (plan: Network). Loaded from SettingsPath() in InitGame (written with defaults
+	// when missing) and mirrored to ATTAGameState. Changes only in the Lobby; saved back to the file.
+	// False (nothing changes) outside the Lobby or on JSON tta::parseMatchSettings rejects.
+	UFUNCTION(BlueprintCallable) bool ApplySettingsJson(const FString& Json);
+	static FString SettingsPath();
+	const tta::MatchSettings& GetSettings() const { return Match.settings(); }
+
+	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
+	virtual void InitGameState() override;
+	// Joining is only allowed between rounds (Lobby, Premiere, Podium).
+	virtual void PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
 
 	// Build requests (server). Each needs the Build phase and a player with a PlayerState;
 	// settings and removal only touch the caller's own placements (removal: this round's only).
@@ -65,6 +86,8 @@ private:
 	tta::MatchScore Score;
 	UPROPERTY() TObjectPtr<ATTARunDirector> Director;
 	UPROPERTY() TMap<int32, TObjectPtr<ATTATrapActor>> TrapActors; // by placement id; persist like the map
-	TArray<int32> RunnerPlayerIds; // replay id (index) -> PlayerState id, this Run
+	// Replay id (index) -> PlayerState id, this Run: runners, then absent trap owners (tta::runPlayers).
+	std::vector<int> RunPlayerIds;
+	int32 RunnerCount = 0;
 	float TimedOutFor = 0.f;
 };

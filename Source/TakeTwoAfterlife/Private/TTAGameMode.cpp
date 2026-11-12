@@ -1,12 +1,16 @@
 #include "TTAGameMode.h"
 
 #include "Engine/World.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
 #include "GameFramework/PlayerController.h"
 #include "TTABuildHUD.h"
 #include "TTABuildPawn.h"
 #include "TTARunDirector.h"
 #include "TTARunnerPawn.h"
 #include "TTATrapActor.h"
+
+#include <algorithm>
 
 ATTAGameMode::ATTAGameMode()
 {
@@ -29,11 +33,84 @@ bool ATTAGameMode::RequestPhase(ETTAPhase To)
 	return true;
 }
 
+FString ATTAGameMode::SettingsPath()
+{
+	return FPaths::ProjectSavedDir() / TEXT("TTA/MatchSettings.json");
+}
+
+void ATTAGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
+{
+	Super::InitGame(MapName, Options, ErrorMessage);
+	const FString Path = SettingsPath();
+	FString Json;
+	if (!FFileHelper::LoadFileToString(Json, *Path))
+	{
+		Json = UTF8_TO_TCHAR(tta::toJson(tta::MatchSettings{}).c_str());
+		if (!FFileHelper::SaveStringToFile(Json, *Path))
+		{
+			UE_LOG(LogTemp, Error, TEXT("ATTAGameMode: can't write default settings to %s"), *Path);
+		}
+	}
+	try
+	{
+		Match = tta::MatchStateMachine(tta::parseMatchSettings(TCHAR_TO_UTF8(*Json)));
+	}
+	catch (const std::invalid_argument& Error)
+	{
+		UE_LOG(LogTemp, Error, TEXT("ATTAGameMode: %s is invalid (%s); using default settings"), *Path, UTF8_TO_TCHAR(Error.what()));
+	}
+}
+
+void ATTAGameMode::InitGameState()
+{
+	Super::InitGameState();
+	GetGameState<ATTAGameState>()->SetSettingsJson(UTF8_TO_TCHAR(tta::toJson(Match.settings()).c_str()));
+}
+
+bool ATTAGameMode::ApplySettingsJson(const FString& Json)
+{
+	if (Match.phase() != tta::Phase::Lobby) return false;
+	tta::MatchSettings Settings;
+	try
+	{
+		Settings = tta::parseMatchSettings(TCHAR_TO_UTF8(*Json));
+	}
+	catch (const std::invalid_argument& Error)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ATTAGameMode: settings rejected: %s"), UTF8_TO_TCHAR(Error.what()));
+		return false;
+	}
+	Match = tta::MatchStateMachine(Settings);
+	const FString Saved = UTF8_TO_TCHAR(tta::toJson(Settings).c_str());
+	if (!FFileHelper::SaveStringToFile(Saved, *SettingsPath()))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ATTAGameMode: can't save settings to %s"), *SettingsPath());
+	}
+	GetGameState<ATTAGameState>()->SetSettingsJson(Saved);
+	return true;
+}
+
+void ATTAGameMode::PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage)
+{
+	Super::PreLogin(Options, Address, UniqueId, ErrorMessage);
+	if (ErrorMessage.IsEmpty() && !tta::canJoin(Match.phase()))
+	{
+		ErrorMessage = TEXT("Round in progress: join when this round's premiere starts.");
+	}
+}
+
+bool ATTAGameMode::EndPremiere(const std::map<int, double>& RatingPoints)
+{
+	if (Match.phase() != tta::Phase::Premiere) return false;
+	Score.addRatings(RatingPoints);
+	return RequestPhase(Match.canTransition(tta::Phase::Build) ? ETTAPhase::Build : ETTAPhase::Podium);
+}
+
 void ATTAGameMode::EnterRun()
 {
 	RevealPlacements();
 	TArray<ATTARunnerPawn*> Runners;
-	RunnerPlayerIds.Reset();
+	std::vector<int> RunnerIds;
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		APlayerController* PC = It->Get();
@@ -51,13 +128,15 @@ void ATTAGameMode::EnterRun()
 		PC->Possess(Runner);
 		if (Old) Old->Destroy();
 		Runners.Add(Runner);
-		RunnerPlayerIds.Add(PC->PlayerState->GetPlayerId());
+		RunnerIds.push_back(PC->PlayerState->GetPlayerId());
 	}
+	RunPlayerIds = tta::runPlayers(RunnerIds, Layout);
+	RunnerCount = Runners.Num();
 	SpawnTraps();
 	if (!Director) Director = GetWorld()->SpawnActor<ATTARunDirector>();
 	check(Director);
 	TimedOutFor = 0.f;
-	Director->StartRun(Runners, static_cast<float>(Match.phaseSeconds()));
+	Director->StartRun(Runners, static_cast<float>(Match.phaseSeconds()), static_cast<int32>(RunPlayerIds.size()) - RunnerCount);
 }
 
 void ATTAGameMode::SpawnTraps()
@@ -65,18 +144,11 @@ void ATTAGameMode::SpawnTraps()
 	for (const tta::Placement& P : Layout.all())
 	{
 		if (P.isCamera) continue;
-		// The replay knows runners by index; a trap whose owner left can't be scored this Run.
-		const int32 OwnerIndex = RunnerPlayerIds.IndexOfByKey(P.owner);
+		// The replay knows players by index; owners who left are in RunPlayerIds too, so their traps stay live.
+		const auto Owner = std::find(RunPlayerIds.begin(), RunPlayerIds.end(), P.owner);
+		check(Owner != RunPlayerIds.end());
+		const int32 OwnerIndex = static_cast<int32>(Owner - RunPlayerIds.begin());
 		TObjectPtr<ATTATrapActor>& Trap = TrapActors.FindOrAdd(P.id);
-		if (OwnerIndex == INDEX_NONE)
-		{
-			if (Trap)
-			{
-				Trap->SetActorHiddenInGame(true);
-				Trap->SetActorEnableCollision(false);
-			}
-			continue;
-		}
 		if (!Trap) Trap = GetWorld()->SpawnActor<ATTATrapActor>();
 		check(Trap);
 		tta::Placement InRun = P;
@@ -90,21 +162,19 @@ void ATTAGameMode::SpawnTraps()
 void ATTAGameMode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	if (GetGameState<ATTAGameState>()->GetPhase() != ETTAPhase::Run || !Director || !Director->IsRunning()) return;
+	const ATTAGameState* State = GetGameState<ATTAGameState>();
+	const bool bTimerDone = Match.phaseSeconds() > 0 && State->GetSecondsLeft() == 0;
+	if (State->GetPhase() == ETTAPhase::Build && bTimerDone) verify(RequestPhase(ETTAPhase::Run));
+	if (State->GetPhase() == ETTAPhase::Edit && bTimerDone) verify(RequestPhase(ETTAPhase::Premiere));
+	if (State->GetPhase() != ETTAPhase::Run || !Director || !Director->IsRunning()) return;
 	if (Director->IsTimedOut()) TimedOutFor += DeltaSeconds;
 	if (Director->AllFinished() || TimedOutFor >= SmiteHoldSeconds) EndRun();
 }
 
 void ATTAGameMode::EndRun()
 {
-	// Replay ids are runner indices; totals are kept by PlayerState id.
-	const tta::RoundInput InRun = Director->GetRoundInput();
-	const auto ToPlayer = [this](int Index) { return RunnerPlayerIds[Index]; };
-	tta::RoundInput Round;
-	for (const int P : InRun.players) Round.players.insert(ToPlayer(P));
-	for (const int P : InRun.finishers) Round.finishers.insert(ToPlayer(P));
-	for (const tta::Wipeout& W : InRun.wipeouts) Round.wipeouts.push_back({ToPlayer(W.victim), ToPlayer(W.trapOwner), W.trap});
-	Score.addRound(Round);
+	// Replay ids are indices into RunPlayerIds; totals are kept by PlayerState id.
+	Score.addRound(tta::toPlayerIds(Director->GetRoundInput(), RunPlayerIds, static_cast<std::size_t>(RunnerCount)));
 	verify(RequestPhase(ETTAPhase::Edit));
 }
 

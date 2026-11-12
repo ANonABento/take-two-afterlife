@@ -45,6 +45,10 @@ std::map<int, double> MatchScore::addRound(const RoundInput& round) {
     return points;
 }
 
+void MatchScore::addRatings(const std::map<int, double>& points) {
+    for (const auto& [p, v] : points) totals_[p] += v;
+}
+
 double MatchScore::total(int player) const {
     auto it = totals_.find(player);
     return it == totals_.end() ? 0.0 : it->second;
