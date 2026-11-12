@@ -43,3 +43,9 @@ Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prom
 - **Agent did:** added `Ratings.h/.cpp` (`RatingBook`) and doctest cases for self-rating, bad input, per-player aggregation and feeding `scoreRound`.
 - **Failed:** nothing.
 - **Fixed by hand:** nothing yet.
+
+## Task 11 — UE project + Core module + package smoke build
+- **Prompt:** UE5 C++ project compiling Core/ as a module, empty Title map, Win64 package profile, zip script `TeamName_TakeTwoAfterlife` with < 1 GB check; `make test`, plus TTA.Core.Smoke and packaged zip checked on Kevin's machine.
+- **Agent did:** added uproject, targets, `TTACore` + game module, `TTA.Core.Smoke`, Config ini files, package/zip/title-map scripts and Python tests for the zip script.
+- **Failed:** UE build not runnable in the sandbox; untested until Kevin builds.
+- **Fixed by hand:** nothing yet.
