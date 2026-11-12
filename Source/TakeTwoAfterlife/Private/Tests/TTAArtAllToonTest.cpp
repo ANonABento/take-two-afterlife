@@ -16,7 +16,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTTAArtAllToonTest, "TTA.Art.AllToon",
 
 bool FTTAArtAllToonTest::RunTest(const FString& Parameters)
 {
-	static const TCHAR* Maps[] = {TEXT("/Game/Maps/TTA_ArtTest.TTA_ArtTest")};
+	static const TCHAR* Maps[] = {TEXT("/Game/Maps/TTA_ArtTest.TTA_ArtTest"), TEXT("/Game/Maps/Backyard.Backyard")};
 	const FString ToonPath = TEXT("/Game/Art/Toon/M_TTA_Toon.M_TTA_Toon");
 
 	for (const TCHAR* MapPath : Maps)

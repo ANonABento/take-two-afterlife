@@ -28,6 +28,7 @@ public:
 	void RecordHit(const tta::Placement& Trap, ATTARunnerPawn* Victim);
 
 	bool IsRunning() const { return Recorder.IsValid(); }
+	bool HasFinished(const ATTARunnerPawn* Runner) const { return Finished.Contains(Runner); }
 	// Valid only after StartRun.
 	const tta::Replay& GetReplay() const { return Recorder->replay(); }
 	int32 PlayerId(const ATTARunnerPawn* Runner) const { return Runners.IndexOfByKey(Runner); }
