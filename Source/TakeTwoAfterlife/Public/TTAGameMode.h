@@ -3,8 +3,11 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 #include "TTAGameState.h"
+#include "TTAPlacementMarker.h"
 #include "tta/MatchStateMachine.h"
 #include "TTAGameMode.generated.h"
+
+class ATTABuildPawn;
 
 // Server-side owner of the match state machine; mirrors each accepted phase
 // into ATTAGameState so it replicates to every client.
@@ -17,8 +20,28 @@ public:
 	ATTAGameMode();
 
 	// Returns false (and changes nothing) for an illegal transition.
+	// Entering Build gives every player an ATTABuildPawn; entering Run reveals all placements.
 	UFUNCTION(BlueprintCallable) bool RequestPhase(ETTAPhase To);
 
+	// Build requests (server). Each needs the Build phase and a player with a PlayerState;
+	// settings and removal only touch the caller's own placements (removal: this round's only).
+	ETTAPlaceOutcome PlaceItem(const AController* By, int32 Item, const FVector& WorldCm, float YawDeg, int32* OutId = nullptr);
+	ETTAPlaceOutcome SetTrapSetting(const AController* By, int32 Id, int32 Index, int32 Value);
+	ETTAPlaceOutcome RemovePlacement(const AController* By, int32 Id);
+	const tta::Layout& GetLayout() const { return Layout; }
+	ATTAPlacementMarker* FindMarker(int32 Id) const;
+
+	UPROPERTY(EditDefaultsOnly, Category = "TTA") TSubclassOf<ATTABuildPawn> BuildPawnClass;
+	UPROPERTY(EditDefaultsOnly, Category = "TTA") FTransform BuildCameraStart = FTransform(FRotator(-30.f, 0.f, 0.f), FVector(-500.f, 0.f, 800.f));
+
 private:
+	void EnterBuild();
+	void RevealPlacements();
+	// Ok when By owns placement Id; fills OutPlacement.
+	ETTAPlaceOutcome CheckOwned(const AController* By, int32 Id, const tta::Placement*& OutPlacement) const;
+	void SyncMarker(int32 Id);
+
+	tta::Layout Layout; // persists across rounds, like the map
+	UPROPERTY() TMap<int32, TObjectPtr<ATTAPlacementMarker>> Markers;
 	tta::MatchStateMachine Match{tta::MatchSettings{}};
 };

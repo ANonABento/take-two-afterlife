@@ -101,3 +101,16 @@ TEST_CASE("bad layout JSON is rejected") {
     CHECK_THROWS_AS(parseLayout("{\"placements\": [{\"id\": 1, \"owner\": 1, \"kind\": \"trap\", \"type\": \"piano\", \"cellX\": 0, \"cellY\": 0, \"rotation\": 0, \"setting1\": 1, \"setting2\": 1, \"hidden\": true}]}"), std::invalid_argument);
     CHECK_THROWS_AS(parseLayout("{\"placements\": [{\"id\": 1, \"owner\": 1, \"kind\": \"camera\", \"type\": \"pan\", \"cellX\": 999, \"cellY\": 0, \"rotation\": 0, \"hidden\": true}]}"), std::invalid_argument);
 }
+
+TEST_CASE("canPlace previews the place rules without placing") {
+    Layout l;
+    CHECK(l.canPlace(1, false, TrapType::Cannon, 10.0, 0.0) == PlaceResult::Ok);
+    CHECK(l.canPlace(1, false, TrapType::Cannon, -1.0, 0.0) == PlaceResult::OutOfBounds);
+    CHECK(l.canPlace(1, true, TrapType::Hammer, 10.0, 4.3) == PlaceResult::OutOfBounds);
+    for (int i = 0; i < 4; ++i) REQUIRE(l.placeTrap(1, TrapType::Cannon, 5.0 * i, 0.0, 0.0) == PlaceResult::Ok);
+    CHECK(l.canPlace(1, false, TrapType::Banana, 30.0, 0.0) == PlaceResult::OverBudget);
+    CHECK(l.canPlace(2, false, TrapType::Banana, 30.0, 0.0) == PlaceResult::Ok);
+    for (int i = 0; i < kCameraCap; ++i) REQUIRE(l.placeCamera(1, CameraType::Pan, i, 1.0, 0.0) == PlaceResult::Ok);
+    CHECK(l.canPlace(1, true, TrapType::Hammer, 30.0, 0.0) == PlaceResult::CameraCapReached);
+    CHECK(l.all().size() == 4 + kCameraCap);
+}

@@ -1,4 +1,5 @@
 #include "TTATrapActor.h"
+#include "TTAPlacementMarker.h"
 
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -43,9 +44,7 @@ void ATTATrapActor::InitFromPlacement(const tta::Placement& InPlacement)
 	}
 	tta::pose(InPlacement.trap, InPlacement.settings, 0.0); // throws on out-of-range settings
 	Placement = InPlacement;
-	SetActorLocationAndRotation(
-		FVector(tta::cellToMeters(Placement.cellX), tta::cellToMeters(Placement.cellY), 0.0) * kCmPerMeter,
-		FRotator(0.f, 45.f * Placement.rotation, 0.f));
+	SetActorTransform(ATTAPlacementMarker::WorldTransform(FTTAPlacementRep::FromCore(Placement)));
 	ApplyPoseAt(0.0);
 }
 
