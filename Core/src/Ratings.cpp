@@ -47,4 +47,12 @@ std::map<int, double> RatingBook::ratingPoints() const {
     return points;
 }
 
+RatingBook::Averages RatingBook::averages(int cutId) const {
+    auto it = cuts_.find(cutId);
+    if (it == cuts_.end()) throw std::invalid_argument("cut " + std::to_string(cutId) + " is not open");
+    const Entry& e = it->second;
+    if (e.funny.empty()) return {};
+    return {average(e.funny), average(e.evil), static_cast<int>(e.funny.size())};
+}
+
 } // namespace tta
