@@ -55,3 +55,9 @@ Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prom
 - **Agent did:** added engine-free `PawnLife` timing + doctest cases, `ATTARunnerPawn`, `TTA.Pawn.Ragdoll`, input mappings.
 - **Failed:** sandbox containers don't keep files; first pass lost uncommitted work and was redone.
 - **Fixed by hand:** nothing yet.
+
+## Task 15 — EOS host/join by code
+- **Prompt:** Epic login, host lobby shows a code, join by code, listen-server travel, direct-IP fallback, phase replication (req 9); Automation TTA.Net.PhaseReplication + a 2-PC code join on Kevin's machine.
+- **Agent did:** added Core `JoinCode` (+ doctest), `UTTASessionSubsystem`, `ATTAGameMode`/`ATTAGameState` with replicated phase, EOS config and plugins, `TTA.Net.PhaseReplication`.
+- **Failed:** sandbox containers don't keep files between runs, so the edit was redone as one script.
+- **Fixed by hand:** nothing yet.
