@@ -20,6 +20,7 @@ add_library(tta_core
   src/MicTrack.cpp
   src/Premiere.cpp
   src/MenuFlow.cpp
+  src/AudioCues.cpp
 )
 target_include_directories(tta_core PUBLIC include)
 if(MSVC)
@@ -45,7 +46,11 @@ add_executable(tta_core_tests
   tests/MicTrackTests.cpp
   tests/PremiereTests.cpp
   tests/MenuFlowTests.cpp
+  tests/AudioCuesTests.cpp
 )
 target_include_directories(tta_core_tests PRIVATE third_party)
 target_link_libraries(tta_core_tests PRIVATE tta_core)
 add_test(NAME tta_core_tests COMMAND tta_core_tests)
+
+add_executable(tta_vo_script tools/vo_script.cpp)
+target_link_libraries(tta_vo_script PRIVATE tta_core)
