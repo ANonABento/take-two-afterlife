@@ -49,3 +49,9 @@ Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prom
 - **Agent did:** added uproject, targets, `TTACore` + game module, `TTA.Core.Smoke`, Config ini files, package/zip/title-map scripts and Python tests for the zip script.
 - **Failed:** UE build not runnable in the sandbox; untested until Kevin builds.
 - **Fixed by hand:** nothing yet.
+
+## Task 14 — Ragdoll pawn + impact frame
+- **Prompt:** walk/jump/dive, ragdoll on hit, victim-only 0.12 s freeze with M_TTA_Toon flash, shake, SFX hook, respawn at start, wings off in human form; Automation TTA.Pawn.Ragdoll.
+- **Agent did:** added engine-free `PawnLife` timing + doctest cases, `ATTARunnerPawn`, `TTA.Pawn.Ragdoll`, input mappings.
+- **Failed:** sandbox containers don't keep files; first pass lost uncommitted work and was redone.
+- **Fixed by hand:** nothing yet.

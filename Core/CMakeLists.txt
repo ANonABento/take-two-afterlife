@@ -14,6 +14,7 @@ add_library(tta_core
   src/Replay.cpp
   src/EditList.cpp
   src/Ratings.cpp
+  src/PawnLife.cpp
 )
 target_include_directories(tta_core PUBLIC include)
 if(MSVC)
@@ -33,6 +34,7 @@ add_executable(tta_core_tests
   tests/ReplayTests.cpp
   tests/EditListTests.cpp
   tests/RatingsTests.cpp
+  tests/PawnLifeTests.cpp
 )
 target_include_directories(tta_core_tests PRIVATE third_party)
 target_link_libraries(tta_core_tests PRIVATE tta_core)
