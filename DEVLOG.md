@@ -31,3 +31,9 @@ Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prom
 - **Agent did:** added `Replay.h/.cpp` (float32 positions, int16 rotations, Catmull-Rom position lookup, nlerp rotations) and doctest cases for size, interpolation error, round-trip, clamping and bad input.
 - **Failed:** first build had 3.4 cm error in the first/last segment (edge sample repeated as the Catmull-Rom neighbour); fixed by extrapolating it. First check ran without cmake installed.
 - **Fixed by hand:** nothing yet.
+
+## Task 9 — Edit list + auto-edit
+- **Prompt:** clip(camera, range) with trim, reorder, multi-angle, slow-mo, zoom, overlays, 30 s cap, auto-edit from hit events; `make test` per op, cap and auto-edit on a fixture replay.
+- **Agent did:** added `EditList.h/.cpp` (copy-validate-commit ops, auto-edit from replay events) and doctest cases for each op, the cap and auto-edit on fixture replays.
+- **Failed:** first check ran without cmake in the sandbox (false PASS); reran with cmake installed.
+- **Fixed by hand:** nothing yet.
