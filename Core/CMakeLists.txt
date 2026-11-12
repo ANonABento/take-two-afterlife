@@ -9,6 +9,7 @@ add_library(tta_core
   src/MatchSettings.cpp
   src/MatchStateMachine.cpp
   src/Placement.cpp
+  src/TrapTimeline.cpp
 )
 target_include_directories(tta_core PUBLIC include)
 if(MSVC)
@@ -23,6 +24,7 @@ add_executable(tta_core_tests
   tests/MatchSettingsTests.cpp
   tests/MatchStateMachineTests.cpp
   tests/PlacementTests.cpp
+  tests/TrapTimelineTests.cpp
 )
 target_include_directories(tta_core_tests PRIVATE third_party)
 target_link_libraries(tta_core_tests PRIVATE tta_core)
