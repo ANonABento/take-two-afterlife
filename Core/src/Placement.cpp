@@ -63,7 +63,7 @@ PlaceResult Layout::add(Placement p, double xMeters, double yMeters, double degr
     p.cellX = snapToCell(xMeters);
     p.cellY = snapToCell(yMeters);
     p.rotation = snapRotation(degrees);
-    const PlaceResult check = canPlace(p.owner, p.isCamera, p.trap, xMeters, yMeters);
+    const PlaceResult check = canPlace(p.owner, p.isCamera, p.trap, xMeters, yMeters, p.camera);
     if (check != PlaceResult::Ok) return check;
     p.id = nextId_++;
     placements_.push_back(p);
@@ -71,10 +71,11 @@ PlaceResult Layout::add(Placement p, double xMeters, double yMeters, double degr
     return PlaceResult::Ok;
 }
 
-PlaceResult Layout::canPlace(int owner, bool isCamera, TrapType trap, double xMeters, double yMeters) const {
+PlaceResult Layout::canPlace(int owner, bool isCamera, TrapType trap, double xMeters, double yMeters,
+                             CameraType camera) const {
     if (!inCorridor(snapToCell(xMeters), snapToCell(yMeters))) return PlaceResult::OutOfBounds;
     if (isCamera) {
-        if (cameraCount(owner) >= kCameraCap) return PlaceResult::CameraCapReached;
+        if (cameraCount(owner, camera) >= kCameraCap) return PlaceResult::CameraCapReached;
     } else if (trapSpec(trap).cost > remaining(owner)) {
         return PlaceResult::OverBudget;
     }

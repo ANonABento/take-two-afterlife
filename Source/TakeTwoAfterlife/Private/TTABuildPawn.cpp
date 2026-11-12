@@ -104,7 +104,7 @@ void ATTABuildPawn::Tick(float DeltaSeconds)
 	Ghost->SetWorldTransform(ATTAPlacementMarker::WorldTransform(FTTAPlacementRep::FromCore(Preview)));
 	Ghost->SetStaticMesh(GetDefault<ATTAPlacementMarker>()->MeshForItem(SelectedItem));
 	GhostOutcome = ToUE(OwnLayout().canPlace(ATTAPlacementMarker::PlayerIdOf(this), Preview.isCamera, Preview.trap,
-		GhostCm.X / 100.0, GhostCm.Y / 100.0));
+		GhostCm.X / 100.0, GhostCm.Y / 100.0, Preview.camera));
 }
 
 void ATTABuildPawn::Place()

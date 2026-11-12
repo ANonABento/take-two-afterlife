@@ -81,12 +81,18 @@ bool FTTABuildPlaceReplicateTest::RunTest(const FString& Parameters)
 	for (int32 i = 0; i < 4; ++i) TestEqual(TEXT("B cannon"), Mode->PlaceItem(B, Cannon, FVector(500.f * i, 0, 0), 0.f), ETTAPlaceOutcome::Ok);
 	TestEqual(TEXT("B over budget"), Mode->PlaceItem(B, Hammer, FVector(3000, 0, 0), 0.f), ETTAPlaceOutcome::OverBudget);
 
-	// Cameras by type, capped at 12, lifted off the floor.
+	// Cameras by type, capped at 12 per type, lifted off the floor.
 	int32 CamId = 0;
 	for (int32 i = 0; i < tta::kCameraCap; ++i)
 	{
 		TestEqual(TEXT("A camera"), Mode->PlaceItem(A, FirstCamera + i % 4, FVector(100.f * i, -300, 0), 0.f, &CamId), ETTAPlaceOutcome::Ok);
 	}
+	const int32 MoreFixed = tta::kCameraCap - tta::kCameraCap / 4;
+	for (int32 i = 0; i < MoreFixed; ++i)
+	{
+		TestEqual(TEXT("A fixed camera"), Mode->PlaceItem(A, FirstCamera, FVector(100.f * i, 300, 0), 0.f), ETTAPlaceOutcome::Ok);
+	}
+	TestEqual(TEXT("other types still open"), Mode->GetLayout().cameraCount(1, tta::CameraType::Pan), tta::kCameraCap / 4);
 	TestEqual(TEXT("camera cap"), Mode->PlaceItem(A, FirstCamera, FVector(2000, 0, 0), 0.f), ETTAPlaceOutcome::CameraCapReached);
 	TestEqual(TEXT("3 trap-cams"), Mode->GetLayout().cameraCount(1, tta::CameraType::TrapCam), 3);
 	TestEqual(TEXT("last is a trap-cam"), Mode->FindMarker(CamId)->GetData().Item, FirstCamera + 3);
@@ -103,7 +109,7 @@ bool FTTABuildPlaceReplicateTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Build -> Run"), Mode->RequestPhase(ETTAPhase::Run));
 	TestTrue(TEXT("revealed to B"), Marker->IsNetRelevantFor(B, B, FVector::ZeroVector));
 	TestTrue(TEXT("marker data revealed"), Marker->GetData().bRevealed);
-	TestEqual(TEXT("B sees all placements"), static_cast<int32>(Mode->GetLayout().visibleTo(2).size()), 1 + 4 + tta::kCameraCap);
+	TestEqual(TEXT("B sees all placements"), static_cast<int32>(Mode->GetLayout().visibleTo(2).size()), 1 + 4 + tta::kCameraCap + MoreFixed);
 	TestEqual(TEXT("no placing in Run"), Mode->PlaceItem(A, Hammer, FVector(1000, 0, 0), 0.f), ETTAPlaceOutcome::WrongPhase);
 	return true;
 }
