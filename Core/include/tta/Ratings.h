@@ -24,6 +24,14 @@ public:
     // Per player: sum over their cuts of the average Funny (as editor) and
     // average Evil (as builder). Unrated cuts add nothing. Feeds RoundInput::ratingPoints.
     std::map<int, double> ratingPoints() const;
+    // One cut's score reveal: average Funny / Evil, 0 when nobody rated.
+    // Throws std::invalid_argument on an unknown cut.
+    struct Averages {
+        double funny = 0;
+        double evil = 0;
+        int votes = 0;
+    };
+    Averages averages(int cutId) const;
 
 private:
     struct Entry {
