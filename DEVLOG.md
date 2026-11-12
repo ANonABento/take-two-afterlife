@@ -13,3 +13,9 @@ Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prom
 - **Agent did:** added `Placement.h/.cpp` and doctest cases for snap, bounds, over-budget, camera cap, settings, hiding and JSON round-trip.
 - **Failed:** two bounds tests used points that snap back inside the corridor (60.2 → 60.0); moved them further out.
 - **Fixed by hand:** nothing yet.
+
+## Task 6 — Deterministic trap timelines
+- **Prompt:** pure `pose(trapType, settings, t)` for all 6 traps; `make test` with determinism and period tests per trap.
+- **Agent did:** added `TrapTimeline.h/.cpp` (integer-ms phase, no randomness) and doctest cases covering every setting combination.
+- **Failed:** nothing.
+- **Fixed by hand:** nothing yet.
