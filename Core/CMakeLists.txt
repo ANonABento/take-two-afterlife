@@ -17,6 +17,7 @@ add_library(tta_core
   src/PawnLife.cpp
   src/JoinCode.cpp
   src/RunRecorder.cpp
+  src/MicTrack.cpp
 )
 target_include_directories(tta_core PUBLIC include)
 if(MSVC)
@@ -39,6 +40,7 @@ add_executable(tta_core_tests
   tests/PawnLifeTests.cpp
   tests/JoinCodeTests.cpp
   tests/RunRecorderTests.cpp
+  tests/MicTrackTests.cpp
 )
 target_include_directories(tta_core_tests PRIVATE third_party)
 target_link_libraries(tta_core_tests PRIVATE tta_core)

@@ -32,6 +32,8 @@ public:
 	UFUNCTION(BlueprintPure) int32 GetRound() const { return Round; }
 	// Whole seconds left in a timed phase (Build/Run/Edit), 0 when untimed or over.
 	UFUNCTION(BlueprintPure) int32 GetSecondsLeft() const;
+	// Seconds since the current phase started, on the server clock. In Run this is replay time.
+	UFUNCTION(BlueprintPure) double GetPhaseElapsedSeconds() const { return GetServerWorldTimeSeconds() - PhaseStartedAt; }
 
 	// Server only. Notifies locally; clients notify in OnRep_Phase.
 	// PhaseSeconds 0 = untimed.
@@ -51,6 +53,8 @@ protected:
 	UPROPERTY(ReplicatedUsing = OnRep_Phase) int32 Round = 0;
 	// Server world time when the current phase's timer runs out; < 0 when untimed.
 	UPROPERTY(Replicated) double PhaseEndsAt = -1.0;
+	// Server world time when the current phase started.
+	UPROPERTY(Replicated) double PhaseStartedAt = 0.0;
 
 private:
 	void NotifyPhaseChanged();

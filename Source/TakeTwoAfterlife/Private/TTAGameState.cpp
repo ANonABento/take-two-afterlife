@@ -9,6 +9,7 @@ void ATTAGameState::SetPhase(ETTAPhase NewPhase, int32 NewRound, int32 PhaseSeco
 	check(HasAuthority());
 	Phase = NewPhase;
 	Round = NewRound;
+	PhaseStartedAt = GetServerWorldTimeSeconds();
 	PhaseEndsAt = PhaseSeconds > 0 ? GetServerWorldTimeSeconds() + PhaseSeconds : -1.0;
 	NotifyPhaseChanged();
 }
@@ -35,4 +36,5 @@ void ATTAGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME(ATTAGameState, Phase);
 	DOREPLIFETIME(ATTAGameState, Round);
 	DOREPLIFETIME(ATTAGameState, PhaseEndsAt);
+	DOREPLIFETIME(ATTAGameState, PhaseStartedAt);
 }

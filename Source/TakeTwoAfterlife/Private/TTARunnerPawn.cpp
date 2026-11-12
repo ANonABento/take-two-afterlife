@@ -12,6 +12,7 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Net/VoiceConfig.h"
 #include "Sound/SoundAttenuation.h"
+#include "TTAMicRecorder.h"
 
 namespace
 {
@@ -27,6 +28,7 @@ ATTARunnerPawn::ATTARunnerPawn()
 	Halo->SetupAttachment(GetMesh());
 	Hat = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Hat"));
 	Handheld = CreateDefaultSubobject<UCameraComponent>(TEXT("Handheld"));
+	MicRecorder = CreateDefaultSubobject<UTTAMicRecorder>(TEXT("MicRecorder"));
 	Handheld->SetupAttachment(RootComponent);
 	Handheld->SetRelativeLocation(FVector(40.f, 20.f, 50.f)); // held at chest height, right hand
 	Handheld->bUsePawnControlRotation = true;
