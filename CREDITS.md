@@ -24,3 +24,12 @@ Every third-party asset, library and tool used in Take Two Afterlife. Human-made
 ## Tools
 | Tool | Use |
 |---|---|
+| Unreal Engine 5.5 (C++, UMG, Python editor scripting, Automation) | game engine, packaging, tests |
+| Epic Online Services (lobbies, P2P relay, voice) | join codes, networking, proximity voice |
+| CMake + doctest | engine-free `Core/` build and unit tests |
+| Python 3 | editor scripts, zip/devlog tools, tests |
+| Blender | angel, hats and faces (scripted builds in `models/`) |
+| ElevenLabs | narrator text-to-speech |
+| OBS Studio | gameplay video capture |
+| Choomfie / Waymond (Claude) coding agents | code, scripts and research per DEVLOG.md; no AI-generated art, music or SFX |
+| Git / GitHub | version control |
