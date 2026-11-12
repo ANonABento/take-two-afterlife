@@ -9,6 +9,7 @@ class UCameraComponent;
 class UCameraShakeBase;
 class USoundAttenuation;
 class UVOIPTalker;
+class UTTAMicRecorder;
 class UMaterialInstanceDynamic;
 class USoundBase;
 class UStaticMeshComponent;
@@ -62,6 +63,8 @@ public:
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> Hat;
 	// Content Warning-style handheld: hold [RMB] to look (and later edit) through it.
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UCameraComponent> Handheld;
+	// Records this runner's mic during Run (locally controlled runner only).
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UTTAMicRecorder> MicRecorder;
 	UPROPERTY(EditAnywhere, Category = "TTA") float VoiceFalloffCm = 2500.f;
 
 	UFUNCTION(BlueprintCallable) void SetFilming(bool bOn);
