@@ -1,6 +1,17 @@
 # Overnight — 2026-11-13 (branch `overnight/cursor`)
 
-Summary is written at the top when the queue finishes.
+## Summary
+
+- **Compile:** GREEN. Editor target linked after the menu and title includes. Nothing for you to do.
+- **Content setup:** GREEN. Backyard is 80 engine cubes because the KayKit/Kenney packs are not in `Downloads/`. Run `Scripts/fetch_assets.ps1` when you can, then `setup_content.ps1` again.
+- **Title map:** GREEN. Saved map uses `TTATitleGameMode`, a plain HUD, sun, sky, atmosphere, fog, and the tagged camera. I did not watch it in a window. Open Title in PIE and look.
+- **Placeholder audio:** GREEN. 76 silent SoundWaves, about 0.25 s, music looping. Replace them with real ElevenLabs / music files of the same names before you submit.
+- **Tests:** RED. `mingw32-make test` passed (`make` is not on PATH; CMake was installed with pip). Automation still fails after 3 runs and the last one crashes in `TTA.UI.MenuFlow`. See section 5. `Saved/Automation/TTA3.log`.
+- **TTA.Art.AllToon:** GREEN. Passed inside the automation runs. No material was off `M_TTA_Toon`.
+- **Shipping zip:** GREEN. `Dist/ANonABento_TakeTwoAfterlife.zip` is 339,370,215 bytes (323.6 MiB), under 1 GB. I used `ANonABento` because the repo has no other team name. Rename the zip if the jam form wants a different team.
+- **Compiler warnings:** GREEN. The editor rebuilds and the Shipping UAT log had no `warning C` lines from our code. Nothing to delete.
+
+Morning, in order: look at Title in PIE, download the mesh packs if you want a real backyard, drop real audio over the placeholders, paste EOS Artifact IDs and set `DefaultPlatformService=EOS`, and read section 5 before trusting automation. The editor keeps rewriting `Config/DefaultEngine.ini` (Android File Server token) and `Config/DefaultInput.ini`; I reverted those and did not commit them.
 
 ## 1. Fix compile errors and rebuild the editor
 
@@ -74,3 +85,22 @@ Passed on the third run: AllToon, MicSync, TriggerTable, Cinema.Sequence, Core.S
 What: included in both completed automation passes. No material was reported off `M_TTA_Toon`.
 
 Result: GREEN. `Saved/Automation/TTA.log` and `TTA3.log`: `Test Completed. Result={Success} Name={AllToon}`. `swap_to_toon.py` swapped 0 slots because the backyard props are already toon instances on the engine cube.
+
+## 7. Win64 Shipping package
+
+What: `RunUAT BuildCookRun` Win64 Shipping, cook, stage, pak, iostore, archive to `Dist`. The first link failed because `TTACore` and `TakeTwoAfterlife/Private/CoreLib` both compile `Core/src` and Shipping links every module into one exe (`Saved/Automation/Package.log`, LNK2005). Putting the game module on `TTACore` instead made the editor link fail (those symbols are not exported from the DLL). The wrappers in `TTACore` now include the sources only when `!IS_MONOLITHIC`. Third run: `Saved/Automation/Package3.log`, `BUILD SUCCESSFUL`, exit 0.
+
+Zip (repo org, because no team name is written down):
+
+```
+python Scripts/zip_package.py Dist/Windows ANonABento --out Dist
+```
+
+Result: GREEN. `Dist/ANonABento_TakeTwoAfterlife.zip` is 339,370,215 bytes (323.6 MiB). Limit is under 1,073,741,824 bytes.
+
+## 8. Compiler warnings
+
+What: read the Development editor rebuilds and `Saved/Automation/Package3.log` for `warning C`.
+
+Result: GREEN. No `warning C` lines in those logs. `TTAGameMode.cpp` already disables 4458 for a local that shadows `AActor::Owner`. Nothing else to change.
+
