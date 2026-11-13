@@ -1,4 +1,6 @@
-#include "TTAEditStage.h"
+﻿#include "TTAEditStage.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Engine/SkeletalMesh.h"
 
 #include "Components/PoseableMeshComponent.h"
 #include "Components/SceneCaptureComponent2D.h"

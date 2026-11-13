@@ -14,6 +14,6 @@ void UTTAWorldLookLibrary::ApplyWorldLook(const UObject* WorldContext, UMaterial
 		{TEXT("RimStrength"), Look.RimStrength}, {TEXT("Warmth"), Look.Warmth}};
 	for (const TPair<FName, float>& Value : Values)
 	{
-		UKismetMaterialLibrary::SetScalarParameterValue(WorldContext, Collection, Value.Key, Value.Value);
+		UKismetMaterialLibrary::SetScalarParameterValue(const_cast<UObject*>(WorldContext), Collection, Value.Key, Value.Value);
 	}
 }
