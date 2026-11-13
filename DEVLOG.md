@@ -181,3 +181,9 @@ Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prom
 - **Prompt:** Title's game mode must be `TTATitleGameMode`, the scene must be lit, the menu must show, and the build HUD must not.
 - **Agent did:** loaded the saved Title map in the editor. Game mode is `TTATitleGameMode`, HUD is the plain `HUD`, the controller is `TTATitlePlayerController` (it builds the menu widget on begin play), and the level has a sun, sky light, atmosphere, fog, and the tagged title camera.
 - **Failed / fixed by hand:** nothing. This was not a play-in-editor look with eyes; it is the saved map plus the controller that creates the widget.
+
+## Overnight — placeholder audio
+
+- **Prompt:** run the task 31 placeholder audio script and confirm the assets exist.
+- **Agent did:** setup created 76 silent SoundWaves (60 VO, 6 music, 10 SFX). A second run kept all 76. Loaded `SFX_Applause` and `MUS_Build` in the editor: duration about 0.25 s, music set to loop.
+- **Failed / fixed by hand:** the first import logged "Decoder for AudioFormat BINKA not found" and the editor exited 1. The waves still imported. Real ElevenLabs / music files are still yours to drop in over these names.
