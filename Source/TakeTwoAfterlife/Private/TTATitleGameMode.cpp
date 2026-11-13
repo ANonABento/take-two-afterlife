@@ -1,6 +1,7 @@
 #include "TTATitleGameMode.h"
 
 #include "Camera/CameraActor.h"
+#include "Engine/GameInstance.h"
 #include "EngineUtils.h"
 #include "GameFramework/HUD.h"
 #include "Kismet/KismetSystemLibrary.h"
