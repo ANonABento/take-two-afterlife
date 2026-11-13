@@ -1,4 +1,5 @@
-#include "TTACinema.h"
+﻿#include "TTACinema.h"
+#include "Engine/StaticMesh.h"
 
 #include "Components/StaticMeshComponent.h"
 #include "Materials/MaterialParameterCollection.h"

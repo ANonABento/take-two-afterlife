@@ -38,7 +38,7 @@ bool FTTAEditorPlayCutTest::RunTest(const FString& Parameters)
 	} while (Player->Advance(1.f / 60.f) && Ticks < 60 * 60);
 
 	TestFalse(TEXT("stopped at the end"), Player->IsPlaying());
-	TestEqual(TEXT("played length = Core edit list length (ms)"), FMath::RoundToInt(Player->GetPlayedMs()), static_cast<int32>(Cut.durationMs()));
+	TestEqual<int64>(TEXT("played length = Core edit list length (ms)"), FMath::RoundToInt(Player->GetPlayedMs()), static_cast<int32>(Cut.durationMs()));
 	TestTrue(TEXT("within the 30 s cap"), Cut.durationMs() <= tta::kMaxCutMs);
 	TestEqual(TEXT("every clip shown"), CamerasSeen.Num(), static_cast<int32>(Cut.clips().size()));
 	for (int32 i = 0; i < CamerasSeen.Num() && i < static_cast<int32>(Cut.clips().size()); ++i)
