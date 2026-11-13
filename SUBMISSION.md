@@ -14,3 +14,13 @@ Deadline: Nov 15, 5:59 PM PT. Tracks: Best Student Project + Solo Driver.
 - [ ] Tools list: the Tools table in CREDITS.md
 - [ ] Dev log link (itch devlog)
 - [ ] CREDITS.md rows filled (music titles, SFX ids, ElevenLabs attribution)
+
+## Status as of Nov 13
+- **Package:** a Shipping zip built at 323.6 MiB (under the 1 GB cap). The packaged `TakeTwoAfterlife.exe` has not been launched yet, so the Title-screen and host/join checks in Build step 2 are still open.
+- **Automation suite is red:**
+  - `TTA.UI.MenuFlow` crashes: it runs with no world.
+  - `TTA.Pawn.Ragdoll`: ragdoll mesh failing.
+  - Build-place meshes failing (`TTA.Build.PlaceReplicate`).
+  - Premiere (`TTA.Cinema.Sequence`) and respawn failing.
+- **Art:** the Backyard map uses placeholder art until `fetch_assets.ps1` runs and the map is rebuilt.
+- **Branches:** `overnight/cursor` and `mwe4dnfb` still need merging into this branch.

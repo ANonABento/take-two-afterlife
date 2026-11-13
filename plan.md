@@ -274,3 +274,8 @@ Scored 1-5 by judges on: ambition/innovation, theme, fun, gameplay, visuals, lev
 - Done: `Core/include/tta/MatchFlow.h` + `Core/src/MatchFlow.cpp` (`canJoin`, `runPlayers`, `toPlayerIds`), derived from `MatchFlowTests.cpp` and `TTAGameMode`. `RoundInput::absentOwners` re-added to Scoring (leavers' traps score; voiding counts runners only; an absent owner who also ran throws). `CoreMatchFlow.cpp` UE wrapper; CMake lists both files. `make test` passes.
 - Left: UE editor compile on Kevin's machine (TTAGameMode, `TTA.Match.ThreeRounds`).
 - Surprises: `absentOwners` was missing from `RoundInput` though the earlier handoff says it was added, so Scoring had to change too. The wrapper list in `Source/TTACore/Private` also lacks `CoreMenuFlow.cpp` (MenuFlow.cpp isn't compiled in UE); left alone here.
+
+### Submission docs — Nov 13 status
+- Done: `SUBMISSION.md` "Status as of Nov 13" (323.6 MiB Shipping zip, exe not launched, red Automation suite, placeholder Backyard art, unmerged branches). DEVLOG entries for tasks 28–31 and the premiere/respawn fix (31b). CREDITS: VO script source filled; TODOs for KayKit/Kenney and audio.
+- Left: merge `overnight/cursor` and `mwe4dnfb`, then rewrite the 28–31b DEVLOG lines from their handoffs; launch the exe; fill audio credits.
+- Surprises: no task 28–31 work, handoffs or `fetch_assets.ps1` exist on this branch, so those DEVLOG entries are written from the status notes only. Tasks 28–31 aren't in plan.md's task list, so `export_devlog.py` doesn't require them.
