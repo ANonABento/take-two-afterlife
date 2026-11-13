@@ -1,6 +1,7 @@
 # Builds the generated content headless, in order:
 #   create_toon_assets.py -> build_backyard_map.py (Downloads/, placeholders for missing packs)
-#   -> swap_to_toon.py (/Game) -> create_title_map.py
+#   -> swap_to_toon.py (/Game) -> create_title_map.py -> create_placeholder_audio.py (silent SoundWaves
+#   for every /Game/Audio cue with no real file in Content/Audio yet)
 # Stops at the first script whose log has a Traceback or a 'LogPython: Error', or lacks the script's own
 # success marker line, then checks that
 # Content/Maps holds Title and Backyard. Run Scripts/fetch_assets.ps1 first for the real meshes.
@@ -31,6 +32,7 @@ $Markers = [ordered]@{
     "build_backyard_map.py" = 'LogPython: built \S+: \d+ props'
     "swap_to_toon.py"       = 'LogPython: swapped \d+ material slots'
     "create_title_map.py"   = 'LogPython: (created \S+|\S+ already exists)'
+    "create_placeholder_audio.py" = 'LogPython: placeholder audio: \d+ created, \d+ kept'
 }
 $LogDir = Join-Path $Repo "Saved\SetupContent"
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null

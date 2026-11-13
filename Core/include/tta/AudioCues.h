@@ -2,6 +2,7 @@
 
 #include "tta/MatchStateMachine.h"
 
+#include <set>
 #include <string>
 #include <vector>
 
@@ -39,5 +40,18 @@ const AudioCue& musicFor(Phase phase);
 const AudioCue* narratorLine(AudioEvent event, int n);
 // UE object path, e.g. "/Game/Audio/VO/VO_Build_01.VO_Build_01".
 std::string assetPath(const AudioCue& cue);
+
+// Remembers asset paths that failed to load this session, so a missing sound is reported
+// once (reportMissing returns true only the first time) and then skipped without a lookup.
+class MissingAssetLog {
+public:
+    bool reportMissing(const std::string& path) { return missing_.insert(path).second; }
+    bool isKnownMissing(const std::string& path) const { return missing_.count(path) > 0; }
+    std::size_t count() const { return missing_.size(); }
+    void reset() { missing_.clear(); }
+
+private:
+    std::set<std::string> missing_;
+};
 
 }  // namespace tta
