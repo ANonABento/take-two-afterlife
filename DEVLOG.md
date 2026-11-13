@@ -158,3 +158,8 @@ Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prom
 ## Task 30 — Title map plays black with build HUD
 - Prompt: Title shows black with the build HUD; add a title GameMode/controller and rebuild the Title map lit with a camera.
 - Agent: found Title had no GameMode override (fell back to TTAGameMode + TTABuildHUD) and no lights, and no runtime code created the menu; added ATTATitleGameMode/ATTATitlePlayerController, rebuilt create_title_map.py, host now travels to Backyard. Python tests only; UE not compiled in sandbox.
+
+### Task 31 — Missing audio assets spam errors
+- **Prompt:** missing `/Game/Audio/...` sounds: one warning per asset per session instead of an error on every play; `Scripts/create_placeholder_audio.py` (run by `setup_content.ps1`) makes silent placeholders unless a real file exists in `Content/Audio/`.
+- **Agent did:** doctest repro for a warn-once log; root cause in `UTTAAudioDirector::LoadCue` (unconditional Error, no memory); `tta::MissingAssetLog`; quiet package check before load; placeholder importer + tests; setup step.
+- **Failed / fixed by hand:** UE code and the importer not run here (no engine).

@@ -48,3 +48,16 @@ TEST_CASE("narrator picks round-robin; asset paths follow the folder layout") {
     CHECK(assetPath(*lines[0]) == "/Game/Audio/VO/VO_Wipeout_01.VO_Wipeout_01");
     CHECK(assetPath(musicFor(Phase::Run)) == "/Game/Audio/Music/MUS_Run.MUS_Run");
 }
+
+TEST_CASE("a missing asset is reported once per session, then skipped quietly") {
+    MissingAssetLog log;
+    const std::string lobby = assetPath(musicFor(Phase::Lobby));
+    CHECK_FALSE(log.isKnownMissing(lobby));
+    CHECK(log.reportMissing(lobby));        // first play: warn
+    CHECK(log.isKnownMissing(lobby));
+    for (int i = 0; i < 10; ++i) CHECK_FALSE(log.reportMissing(lobby));  // later plays: silent
+    CHECK(log.reportMissing("/Game/Audio/VO/VO_Lobby_01.VO_Lobby_01"));  // other assets still warn once
+    CHECK(log.count() == 2);
+    log.reset();                            // new session
+    CHECK(log.reportMissing(lobby));
+}

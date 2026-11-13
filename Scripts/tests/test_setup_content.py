@@ -20,7 +20,8 @@ class SetupContentTests(unittest.TestCase):
     def test_every_script_prints_its_success_marker(self):
         m = markers()
         self.assertEqual(sorted(m), sorted(["create_toon_assets.py", "build_backyard_map.py",
-                                            "swap_to_toon.py", "create_title_map.py"]))
+                                            "swap_to_toon.py", "create_title_map.py",
+                                            "create_placeholder_audio.py"]))
         for script, pattern in m.items():
             src = (ROOT / "Scripts" / script).read_text()
             logged = [re.sub(r"\{[^}]*\}", "1", s)

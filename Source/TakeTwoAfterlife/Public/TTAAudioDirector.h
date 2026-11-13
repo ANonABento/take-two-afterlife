@@ -18,9 +18,12 @@ class TAKETWOAFTERLIFE_API UTTAAudioDirector : public UWorldSubsystem
 	GENERATED_BODY()
 
 public:
-	// Loads a cue's asset; logs an error and returns nullptr when it is missing.
+	// Loads a cue's asset. A missing asset returns nullptr: the first miss per session logs one
+	// LogTTAAudio warning, later calls skip it without a lookup or a log line.
 	static USoundBase* LoadCue(const tta::AudioCue& Cue);
 
+	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+	virtual void Deinitialize() override;
 	virtual void OnWorldBeginPlay(UWorld& InWorld) override;
 
 	// Plays the event's SFX and its next narrator line (and music for phase events).
@@ -35,4 +38,5 @@ private:
 	UPROPERTY() TObjectPtr<UAudioComponent> Music;
 	UPROPERTY() TObjectPtr<UAudioComponent> Narrator;
 	TMap<int32, int32> LinesPlayed;
+	bool bCountsAsGameWorld = false;
 };

@@ -3,16 +3,57 @@
 
 #include "Components/AudioComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Misc/PackageName.h"
 #include "Sound/SoundBase.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogTTAAudio, Log, All);
 
+namespace
+{
+	// One session = from the first game world's director to the last one going away (a PIE run,
+	// or the packaged game's lifetime). PIE clients share it, so each asset warns once per run.
+	tta::MissingAssetLog& MissingAudio()
+	{
+		static tta::MissingAssetLog Log;
+		return Log;
+	}
+	int32 LiveGameDirectors = 0;
+}
+
 USoundBase* UTTAAudioDirector::LoadCue(const tta::AudioCue& Cue)
 {
-	const FString Path = UTF8_TO_TCHAR(tta::assetPath(Cue).c_str());
-	USoundBase* Sound = LoadObject<USoundBase>(nullptr, *Path);
-	if (!Sound) UE_LOG(LogTTAAudio, Error, TEXT("Missing audio asset %s"), *Path);
+	const std::string Key = tta::assetPath(Cue);
+	if (MissingAudio().isKnownMissing(Key)) return nullptr;
+
+	const FString Path = UTF8_TO_TCHAR(Key.c_str());
+	USoundBase* Sound = nullptr;
+	// Check the package first: LoadObject on a missing package logs its own warning on every call.
+	if (FPackageName::DoesPackageExist(FPackageName::ObjectPathToPackageName(Path)))
+	{
+		Sound = LoadObject<USoundBase>(nullptr, *Path, nullptr, LOAD_NoWarn | LOAD_Quiet);
+	}
+	if (!Sound && MissingAudio().reportMissing(Key))
+	{
+		UE_LOG(LogTTAAudio, Warning,
+			TEXT("Missing audio asset %s; skipping it for the rest of this session (Scripts/setup_content.ps1 creates silent placeholders)"),
+			*Path);
+	}
 	return Sound;
+}
+
+void UTTAAudioDirector::Initialize(FSubsystemCollectionBase& Collection)
+{
+	Super::Initialize(Collection);
+	const UWorld* World = GetWorld();
+	bCountsAsGameWorld = World && World->IsGameWorld();
+	if (bCountsAsGameWorld && LiveGameDirectors++ == 0) MissingAudio().reset();
+}
+
+void UTTAAudioDirector::Deinitialize()
+{
+	if (bCountsAsGameWorld) --LiveGameDirectors;
+	bCountsAsGameWorld = false;
+	Super::Deinitialize();
 }
 
 void UTTAAudioDirector::OnWorldBeginPlay(UWorld& InWorld)
