@@ -19,6 +19,11 @@ bool trapPointsVoided(const RoundInput& round) {
 
 std::map<int, double> scoreRound(const RoundInput& round) {
     std::map<int, double> points;
+    for (int p : round.absentOwners) {
+        if (round.players.count(p) != 0)
+            throw std::invalid_argument("absent owner " + std::to_string(p) + " also ran the round");
+        points[p] = 0.0;
+    }
     for (int p : round.players) points[p] = 0.0;
     for (int p : round.finishers) {
         requirePlayer(round, p, "finisher");
@@ -27,7 +32,7 @@ std::map<int, double> scoreRound(const RoundInput& round) {
     const bool voided = trapPointsVoided(round);
     for (const Wipeout& w : round.wipeouts) {
         requirePlayer(round, w.victim, "victim");
-        requirePlayer(round, w.trapOwner, "trap owner");
+        if (round.absentOwners.count(w.trapOwner) == 0) requirePlayer(round, w.trapOwner, "trap owner");
         if (voided || w.victim == w.trapOwner) continue;
         points[w.trapOwner] += std::max(kMinTrapPoints, static_cast<double>(trapSpec(w.trap).cost));
     }
