@@ -142,6 +142,9 @@ def build(downloads):
                                              (k.max_z - k.min_z) / 2 * CM))
     world = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()
     world.get_world_settings().set_editor_property("kill_z", L.WORLD_KILL_Z * CM)
+    # Only the backyard runs the match/build mode (TTABuildHUD); Title overrides to TTATitleGameMode.
+    world.get_world_settings().set_editor_property(
+        "default_game_mode", unreal.load_class(None, "/Script/TakeTwoAfterlife.TTAGameMode"))
     sun = actors.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 2000),
                                         unreal.Rotator(0.0, -50.0, 30.0))
     sun.set_actor_label("Sun")

@@ -118,6 +118,10 @@ void UTTAMenuWidget::NativeOnInitialized()
 		CodeBox->OnTextCommitted.AddDynamic(this, &UTTAMenuWidget::OnCodeCommitted);
 		Inner->AddChild(CodeBox);
 		JoinError = Label(Inner, TEXT(""), kSmall);
+		IpBox = WidgetTree->ConstructWidget<UEditableTextBox>();
+		IpBox->SetHintText(FText::FromString(TEXT("127.0.0.1:7777")));
+		Inner->AddChild(IpBox);
+		MenuButton(Inner, TEXT("DIRECT IP"), tta::kInk)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnDirectClicked);
 		MenuButton(Box, TEXT("BACK"), tta::kInk)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnBackClicked);
 		Switcher->AddChild(Box);
 	}

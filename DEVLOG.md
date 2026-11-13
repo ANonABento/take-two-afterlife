@@ -154,3 +154,7 @@ Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prom
 - Prompt: fix `create_toon_assets.py` TypeError in `-run=pythonscript`; default Downloads/ and /Game; placeholders for missing packs; add fetch_assets.ps1 + setup_content.ps1.
 - Agent: reproduced with a fake UE struct (no-arg constructor), fixed `custom_node`, added the defaults, placeholder blocks and both PowerShell scripts, with unit tests.
 - Failed / by hand: the TypeError only showed on Kevin's machine (UE structs reject constructor kwargs); the in-engine run is still to be checked by hand.
+
+## Task 30 — Title map plays black with build HUD
+- Prompt: Title shows black with the build HUD; add a title GameMode/controller and rebuild the Title map lit with a camera.
+- Agent: found Title had no GameMode override (fell back to TTAGameMode + TTABuildHUD) and no lights, and no runtime code created the menu; added ATTATitleGameMode/ATTATitlePlayerController, rebuilt create_title_map.py, host now travels to Backyard. Python tests only; UE not compiled in sandbox.
