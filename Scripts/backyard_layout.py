@@ -135,6 +135,20 @@ def props():
     return _floor() + _markers() + _dressing() + _gate()
 
 
+def downloads_dir(args):
+    """Packs folder: the first script arg, else <repo>/Downloads (filled by Scripts/fetch_assets.ps1)."""
+    return Path(args[0]) if args else REPO / "Downloads"
+
+
+def find_fbx(downloads, kit, mesh):
+    """FBX for `mesh` in downloads/<kit>, or None when the pack or mesh is missing (map uses a placeholder)."""
+    kit_dir = Path(downloads) / kit
+    if not kit_dir.is_dir():
+        return None
+    hits = [p for p in kit_dir.rglob("*.fbx") if p.stem.lower() == mesh.lower() and "(unity)" not in str(p).lower()]
+    return min(hits, key=lambda p: len(p.parts)) if hits else None
+
+
 def meshes_by_kit():
     used = {}
     for p in props():

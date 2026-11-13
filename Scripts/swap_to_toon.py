@@ -1,5 +1,5 @@
 # Run inside the UE editor (PythonScriptPlugin):
-#   py Scripts/swap_to_toon.py /Game/Imported/Kenney [/Game/Imported/KayKit ...]
+#   py Scripts/swap_to_toon.py [/Game/Imported/Kenney ...]   (default: /Game)
 # Every static/skeletal mesh under the folders gets each material slot that is not already an M_TTA_Toon
 # instance replaced by MI_TTA_Toon_<material>: PaletteIndex = nearest palette colour to the old material's
 # colour parameter (Bone when it has none); UsePaletteUV = 1 when the old material samples a texture
@@ -84,6 +84,4 @@ def swap(folders):
     unreal.log(f"swapped {swapped} material slots to M_TTA_Toon instances")
 
 
-if len(sys.argv) < 2:
-    raise SystemExit("usage: swap_to_toon.py <content folder> [...]")
-swap(sys.argv[1:])
+swap(sys.argv[1:] or ["/Game"])
