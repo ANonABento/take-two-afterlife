@@ -1,6 +1,7 @@
 #include "Misc/AutomationTest.h"
 
 #include "Engine/Engine.h"
+#include "Engine/GameInstance.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/PlayerController.h"
@@ -60,6 +61,7 @@ bool FTTAMatchThreeRoundsTest::RunTest(const FString& Parameters)
 
 	UWorld* World = UWorld::CreateWorld(EWorldType::Game, false);
 	GEngine->CreateNewWorldContext(EWorldType::Game).SetCurrentWorld(World);
+	World->SetGameInstance(NewObject<UGameInstance>());
 	World->GetWorldSettings()->DefaultGameMode = ATTAGameMode::StaticClass();
 	World->SetGameMode(FURL());
 	World->InitializeActorsForPlay(FURL());

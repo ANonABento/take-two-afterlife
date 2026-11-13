@@ -187,3 +187,9 @@ Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prom
 - **Prompt:** run the task 31 placeholder audio script and confirm the assets exist.
 - **Agent did:** setup created 76 silent SoundWaves (60 VO, 6 music, 10 SFX). A second run kept all 76. Loaded `SFX_Applause` and `MUS_Build` in the editor: duration about 0.25 s, music set to loop.
 - **Failed / fixed by hand:** the first import logged "Decoder for AudioFormat BINKA not found" and the editor exited 1. The waves still imported. Real ElevenLabs / music files are still yours to drop in over these names.
+
+## Overnight — tests
+
+- **Prompt:** `make test`, then the TTA automation suite, and fix what fails.
+- **Agent did:** `make` is not installed. CMake came from pip and the Makefile now passes `--config Debug` so Visual Studio's multi-config ctest actually runs. Two Core tests did not compile under MSVC (`1.0 / 0.0`, missing `M_PI`); both compile and the suite passes (43 Python tests too). Automation needed a game instance before `SetGameMode`, and the cinema clock now banks leftover milliseconds so a 30 fps step does not drift the 10 second rating. That cinema test passed on the last run. `TTA.Art.AllToon` passed.
+- **Failed / fixed by hand:** after three automation runs the suite still fails and the last one crashes inside the menu widget test, so the rest never finish. Still red: build-place item meshes in DefaultGame.ini, the runner mesh for ragdoll, match premiere not advancing, respawn timing, and `TTA.UI.MenuFlow` crashing with no world. I stopped at the third attempt. Log: `Saved/Automation/TTA3.log`.

@@ -1,7 +1,9 @@
 #include "Misc/AutomationTest.h"
 
 #include "Engine/Engine.h"
+#include "Engine/GameInstance.h"
 #include "Engine/World.h"
+#include "GameFramework/WorldSettings.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 #include "Misc/ScopeExit.h"
@@ -34,7 +36,12 @@ bool FTTABuildPlaceReplicateTest::RunTest(const FString& Parameters)
 		World->DestroyWorld(false);
 	};
 
-	ATTAGameMode* Mode = World->SpawnActor<ATTAGameMode>();
+	UGameInstance* Instance = NewObject<UGameInstance>();
+	World->SetGameInstance(Instance);
+	World->GetWorldSettings()->DefaultGameMode = ATTAGameMode::StaticClass();
+	if (!TestTrue(TEXT("game mode starts"), World->SetGameMode(FURL()))) return false;
+	World->InitializeActorsForPlay(FURL());
+	ATTAGameMode* Mode = Cast<ATTAGameMode>(World->GetAuthGameMode());
 	if (!TestNotNull(TEXT("game mode"), Mode)) return false;
 	APlayerController* A = World->SpawnActor<APlayerController>();
 	APlayerController* B = World->SpawnActor<APlayerController>();

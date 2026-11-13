@@ -81,4 +81,6 @@ private:
 	UPROPERTY() TObjectPtr<UTTACutPlayer> Player;
 	int32 LastClip = -1;
 	bool bMicLoaded = false;
+	// Sub-millisecond leftover so a 30 fps step does not round a 10 s rating short or long.
+	float StepRemainder = 0.f;
 };
