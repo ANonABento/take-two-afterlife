@@ -1,8 +1,9 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "Interfaces/OnlineSessionInterface.h"
+#include "TimerManager.h"
 #include "TTASessionSubsystem.generated.h"
 
 class FOnlineSessionSearch;

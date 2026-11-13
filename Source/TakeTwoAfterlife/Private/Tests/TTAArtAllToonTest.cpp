@@ -38,7 +38,7 @@ bool FTTAArtAllToonTest::RunTest(const FString& Parameters)
 			{
 				for (int32 Slot = 0; Slot < Mesh->GetNumMaterials(); ++Slot)
 				{
-					const UMaterialInterface* Material = Mesh->GetMaterial(Slot);
+					UMaterialInterface* Material = Mesh->GetMaterial(Slot);
 					const bool bToonInstance = Material && Material->IsA<UMaterialInstance>()
 						&& Material->GetBaseMaterial()->GetPathName() == ToonPath;
 					TestTrue(FString::Printf(TEXT("%s slot %d uses an M_TTA_Toon instance (has %s)"),

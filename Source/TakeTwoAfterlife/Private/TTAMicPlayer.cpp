@@ -1,4 +1,5 @@
-#include "TTAMicPlayer.h"
+﻿#include "TTAMicPlayer.h"
+#include "GameFramework/Actor.h"
 
 #include "Components/AudioComponent.h"
 #include "Misc/FileHelper.h"
