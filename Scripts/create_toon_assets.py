@@ -67,7 +67,12 @@ def custom_node(material, code, inputs, x, y, output=unreal.CustomMaterialOutput
     node = MEL.create_material_expression(material, unreal.MaterialExpressionCustom, x, y)
     node.set_editor_property("code", code)
     node.set_editor_property("output_type", output)
-    node.set_editor_property("inputs", [unreal.CustomInput(input_name=name) for name in inputs])
+    custom_inputs = []
+    for name in inputs:
+        ci = unreal.CustomInput()  # UE structs take no constructor args; set fields afterwards
+        ci.set_editor_property("input_name", name)
+        custom_inputs.append(ci)
+    node.set_editor_property("inputs", custom_inputs)
     return node
 
 

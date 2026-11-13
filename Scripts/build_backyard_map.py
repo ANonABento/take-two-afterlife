@@ -1,8 +1,9 @@
 # Run inside the UE editor (PythonScriptPlugin), after Scripts/create_toon_assets.py:
-#   py Scripts/build_backyard_map.py <downloads folder>
+#   py Scripts/build_backyard_map.py [downloads folder]   (default: <repo>/Downloads, see Scripts/fetch_assets.ps1)
 # The downloads folder holds the unzipped packs from Scripts/backyard_layout.KITS, one sub-folder each named by
 # its kit key (KayKitPrototypeBits, KenneyCitySuburban, KenneyNature). Imports the FBX meshes the layout uses
-# into /Game/Imported/<kit> without their materials, then (re)builds /Game/Maps/Backyard: floor, route markers,
+# into /Game/Imported/<kit> without their materials (a missing pack or mesh becomes a toon-coloured
+# /Engine/BasicShapes/Cube placeholder, fitted to the same size), then (re)builds /Game/Maps/Backyard: floor, route markers,
 # dressing, PlayerStart, TTAFinishGate, TTAKillPlane and KillZ. Every slot gets an MI_TTA_Toon_Pal_<colour>.
 import os
 import sys
@@ -17,23 +18,18 @@ import toon_spec  # noqa: E402
 EAL = unreal.EditorAssetLibrary
 MEL = unreal.MaterialEditingLibrary
 CM = 100.0
-
-
-def find_fbx(kit_dir, mesh):
-    hits = [p for p in kit_dir.rglob("*.fbx") if p.stem.lower() == mesh.lower() and "(unity)" not in str(p).lower()]
-    if not hits:
-        raise RuntimeError(f"{mesh}.fbx not found under {kit_dir}")
-    return min(hits, key=lambda p: len(p.parts))
+PLACEHOLDER = "/Engine/BasicShapes/Cube"
 
 
 def import_meshes(downloads):
     tasks = []
     for kit, names in L.meshes_by_kit().items():
-        kit_dir = Path(downloads) / kit
-        if not kit_dir.is_dir():
-            raise RuntimeError(f"missing {kit_dir}: unzip {L.KITS[kit].url} there")
         for name in names:
             if EAL.does_asset_exist(f"{L.IMPORT_ROOT}/{kit}/{name}"):
+                continue
+            fbx = L.find_fbx(downloads, kit, name)
+            if fbx is None:
+                unreal.log_warning(f"{kit}/{name}.fbx not in {downloads}: using a placeholder block ({L.KITS[kit].url})")
                 continue
             ui = unreal.FbxImportUI()
             ui.import_materials = False
@@ -41,18 +37,24 @@ def import_meshes(downloads):
             ui.import_as_skeletal = False
             ui.static_mesh_import_data.combine_meshes = True
             task = unreal.AssetImportTask()
-            task.filename = str(find_fbx(kit_dir, name))
+            task.filename = str(fbx)
             task.destination_path = f"{L.IMPORT_ROOT}/{kit}"
             task.destination_name = name
             task.automated = True
             task.save = True
             task.options = ui
             tasks.append(task)
-    unreal.AssetToolsHelpers.get_asset_tools().import_asset_tasks(tasks)
-    for kit, names in L.meshes_by_kit().items():
-        for name in names:
-            if not EAL.does_asset_exist(f"{L.IMPORT_ROOT}/{kit}/{name}"):
-                raise RuntimeError(f"import failed for {kit}/{name}")
+    if tasks:
+        unreal.AssetToolsHelpers.get_asset_tools().import_asset_tasks(tasks)
+
+
+def prop_mesh(prop):
+    """Imported kit mesh, or the engine cube (fitted + toon-coloured like the real one) when it is missing."""
+    path = f"{L.IMPORT_ROOT}/{prop.kit}/{prop.mesh}"
+    if EAL.does_asset_exist(path):
+        return EAL.load_asset(path)
+    unreal.log_warning(f"{path} missing: placeholder block")
+    return EAL.load_asset(PLACEHOLDER)
 
 
 def palette_instance(colour, toon):
@@ -88,7 +90,7 @@ def fit(component, mesh, prop):
 
 
 def place(actors, prop, toon):
-    mesh = EAL.load_asset(f"{L.IMPORT_ROOT}/{prop.kit}/{prop.mesh}")
+    mesh = prop_mesh(prop)
     actor = actors.spawn_actor_from_class(unreal.StaticMeshActor, unreal.Vector(prop.x * CM, prop.y * CM, prop.z * CM),
                                           unreal.Rotator(0.0, 0.0, float(prop.yaw)))
     actor.set_actor_label(f"{prop.role}_{prop.mesh}")
@@ -122,7 +124,7 @@ def build(downloads):
         if prop.role == "gate":
             gate = actors.spawn_actor_from_class(unreal.TTAFinishGate, unreal.Vector(L.GATE.x * CM, L.GATE.y * CM,
                                                                                      L.GATE.z * CM))
-            mesh = EAL.load_asset(f"{L.IMPORT_ROOT}/{prop.kit}/{prop.mesh}")
+            mesh = prop_mesh(prop)
             gate.arch.set_static_mesh(mesh)
             fit(gate.arch, mesh, prop)
             for slot in range(gate.arch.get_num_materials()):
@@ -149,6 +151,6 @@ def build(downloads):
     unreal.log(f"built {L.MAP_PATH}: {len(L.props())} props")
 
 
-if len(sys.argv) != 2:
-    raise SystemExit("usage: build_backyard_map.py <downloads folder>")
-build(sys.argv[1])
+if len(sys.argv) > 2:
+    raise SystemExit("usage: build_backyard_map.py [downloads folder]")
+build(L.downloads_dir(sys.argv[1:]))
