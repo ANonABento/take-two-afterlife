@@ -24,4 +24,10 @@ Command:
 powershell -ExecutionPolicy Bypass -File Scripts\setup_content.ps1
 ```
 
-Result: GREEN. Exit 0 in ~57s. Every step printed its success line: toon assets built, `built /Game/Maps/Backyard: 80 props`, `swapped 0 material slots` (props were already toon instances), `created /Game/Maps/Title`, `placeholder audio: 76 created, 0 kept`. The audio editor process exited 1 because of a non-Python ensure (`Decoder for AudioFormat 'BINKA' not found` in SoundWave.cpp); the script's own check still found every asset. Logs: `Saved/SetupContent/*.log`.
+Result: GREEN. Exit 0 in ~57s. Every step printed its success line: toon assets built, `built /Game/Maps/Backyard: 80 props`, `swapped 0 material slots` (props were already toon instances), `created /Game/Maps/Title`, `placeholder audio: 76 created, 0 kept`. The audio editor process exited 1 because of a non-Python ensure (`Decoder for AudioFormat 'BINKA' not found` in SoundWave.cpp); the script's own check still found every asset. Logs: `Saved/SetupContent/*.log`. The editor also appended an Android File Server block (with a generated token) to `Config/DefaultEngine.ini`; that was reverted and not committed.
+
+## 3. Verify the Title map
+
+What: loaded `/Game/Maps/Title` in UnrealEditor-Cmd and printed world settings and actors (`Saved/verify_title.py`, log `Saved/SetupContent/verify_title.log`).
+
+Result: GREEN. No generator change. World Settings game mode is `TTATitleGameMode`. Its CDO uses HUD class `HUD` (not `TTABuildHUD`), pawn class None, and player controller `TTATitlePlayerController`, which creates `UTTAMenuWidget` and adds it to the screen in BeginPlay. Actors: DirectionalLight intensity 10, SkyLight intensity 1 (captured scene), SkyAtmosphere, ExponentialHeightFog, backdrop and ground planes, CameraActor tagged `TitleCamera`. No build HUD actor in the level.

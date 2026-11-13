@@ -175,3 +175,9 @@ Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prom
 - **Prompt:** delete `Content/Maps/Title.umap`, run `Scripts/setup_content.ps1`, and keep going until every step passes. Missing imported props should be placeholders.
 - **Agent did:** the old backyard log failed because Python cannot see `TTAFinishGate.Arch` (it is not BlueprintVisible). The script now uses `get_editor_property`. Setup then built toon assets, an 80-prop Backyard of engine cubes (KayKit and Kenney are not downloaded), the toon swap, Title, and 76 silent sounds.
 - **Failed / fixed by hand:** the pack download is still a manual step (`Scripts/fetch_assets.ps1`). Until those zips are in `Downloads/`, the backyard is coloured cubes, not the kit meshes. The sound import also logged a Bink decoder ensure; the SoundWave assets still came out at about 0.25 s.
+
+## Overnight — Title map check
+
+- **Prompt:** Title's game mode must be `TTATitleGameMode`, the scene must be lit, the menu must show, and the build HUD must not.
+- **Agent did:** loaded the saved Title map in the editor. Game mode is `TTATitleGameMode`, HUD is the plain `HUD`, the controller is `TTATitlePlayerController` (it builds the menu widget on begin play), and the level has a sun, sky light, atmosphere, fog, and the tagged title camera.
+- **Failed / fixed by hand:** nothing. This was not a play-in-editor look with eyes; it is the saved map plus the controller that creates the widget.
