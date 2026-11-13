@@ -169,3 +169,9 @@ Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prom
 - **Prompt:** the editor would not compile: `TTAMenuWidget.h` used `UEditableTextBox` inline while it was only forward-declared, and `TTATitleGameMode.cpp` failed around `GetGameInstance()`.
 - **Agent did:** included `Components/EditableTextBox.h` (the join-IP click already used `GetText().ToString()`), included `Engine/GameInstance.h`, and rebuilt `TakeTwoAfterlifeEditor` Win64 Development. UMG, Slate, and SlateCore were already in `TakeTwoAfterlife.Build.cs`.
 - **Failed / fixed by hand:** the rebuild succeeded on this machine (exit 0, no compiler warnings in that log). Nothing left for a person on this item.
+
+## Overnight — content setup
+
+- **Prompt:** delete `Content/Maps/Title.umap`, run `Scripts/setup_content.ps1`, and keep going until every step passes. Missing imported props should be placeholders.
+- **Agent did:** the old backyard log failed because Python cannot see `TTAFinishGate.Arch` (it is not BlueprintVisible). The script now uses `get_editor_property`. Setup then built toon assets, an 80-prop Backyard of engine cubes (KayKit and Kenney are not downloaded), the toon swap, Title, and 76 silent sounds.
+- **Failed / fixed by hand:** the pack download is still a manual step (`Scripts/fetch_assets.ps1`). Until those zips are in `Downloads/`, the backyard is coloured cubes, not the kit meshes. The sound import also logged a Bink decoder ensure; the SoundWave assets still came out at about 0.25 s.

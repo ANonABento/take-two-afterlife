@@ -73,6 +73,14 @@ def palette_instance(colour, toon):
     return mi
 
 
+def component(actor, name):
+    """VisibleAnywhere components are not Python attributes (they are not BlueprintVisible)."""
+    found = actor.get_editor_property(name)
+    if found is None:
+        raise RuntimeError(f"{actor.get_class().get_name()} has no {name}")
+    return found
+
+
 def fit(component, mesh, prop):
     """Scale + offset so the mesh's bounding box bottom-centre lands on the prop position at the fitted size."""
     box = mesh.get_bounding_box()
@@ -125,12 +133,13 @@ def build(downloads):
             gate = actors.spawn_actor_from_class(unreal.TTAFinishGate, unreal.Vector(L.GATE.x * CM, L.GATE.y * CM,
                                                                                      L.GATE.z * CM))
             mesh = prop_mesh(prop)
-            gate.arch.set_static_mesh(mesh)
-            fit(gate.arch, mesh, prop)
-            for slot in range(gate.arch.get_num_materials()):
-                gate.arch.set_material(slot, palette_instance(prop.palette, toon))
+            arch = component(gate, "Arch")
+            arch.set_static_mesh(mesh)
+            fit(arch, mesh, prop)
+            for slot in range(arch.get_num_materials()):
+                arch.set_material(slot, palette_instance(prop.palette, toon))
             hx, hy, hz = L.GATE_TRIGGER_HALF
-            gate.trigger.set_box_extent(unreal.Vector(hx * CM, hy * CM, hz * CM))
+            component(gate, "Trigger").set_box_extent(unreal.Vector(hx * CM, hy * CM, hz * CM))
         else:
             place(actors, prop, toon)
 
@@ -138,8 +147,8 @@ def build(downloads):
     k = L.KILL_PLANE
     kill = actors.spawn_actor_from_class(unreal.TTAKillPlane, unreal.Vector(
         (k.min_x + k.max_x) / 2 * CM, (k.min_y + k.max_y) / 2 * CM, (k.min_z + k.max_z) / 2 * CM))
-    kill.volume.set_box_extent(unreal.Vector((k.max_x - k.min_x) / 2 * CM, (k.max_y - k.min_y) / 2 * CM,
-                                             (k.max_z - k.min_z) / 2 * CM))
+    component(kill, "Volume").set_box_extent(unreal.Vector((k.max_x - k.min_x) / 2 * CM, (k.max_y - k.min_y) / 2 * CM,
+                                                           (k.max_z - k.min_z) / 2 * CM))
     world = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()
     world.get_world_settings().set_editor_property("kill_z", L.WORLD_KILL_Z * CM)
     # Only the backyard runs the match/build mode (TTABuildHUD); Title overrides to TTATitleGameMode.
