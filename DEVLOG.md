@@ -193,3 +193,15 @@ Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prom
 - **Prompt:** `make test`, then the TTA automation suite, and fix what fails.
 - **Agent did:** `make` is not installed. CMake came from pip and the Makefile now passes `--config Debug` so Visual Studio's multi-config ctest actually runs. Two Core tests did not compile under MSVC (`1.0 / 0.0`, missing `M_PI`); both compile and the suite passes (43 Python tests too). Automation needed a game instance before `SetGameMode`, and the cinema clock now banks leftover milliseconds so a 30 fps step does not drift the 10 second rating. That cinema test passed on the last run. `TTA.Art.AllToon` passed.
 - **Failed / fixed by hand:** after three automation runs the suite still fails and the last one crashes inside the menu widget test, so the rest never finish. Still red: build-place item meshes in DefaultGame.ini, the runner mesh for ragdoll, match premiere not advancing, respawn timing, and `TTA.UI.MenuFlow` crashing with no world. I stopped at the third attempt. Log: `Saved/Automation/TTA3.log`.
+
+## Overnight — Shipping zip
+
+- **Prompt:** package Win64 Shipping and zip it as TeamName_GameName, under 1 GB.
+- **Agent did:** the first cook never started. Shipping links `TTACore` and the game module into one exe, and both were compiling the same Core sources. `TTACore` now compiles those sources only for the editor (separate DLL). The third `RunUAT BuildCookRun` succeeded. Zip is `Dist/ANonABento_TakeTwoAfterlife.zip`, 323.6 MiB.
+- **Failed / fixed by hand:** the jam form may want a different team name than `ANonABento`. Rename the zip if so. Unzip and launch to Title yourself; I did not play the packaged exe.
+
+## Overnight — compiler warnings
+
+- **Prompt:** clean compiler warnings in our code.
+- **Agent did:** checked the editor rebuilds and the Shipping build log.
+- **Failed / fixed by hand:** there were no `warning C` lines to fix.
