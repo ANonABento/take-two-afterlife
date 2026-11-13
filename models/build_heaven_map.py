@@ -10,6 +10,7 @@ from pathlib import Path
 import unreal
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "Scripts"))  # toon_spec lives in Scripts/
 import toon_spec  # noqa: E402
 
 EAL = unreal.EditorAssetLibrary
