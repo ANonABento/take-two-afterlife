@@ -33,6 +33,8 @@ public:
 	FTTAMenuAction OnStart;
 	FTTAMenuAction OnQuit;
 	FTTAMenuCode OnJoinCode;
+	// Direct-IP dev fallback (Join screen): fires with the typed address as-is.
+	FTTAMenuCode OnJoinDirect;
 
 	tta::MenuScreen GetScreen() const { return Flow.current(); }
 	int32 GetVisibleIndex() const;
@@ -81,6 +83,7 @@ private:
 	UPROPERTY() TObjectPtr<UBorder> JoinCard;
 	UPROPERTY() TObjectPtr<UEditableTextBox> CodeBox;
 	UPROPERTY() TObjectPtr<UTextBlock> JoinError;
+	UPROPERTY() TObjectPtr<UEditableTextBox> IpBox;
 	UPROPERTY() TObjectPtr<UTextBlock> RoomCodeText;
 	UPROPERTY() TObjectPtr<UTextBlock> WaitingText;
 	UPROPERTY() TObjectPtr<UTextBlock> LookText;
@@ -106,6 +109,7 @@ private:
 	UFUNCTION() void OnBackClicked() { Back(); }
 	UFUNCTION() void OnCodeCommitted(const FText& Text, ETextCommit::Type Method);
 	UFUNCTION() void OnStartClicked();
+	UFUNCTION() void OnDirectClicked() { OnJoinDirect.ExecuteIfBound(IpBox->GetText().ToString()); }
 	UFUNCTION() void OnColourNext() { CycleLook(tta::LookPart::Colour, 1); }
 	UFUNCTION() void OnHatNext() { CycleLook(tta::LookPart::Hat, 1); }
 	UFUNCTION() void OnFaceNext() { CycleLook(tta::LookPart::Face, 1); }

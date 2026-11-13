@@ -42,8 +42,8 @@ private:
 	void HandleJoin(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 	void FailJoin(const FString& Message);
 
-	// Map the host travels to with ?listen (menus land in task 24).
-	UPROPERTY(Config) FString LobbyMap = TEXT("/Game/Maps/Title");
+	// Map the host travels to with ?listen (the match map; Title is menus only).
+	UPROPERTY(Config) FString LobbyMap = TEXT("/Game/Maps/Backyard");
 	UPROPERTY(Config) int32 MaxPlayers = 4;
 	// New lobbies take up to 3 s to be searchable, so a miss is retried.
 	UPROPERTY(Config) int32 FindAttempts = 4;
