@@ -31,3 +31,15 @@ Result: GREEN. Exit 0 in ~57s. Every step printed its success line: toon assets 
 What: loaded `/Game/Maps/Title` in UnrealEditor-Cmd and printed world settings and actors (`Saved/verify_title.py`, log `Saved/SetupContent/verify_title.log`).
 
 Result: GREEN. No generator change. World Settings game mode is `TTATitleGameMode`. Its CDO uses HUD class `HUD` (not `TTABuildHUD`), pawn class None, and player controller `TTATitlePlayerController`, which creates `UTTAMenuWidget` and adds it to the screen in BeginPlay. Actors: DirectionalLight intensity 10, SkyLight intensity 1 (captured scene), SkyAtmosphere, ExponentialHeightFog, backdrop and ground planes, CameraActor tagged `TitleCamera`. No build HUD actor in the level.
+
+## 4. Placeholder audio
+
+What: ran `Scripts/create_placeholder_audio.py` again after setup had already imported the cues. Confirmed each asset loads as a SoundWave of ~0.25 s (`Saved/SetupContent/verify_audio.log`: 10 SFX, 6 Music with looping, 60 VO).
+
+Command:
+
+```
+UnrealEditor-Cmd.exe TakeTwoAfterlife.uproject -run=pythonscript -script=Scripts/create_placeholder_audio.py -unattended -nop4 -nosplash
+```
+
+Result: GREEN. Log `Saved/SetupContent/placeholder_audio_rerun.log`: `placeholder audio: 0 created, 76 kept`. 76 `Content/Audio/**/*.uasset` files on disk. The first import (inside setup) logged a Bink decoder ensure and the editor exited 1; the assets still have duration and this rerun exited 0.
