@@ -83,7 +83,7 @@ bool FTTAMatchThreeRoundsTest::RunTest(const FString& Parameters)
 		APlayerController* Leaver = AddPlayer(World, 1);
 		APlayerController* Stayer = AddPlayer(World, 2);
 		const int32 Hammer = HammerItem();
-		TestNotEqual(TEXT("hammer in the build menu"), Hammer, INDEX_NONE);
+		TestNotEqual<int32>(TEXT("hammer in the build menu"), Hammer, INDEX_NONE);
 
 		TestTrue(TEXT("match starts"), Mode->RequestPhase(ETTAPhase::Build));
 		for (int32 Round = 1; Round <= 3; ++Round)

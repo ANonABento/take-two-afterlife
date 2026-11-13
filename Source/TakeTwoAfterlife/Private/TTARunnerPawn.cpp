@@ -1,4 +1,5 @@
-#include "TTARunnerPawn.h"
+﻿#include "TTARunnerPawn.h"
+#include "Engine/SkeletalMesh.h"
 
 #include "Camera/CameraComponent.h"
 #include "Camera/CameraShakeBase.h"

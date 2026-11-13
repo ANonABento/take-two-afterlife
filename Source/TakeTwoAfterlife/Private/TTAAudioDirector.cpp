@@ -1,4 +1,5 @@
-#include "TTAAudioDirector.h"
+﻿#include "TTAAudioDirector.h"
+#include "Engine/World.h"
 
 #include "Components/AudioComponent.h"
 #include "Kismet/GameplayStatics.h"

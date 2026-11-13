@@ -23,14 +23,16 @@ struct RoundInput {
     std::set<int> finishers;          // reached the gate
     std::vector<Wipeout> wipeouts;
     std::map<int, double> ratingPoints; // rating averages earned this round
+    std::set<int> absentOwners;       // left the match; their traps still score
 };
 
-// True when trap points are voided: everyone or nobody finished.
+// True when trap points are voided: every runner or no runner finished.
 bool trapPointsVoided(const RoundInput& round);
 
 // Points per player for one round. Every player gets an entry (0 if nothing).
 // Throws std::invalid_argument when a finisher, victim, trap owner or rated
-// player is not in `players`. A player wiped out by their own trap scores nothing.
+// player is not in `players` (a trap owner may be in `absentOwners`), or when an
+// absent owner is also in `players`. A player wiped out by their own trap scores nothing.
 std::map<int, double> scoreRound(const RoundInput& round);
 
 class MatchScore {

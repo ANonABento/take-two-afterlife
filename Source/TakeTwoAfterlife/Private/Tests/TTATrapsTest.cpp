@@ -1,4 +1,5 @@
-#include "Misc/AutomationTest.h"
+﻿#include "Misc/AutomationTest.h"
+#include "Components/StaticMeshComponent.h"
 
 #include "Camera/CameraActor.h"
 #include "Engine/Engine.h"

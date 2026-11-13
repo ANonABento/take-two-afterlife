@@ -1,4 +1,5 @@
-#include "Misc/AutomationTest.h"
+﻿#include "Misc/AutomationTest.h"
+#include "Components/StaticMeshComponent.h"
 
 #include "Engine/World.h"
 #include "TTACinema.h"

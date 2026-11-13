@@ -1,4 +1,6 @@
 #include "TTAGameMode.h"
+#include "GameFramework/PlayerState.h"
+#pragma warning(disable: 4458) // local Owner shadows AActor::Owner
 
 #include "Engine/World.h"
 #include "Misc/FileHelper.h"

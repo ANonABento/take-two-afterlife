@@ -12,7 +12,7 @@
 
 namespace
 {
-constexpr float kCmPerMeter = 100.f;
+constexpr float kTrapCmPerMeter = 100.f;
 }
 
 ATTATrapActor::ATTATrapActor()
@@ -51,12 +51,12 @@ void ATTATrapActor::InitFromPlacement(const tta::Placement& InPlacement)
 FTransform ATTATrapActor::MovingTransform(tta::TrapType Type, const tta::TrapPose& Pose)
 {
 	const float Angle = static_cast<float>(Pose.angleDeg);
-	const float Reach = static_cast<float>(Pose.extensionMeters) * kCmPerMeter;
+	const float Reach = static_cast<float>(Pose.extensionMeters) * kTrapCmPerMeter;
 	switch (Type)
 	{
 	case tta::TrapType::Hammer: return FTransform(FRotator(0.f, 0.f, Angle));
 	case tta::TrapType::Spinner:
-		return FTransform(FRotator(0.f, Angle, 0.f), FVector::ZeroVector, FVector(FMath::Max(Reach, 1.f) / kCmPerMeter, 1.f, 1.f));
+		return FTransform(FRotator(0.f, Angle, 0.f), FVector::ZeroVector, FVector(FMath::Max(Reach, 1.f) / kTrapCmPerMeter, 1.f, 1.f));
 	case tta::TrapType::PusherWall: return FTransform(FVector(Reach, 0.f, 0.f));
 	case tta::TrapType::Trapdoor: return FTransform(FRotator(Angle, 0.f, 0.f));
 	case tta::TrapType::Cannon:
@@ -72,7 +72,7 @@ FTransform ATTATrapActor::ProjectileTransform(tta::TrapType Type, const tta::Tra
 	{
 		const float Scale = Pose.projectileActive ? static_cast<float>(Pose.projectileRadiusMeters) * 2.f : 0.f;
 		return FTransform(FRotator::ZeroRotator,
-			FVector(static_cast<float>(Pose.projectileDistanceMeters) * kCmPerMeter, 0.f, 0.f), FVector(Scale));
+			FVector(static_cast<float>(Pose.projectileDistanceMeters) * kTrapCmPerMeter, 0.f, 0.f), FVector(Scale));
 	}
 	if (Type == tta::TrapType::Banana)
 	{

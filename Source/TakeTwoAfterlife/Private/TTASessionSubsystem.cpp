@@ -1,4 +1,5 @@
 #include "TTASessionSubsystem.h"
+#include "Online/OnlineSessionNames.h"
 
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"

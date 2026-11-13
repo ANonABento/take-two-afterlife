@@ -269,3 +269,8 @@ Scored 1-5 by judges on: ambition/innovation, theme, fun, gameplay, visuals, lev
 - Done: camera cap is per type. `Layout::canPlace` takes the camera type (last arg, default `Fixed`); `add()` passes `p.camera`, the build-mode ghost passes `Preview.camera`; the check is `cameraCount(owner, type)`. New doctest: 12 Pan placed, 13th Pan rejected, a Fixed still accepted. Updated tests that encoded the old total cap (mixed-type doctest, `canPlace` preview doctest, UE `TTA.Build.PlaceReplicate` now fills Fixed to 12 before the cap check).
 - Left: on Kevin's machine: build and run `TTA.Build.PlaceReplicate`. Build HUD still shows `CAMERAS <total> / 12` — misleading now; show per-type `n/12` if wanted.
 - Surprises: the UE test placed 3 of each type and expected the 13th (Fixed) to hit the cap — it would have failed under the per-type rule. Not compiled here.
+
+### Task 5 (restore) — Core match flow
+- Done: `Core/include/tta/MatchFlow.h` + `Core/src/MatchFlow.cpp` (`canJoin`, `runPlayers`, `toPlayerIds`), derived from `MatchFlowTests.cpp` and `TTAGameMode`. `RoundInput::absentOwners` re-added to Scoring (leavers' traps score; voiding counts runners only; an absent owner who also ran throws). `CoreMatchFlow.cpp` UE wrapper; CMake lists both files. `make test` passes.
+- Left: UE editor compile on Kevin's machine (TTAGameMode, `TTA.Match.ThreeRounds`).
+- Surprises: `absentOwners` was missing from `RoundInput` though the earlier handoff says it was added, so Scoring had to change too. The wrapper list in `Source/TTACore/Private` also lacks `CoreMenuFlow.cpp` (MenuFlow.cpp isn't compiled in UE); left alone here.
