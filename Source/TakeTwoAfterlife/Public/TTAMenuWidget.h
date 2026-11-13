@@ -2,12 +2,12 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/EditableTextBox.h"
 #include "tta/MenuFlow.h"
 #include "TTAMenuWidget.generated.h"
 
 class UBorder;
 class UButton;
-class UEditableTextBox;
 class UPanelWidget;
 class UProgressBar;
 class USlider;
