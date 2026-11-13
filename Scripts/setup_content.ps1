@@ -1,7 +1,8 @@
 # Builds the generated content headless, in order:
 #   create_toon_assets.py -> build_backyard_map.py (Downloads/, placeholders for missing packs)
 #   -> swap_to_toon.py (/Game) -> create_title_map.py
-# Stops at the first script whose log has a Python Traceback or that exits non-zero, then checks that
+# Stops at the first script whose log has a Traceback or a 'LogPython: Error', or lacks the script's own
+# success marker line, then checks that
 # Content/Maps holds Title and Backyard. Run Scripts/fetch_assets.ps1 first for the real meshes.
 #   powershell -ExecutionPolicy Bypass -File Scripts/setup_content.ps1 [-Editor "C:\...\UnrealEditor-Cmd.exe"]
 param([string]$Editor = $env:UE_EDITOR_CMD)
@@ -23,22 +24,34 @@ if (-not $Editor -or -not (Test-Path $Editor)) {
     throw "UnrealEditor-Cmd.exe not found: pass -Editor <path> or set UE_EDITOR_CMD / UE_ROOT"
 }
 
-$Scripts = @("create_toon_assets.py", "build_backyard_map.py", "swap_to_toon.py", "create_title_map.py")
+# Run order -> regex for the success line each script logs last. UnrealEditor-Cmd's exit code is not used:
+# it is 1 whenever any subsystem logs an error (e.g. EOS with empty Dev Portal IDs) even if the script worked.
+$Markers = [ordered]@{
+    "create_toon_assets.py" = 'LogPython: toon assets built'
+    "build_backyard_map.py" = 'LogPython: built \S+: \d+ props'
+    "swap_to_toon.py"       = 'LogPython: swapped \d+ material slots'
+    "create_title_map.py"   = 'LogPython: (created \S+|\S+ already exists)'
+}
 $LogDir = Join-Path $Repo "Saved\SetupContent"
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 
-foreach ($s in $Scripts) {
+foreach ($s in $Markers.Keys) {
     $path = (Join-Path $PSScriptRoot $s) -replace '\\', '/'
     $log = Join-Path $LogDir ($s -replace '\.py$', '.log')
     Write-Host "== $s"
     & $Editor $Project -run=pythonscript "-script=$path" -unattended -nop4 -nosplash -stdout -FullStdOutLogOutput 2>&1 |
         Out-File -FilePath $log -Encoding utf8
     $code = $LASTEXITCODE
-    if (Select-String -Path $log -Pattern "Traceback" -Quiet) {
-        Select-String -Path $log -Pattern "Traceback" -Context 0, 15 | ForEach-Object { $_.ToString() } | Write-Host
-        throw "${s} raised a Python Traceback (full log: $log)"
+    $bad = Select-String -Path $log -Pattern "Traceback", "LogPython: Error"
+    if ($bad) {
+        Select-String -Path $log -Pattern "Traceback", "LogPython: Error" -Context 0, 15 |
+            ForEach-Object { $_.ToString() } | Write-Host
+        throw "${s} failed in Python (full log: $log)"
     }
-    if ($code -ne 0) { throw "${s}: UnrealEditor-Cmd exited $code (log: $log)" }
+    if (-not (Select-String -Path $log -Pattern $Markers[$s] -Quiet)) {
+        throw "${s}: success line /$($Markers[$s])/ missing (editor exit $code, log: $log)"
+    }
+    if ($code -ne 0) { Write-Host "   editor exited $code; script succeeded, other errors are in $log" }
 }
 
 $Maps = Join-Path $Repo "Content\Maps"
