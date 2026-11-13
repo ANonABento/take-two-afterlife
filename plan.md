@@ -279,3 +279,8 @@ Scored 1-5 by judges on: ambition/innovation, theme, fun, gameplay, visuals, lev
 - Done: `SUBMISSION.md` "Status as of Nov 13" (323.6 MiB Shipping zip, exe not launched, red Automation suite, placeholder Backyard art, unmerged branches). DEVLOG entries for tasks 28–31 and the premiere/respawn fix (31b). CREDITS: VO script source filled; TODOs for KayKit/Kenney and audio.
 - Left: merge `overnight/cursor` and `mwe4dnfb`, then rewrite the 28–31b DEVLOG lines from their handoffs; launch the exe; fill audio credits.
 - Surprises: no task 28–31 work, handoffs or `fetch_assets.ps1` exist on this branch, so those DEVLOG entries are written from the status notes only. Tasks 28–31 aren't in plan.md's task list, so `export_devlog.py` doesn't require them.
+
+### Glass Box public dev log
+- Done: `Docs/DEVLOG_PUBLIC.md`, a readable public log from DEVLOG.md, handoffs and the "Fix UE compile + link on Windows" commit: concept, Director's Cut fit, plan v3 timeline table, Core/Unreal split, multi-agent workflow, what broke (duplicate Core sources at link, MSVC includes/C4458, Automation crashes). Screenshot slots are `<!-- TODO(screenshot) -->`. `Scripts/tests/test_devlog_public.py` checks the sections.
+- Left: add screenshots; post it to the itch devlog; update the 28–31b and Windows-workflow lines after `overnight/cursor` / `mwe4dnfb` merge.
+- Surprises: nothing in the repo records the Grok/Cursor workflow or the exact LNK error text; those paragraphs come from the task brief and the fix commit's diff (TTACore dependency dropped, Core compiled once via CoreLib wrappers). `export_devlog.py` output (`Dist/`) isn't committed, so DEVLOG.md was the source.
