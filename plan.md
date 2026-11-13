@@ -284,3 +284,8 @@ Scored 1-5 by judges on: ambition/innovation, theme, fun, gameplay, visuals, lev
 - Done: `Docs/DEVLOG_PUBLIC.md`, a readable public log from DEVLOG.md, handoffs and the "Fix UE compile + link on Windows" commit: concept, Director's Cut fit, plan v3 timeline table, Core/Unreal split, multi-agent workflow, what broke (duplicate Core sources at link, MSVC includes/C4458, Automation crashes). Screenshot slots are `<!-- TODO(screenshot) -->`. `Scripts/tests/test_devlog_public.py` checks the sections.
 - Left: add screenshots; post it to the itch devlog; update the 28–31b and Windows-workflow lines after `overnight/cursor` / `mwe4dnfb` merge.
 - Surprises: nothing in the repo records the Grok/Cursor workflow or the exact LNK error text; those paragraphs come from the task brief and the fix commit's diff (TTACore dependency dropped, Core compiled once via CoreLib wrappers). `export_devlog.py` output (`Dist/`) isn't committed, so DEVLOG.md was the source.
+
+### Itch page text
+- Done: `Docs/ITCH_PAGE.md` — pitch, short/long description (Director's Cut), controls, how to play (rounds, traps, replay, premiere), tools used, team credits. `Scripts/tests/test_itch_page.py` checks sections and key terms.
+- Left: fill TODOs — gamepad/editor/rating/voice controls, team names/roles, team name, confirm no Meshy assets.
+- Surprises: keyboard bindings came from Config input mappings; editor/rating/voice inputs aren't there, so those are TODO. Plan forbids AI-generated assets, so Meshy is listed as "confirm none".
