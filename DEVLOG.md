@@ -149,3 +149,29 @@ Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prom
 - **Prompt:** final Win64 zip under 1 GB, DEVLOG.md complete and exported for the itch devlog, submission tools list.
 - **Agent did:** added Backyard to the cooked maps, back-filled devlog entries for every plan task, `Scripts/export_devlog.py` (fails if a plan task has no entry, writes itch-ready HTML) with tests, `SUBMISSION.md` checklist and filled the CREDITS tools table.
 - **Failed / fixed by hand:** packaging and the launch-to-Title check need Kevin's Windows machine.
+
+## Task 28 — Review fixes, round 2
+- **Prompt:** second review pass after the Nov 12 Windows compile.
+- **Agent did:** work is on the `overnight/cursor` / `mwe4dnfb` branches, not merged here yet.
+- **Failed / fixed by hand:** pending merge; check the branch handoff before quoting.
+
+## Task 29 — Shipping package
+- **Prompt:** build the Win64 Shipping zip on Kevin's machine.
+- **Agent did:** Shipping zip built at 323.6 MiB.
+- **Failed / fixed by hand:** packaged exe not launched yet.
+
+## Task 30 — Automation run
+- **Prompt:** run the full `TTA.*` Automation suite in the editor.
+- **Agent did:** ran the suite; it is red.
+- **Failed / fixed by hand:** `TTA.UI.MenuFlow` crashes (no world); ragdoll mesh, build-place meshes, premiere and respawn tests fail.
+
+## Task 31 — Backyard assets
+- **Prompt:** replace Backyard placeholder art with KayKit/Kenney meshes.
+- **Agent did:** asset fetch via `fetch_assets.ps1` (on an unmerged branch).
+- **Failed / fixed by hand:** script not run yet; Backyard art is still placeholder.
+
+## Task 31b — Premiere + respawn fix
+- **Prompt:** fix the failing premiere and respawn tests.
+- **Agent did:** fix is on an unmerged branch (`overnight/cursor` / `mwe4dnfb`).
+- **Failed / fixed by hand:** premiere and respawn still fail on this branch until it is merged.
+
