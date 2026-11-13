@@ -9,14 +9,17 @@ using namespace tta;
 
 namespace {
 
+// M_PI is not defined by MSVC's <cmath> unless _USE_MATH_DEFINES is set first.
+constexpr double kPi = 3.14159265358979323846;
+
 // Running ragdoll-ish motion: root runs at 6 m/s with a bob, limbs swing.
 ReplayPose truePose(int player, double t) {
     ReplayPose pose;
     const double rootX = 6.0 * t;
     const double rootY = -3.0 + 2.0 * player + 0.5 * std::sin(0.8 * t);
-    const double rootZ = 1.0 + 0.1 * std::sin(2.0 * M_PI * 3.0 * t);
+    const double rootZ = 1.0 + 0.1 * std::sin(2.0 * kPi * 3.0 * t);
     for (int b = 0; b < kReplayBones; ++b) {
-        const double phase = 2.0 * M_PI * 1.5 * t + b;
+        const double phase = 2.0 * kPi * 1.5 * t + b;
         const double reach = b == 0 ? 0.0 : 0.3;
         pose[b].position = {static_cast<float>(rootX + reach * std::sin(phase)),
                             static_cast<float>(rootY + 0.05 * b),

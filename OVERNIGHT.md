@@ -43,3 +43,34 @@ UnrealEditor-Cmd.exe TakeTwoAfterlife.uproject -run=pythonscript -script=Scripts
 ```
 
 Result: GREEN. Log `Saved/SetupContent/placeholder_audio_rerun.log`: `placeholder audio: 0 created, 76 kept`. 76 `Content/Audio/**/*.uasset` files on disk. The first import (inside setup) logged a Bink decoder ensure and the editor exited 1; the assets still have duration and this rerun exited 0.
+
+## 5. make test and Automation RunTests TTA
+
+What: `make` is not on PATH. Installed CMake with `python -m pip install cmake` (scripts landed in `%APPDATA%\Python\Python314\Scripts`, not on PATH) and ran `C:\msys64\ucrt64\bin\mingw32-make.exe test`. The Visual Studio generator needs `ctest --build-config Debug`, so the Makefile now configures Debug, builds `--config Debug`, and passes that config to ctest. MSVC rejected `1.0 / 0.0` in `TrapTimelineTests.cpp` and `M_PI` in `ReplayTests.cpp`; the test now passes infinity, and the replay fixture uses a local pi constant.
+
+Automation command (the literal `TTA` filter also matches `Attachment` and `FloatTan`, so the reruns used `TTA.`):
+
+```
+UnrealEditor-Cmd.exe TakeTwoAfterlife.uproject -ExecCmds="Automation RunTests TTA.;Quit" -unattended -nullrhi -abslog=Saved/Automation/TTA3.log
+```
+
+The first suite (`Saved/Automation/TTA.log`) sat across a clock jump of about 6 hours in editor startup (`Loading editor; pre map load`), then crashed in `TTA.Match.ThreeRounds` at `SetGameMode` because the test world has no game instance. `TTA.Art.AllToon` passed. Second run (`TTA2.log`) crashed in `PlaceItem` on a null game state. Third run (`TTA3.log`) finished more of the list and then crashed in `TTA.UI.MenuFlow` (`Menu->Initialize()`, UMG null).
+
+Result: RED. `mingw32-make test` is green: `tta_core_tests` passed and 43 Python tests OK. Automation, after three runs, still fails:
+
+- `TTA.Build.PlaceReplicate` — cameras log `no ItemMeshes entry` (DefaultGame.ini). The assertions that failed are those log errors, which automation promotes to test failures.
+- `TTA.Map.StartToGate` — faller did not return to alive. A float of the exact freeze/ragdoll doubles can fall short of the threshold. `+ 0.01f` is in the test now and was not re-run (attempt cap).
+- `TTA.Match.ThreeRounds` — premiere transition rejected, round stayed 1, score stayed 0.
+- `TTA.Net.PhaseReplication` — spawned game mode has no `ATTAGameState` until the world is initialized.
+- `TTA.Pawn.Ragdoll` — `RunnerMesh` is null (DefaultGame.ini), so physics and respawn checks fail. Wings/halo show because the mesh path that hides them did not run as expected.
+- `TTA.Run.ScoreRound` — victim not respawned / not alive (same life-step issue).
+- `TTA.Traps.HitRecorded` — `smitten runner hit` is false.
+- `TTA.UI.MenuFlow` — access violation in UMG during `Initialize()` on a widget with no world. This aborts the rest of the suite.
+
+Passed on the third run: AllToon, MicSync, TriggerTable, Cinema.Sequence, Core.Smoke, Editor.PlayCut, Traps.Deterministic.
+
+## 6. TTA.Art.AllToon
+
+What: included in both completed automation passes. No material was reported off `M_TTA_Toon`.
+
+Result: GREEN. `Saved/Automation/TTA.log` and `TTA3.log`: `Test Completed. Result={Success} Name={AllToon}`. `swap_to_toon.py` swapped 0 slots because the backyard props are already toon instances on the engine cube.

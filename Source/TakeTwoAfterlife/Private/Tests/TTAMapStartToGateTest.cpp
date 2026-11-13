@@ -10,6 +10,7 @@
 #include "TTAKillPlane.h"
 #include "TTARunDirector.h"
 #include "TTARunnerPawn.h"
+#include "tta/PawnLife.h"
 #include "tta/Placement.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -89,7 +90,10 @@ bool FTTAMapStartToGateTest::RunTest(const FString& Parameters)
 		Faller->SetActorLocation(Kill->GetActorLocation());
 		TestTrue(TEXT("kill plane hits the faller"), Kill->HandleRunnerFell(Faller));
 		TestFalse(TEXT("not hit twice"), Kill->HandleRunnerFell(Faller));
-		Faller->AdvanceLife(10.f);
+		// Core advances one life state per call. The freeze threshold is a double;
+		// a float of that exact value can fall short, so add a hair.
+		Faller->AdvanceLife(static_cast<float>(tta::kImpactFreezeSeconds) + 0.01f);
+		Faller->AdvanceLife(static_cast<float>(tta::kRagdollSeconds) + 0.01f);
 		TestTrue(TEXT("faller alive again"), Faller->GetLifeState() == tta::LifeState::Alive);
 		TestTrue(TEXT("faller back at the start"), Faller->GetActorLocation().Equals(Faller->GetStartLocation(), 1.f));
 	}

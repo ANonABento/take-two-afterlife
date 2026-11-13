@@ -1,6 +1,7 @@
 #include "doctest/doctest.h"
 #include "tta/TrapTimeline.h"
 
+#include <limits>
 #include <stdexcept>
 
 using namespace tta;
@@ -66,5 +67,6 @@ TEST_CASE("settings shape the timeline") {
 TEST_CASE("bad settings and times are rejected") {
     CHECK_THROWS_AS(pose(TrapType::Hammer, {0, 0}, 1.0), std::invalid_argument);
     CHECK_THROWS_AS(pose(TrapType::Banana, {3, 4}, 1.0), std::invalid_argument);
-    CHECK_THROWS_AS(pose(TrapType::Spinner, {3, 2}, 1.0 / 0.0), std::invalid_argument);
+    // MSVC rejects a literal divide-by-zero. Infinity is the same non-finite time.
+    CHECK_THROWS_AS(pose(TrapType::Spinner, {3, 2}, std::numeric_limits<double>::infinity()), std::invalid_argument);
 }

@@ -91,6 +91,7 @@ void ATTACinema::StartPremiere(const TArray<FTTACinemaCut>& Cuts, uint32 Seed, b
 	Premiere = std::make_unique<tta::Premiere>(std::move(Core), Seed, bFinalRound);
 	FinalPodium = Podium;
 	ShownPodium.Reset();
+	StepRemainder = 0.f;
 	if (!Player) Player = NewObject<UTTACutPlayer>(this);
 	EnterStep();
 }
@@ -115,7 +116,10 @@ void ATTACinema::Step(float DeltaSeconds)
 	if (!Premiere) return;
 	const tta::PremiereStep Before = Premiere->step();
 	const size_t BeforeIndex = Premiere->index();
-	Premiere->advance(static_cast<uint32>(FMath::RoundToInt(DeltaSeconds * 1000.f)));
+	StepRemainder += DeltaSeconds;
+	const int32 WholeMs = FMath::FloorToInt(StepRemainder * 1000.f);
+	StepRemainder -= WholeMs * 0.001f;
+	Premiere->advance(static_cast<uint32>(FMath::Max(0, WholeMs)));
 	if (Premiere->step() != Before || Premiere->index() != BeforeIndex) EnterStep();
 
 	if (Premiere->step() == tta::PremiereStep::Playback)

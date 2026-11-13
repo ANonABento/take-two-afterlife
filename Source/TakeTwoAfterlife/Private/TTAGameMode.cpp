@@ -165,6 +165,7 @@ void ATTAGameMode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	const ATTAGameState* State = GetGameState<ATTAGameState>();
+	if (!State) return;
 	const bool bTimerDone = Match.phaseSeconds() > 0 && State->GetSecondsLeft() == 0;
 	if (State->GetPhase() == ETTAPhase::Build && bTimerDone) verify(RequestPhase(ETTAPhase::Run));
 	if (State->GetPhase() == ETTAPhase::Edit && bTimerDone) verify(RequestPhase(ETTAPhase::Premiere));
@@ -227,7 +228,8 @@ void ATTAGameMode::SyncMarker(int32 Id)
 
 ETTAPlaceOutcome ATTAGameMode::PlaceItem(const AController* By, int32 Item, const FVector& WorldCm, float YawDeg, int32* OutId)
 {
-	if (GetGameState<ATTAGameState>()->GetPhase() != ETTAPhase::Build) return ETTAPlaceOutcome::WrongPhase;
+	const ATTAGameState* State = GetGameState<ATTAGameState>();
+	if (!State || State->GetPhase() != ETTAPhase::Build) return ETTAPlaceOutcome::WrongPhase;
 	if (Item < 0 || Item >= TTABuildItem::Count()) return ETTAPlaceOutcome::BadItem;
 	const int32 Owner = ATTAPlacementMarker::PlayerIdOf(By);
 	if (Owner == INDEX_NONE) return ETTAPlaceOutcome::NotOwner;
@@ -244,7 +246,8 @@ ETTAPlaceOutcome ATTAGameMode::PlaceItem(const AController* By, int32 Item, cons
 
 ETTAPlaceOutcome ATTAGameMode::CheckOwned(const AController* By, int32 Id, const tta::Placement*& OutPlacement) const
 {
-	if (GetGameState<ATTAGameState>()->GetPhase() != ETTAPhase::Build) return ETTAPlaceOutcome::WrongPhase;
+	const ATTAGameState* State = GetGameState<ATTAGameState>();
+	if (!State || State->GetPhase() != ETTAPhase::Build) return ETTAPlaceOutcome::WrongPhase;
 	for (const tta::Placement& P : Layout.all())
 	{
 		if (P.id != Id) continue;
