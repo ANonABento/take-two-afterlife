@@ -1,34 +1,21 @@
 """Engine-free layout of the Backyard map (task 17): corridor floor, set dressing, start, gate, kill plane.
 
 Units are metres, +X runs from start to gate, +Z is up, the corridor floor top is at Z = 0.
+Built on Scripts/maplib (grid, roles, kill plane, credits, validate); this file keeps only the Backyard itself.
 Scripts/build_backyard_map.py places this in UE; `make test` checks it (bounds, clear route, credits).
 """
-import re
-from collections import namedtuple
 from pathlib import Path
 
-import toon_spec
+import maplib
+from maplib import WORLD_KILL_Z, Box, Kit, Point, Prop, footprint, palette_index  # noqa: F401  (map API)
 
-REPO = Path(__file__).resolve().parents[1]
+REPO = maplib.REPO
 MAP_PATH = "/Game/Maps/Backyard"
 IMPORT_ROOT = "/Game/Imported"
 
-
-def _corridor():
-    """Corridor size from Core's Placement.h, so traps and the map share one source."""
-    text = (REPO / "Core" / "include" / "tta" / "Placement.h").read_text(encoding="utf-8")
-    values = dict(re.findall(r"constexpr double (kCorridor\w+Meters) = ([\d.]+);", text))
-    try:
-        return float(values["kCorridorLengthMeters"]), float(values["kCorridorWidthMeters"])
-    except KeyError as missing:
-        raise ValueError(f"Placement.h has no {missing}") from None
-
-
-CORRIDOR_LENGTH, CORRIDOR_WIDTH = _corridor()
+CORRIDOR_LENGTH, CORRIDOR_WIDTH = maplib.corridor()
 HALF_WIDTH = CORRIDOR_WIDTH / 2
 
-# kit key -> (credits name, author, url, licence). `verified` = mesh names checked against the published pack.
-Kit = namedtuple("Kit", "name author url licence verified")
 KITS = {
     "KayKitPrototypeBits": Kit("KayKit Prototype Bits 1.0", "Kay Lousberg",
                                "https://github.com/KayKit-Game-Assets/KayKit-Prototype-Bits-1.0", "CC0 1.0", True),
@@ -37,21 +24,13 @@ KITS = {
     "KenneyNature": Kit("Nature Kit", "Kenney", "https://kenney.nl/assets/nature-kit", "CC0 1.0", False),
 }
 
-# role: floor (walkable, blocks), marker (flat route sign on the floor, no collision), dressing (outside the
-# corridor), gate (finish arch, no collision). fit: ("box", (x, y, z)) scales each axis to that size;
-# ("height", h) scales uniformly to that height. Position = bottom-centre of the fitted mesh.
-Prop = namedtuple("Prop", "kit mesh role x y z yaw palette fit")
-Point = namedtuple("Point", "x y z")
-Box = namedtuple("Box", "min_x max_x min_y max_y min_z max_z")
-
 FLOOR_THICKNESS = 0.2
 DITCH = 2.0                                  # open gap each side of the corridor, down to the kill plane
 LAWN_WIDTH = 8.0
 START = Point(1.0, 0.0, 0.1)                 # PlayerStart, on the patio deck
 GATE = Point(CORRIDOR_LENGTH - 1.0, 0.0, 0.0)
 GATE_TRIGGER_HALF = (0.5, HALF_WIDTH, 2.0)   # half extents of the finish trigger
-KILL_PLANE = Box(-10.0, CORRIDOR_LENGTH + 10.0, -20.0, 20.0, -12.0, -8.0)
-WORLD_KILL_Z = -500.0                        # engine KillZ, far below so ragdolls are respawned, not destroyed
+KILL_PLANE = maplib.kill_plane(CORRIDOR_LENGTH)
 
 # Corridor zones, start to gate: (from x, to x, palette name, reading of the route).
 ZONES = (
@@ -61,13 +40,6 @@ ZONES = (
     (36.0, 48.0, "Grass", "back lawn"),
     (48.0, CORRIDOR_LENGTH, "Bone", "stone patio to the gate"),
 )
-
-
-def palette_index(name):
-    names = [n for n, _ in toon_spec.PALETTE]
-    if name not in names:
-        raise ValueError(f"{name!r} is not a palette colour")
-    return names.index(name)
 
 
 def _floor():
@@ -150,69 +122,19 @@ def find_fbx(downloads, kit, mesh):
 
 
 def meshes_by_kit():
-    used = {}
-    for p in props():
-        used.setdefault(p.kit, set()).add(p.mesh)
-    return {kit: sorted(names) for kit, names in used.items()}
+    return maplib.meshes_by_kit(props())
 
 
 def in_corridor(x, y):
-    return 0.0 <= x <= CORRIDOR_LENGTH and -HALF_WIDTH <= y <= HALF_WIDTH
-
-
-def footprint(p):
-    """Rough XY half-size of a prop (m): box fits are exact; height fits assume a footprint up to its height."""
-    kind, size = p.fit
-    if kind == "box":
-        hx, hy = size[0] / 2, size[1] / 2
-        return (hy, hx) if p.yaw % 180 == 90 else (hx, hy)
-    return size / 2, size / 2
+    return maplib.in_corridor(x, y, CORRIDOR_LENGTH, HALF_WIDTH)
 
 
 def validate():
     """Raise ValueError naming the first broken rule."""
-    for p in props():
-        if p.kit not in KITS:
-            raise ValueError(f"{p.mesh}: unknown kit {p.kit}")
-        palette_index(p.palette)
-        hx, hy = footprint(p)
-        if p.role == "dressing":
-            # nothing inside the corridor: traps own it, the route stays clear
-            if p.x + hx > 0 and p.x - hx < CORRIDOR_LENGTH and abs(p.y) - hy < HALF_WIDTH + DITCH:
-                raise ValueError(f"dressing {p.mesh} at ({p.x}, {p.y}) intrudes on the corridor or ditch")
-        elif p.role in ("marker",):
-            if not in_corridor(p.x, p.y) or p.fit[1][2] > 0.05:
-                raise ValueError(f"marker {p.mesh} at ({p.x}, {p.y}) must be flat and inside the corridor")
-    floors = [p for p in props() if p.role == "floor" and in_corridor(p.x, p.y)]
-    covered = sorted((p.x - footprint(p)[0], p.x + footprint(p)[0]) for p in floors)
-    reach = 0.0
-    for lo, hi in covered:
-        if lo > reach + 1e-6:
-            raise ValueError(f"corridor floor has a gap at x = {reach}")
-        reach = max(reach, hi)
-    if reach < CORRIDOR_LENGTH:
-        raise ValueError(f"corridor floor stops at x = {reach}")
-    if not (in_corridor(START.x, START.y) and in_corridor(GATE.x, GATE.y)):
-        raise ValueError("start and gate must be inside the corridor")
-    if GATE.x - START.x < 0.9 * CORRIDOR_LENGTH:
-        raise ValueError("route from start to gate is shorter than 90% of the corridor")
-    k = KILL_PLANE
-    if not (k.min_x < 0 and k.max_x > CORRIDOR_LENGTH and k.min_y < -HALF_WIDTH - DITCH - LAWN_WIDTH
-            and k.max_y > HALF_WIDTH + DITCH + LAWN_WIDTH):
-        raise ValueError("kill plane does not cover the map footprint")
-    if not (WORLD_KILL_Z < k.min_z < k.max_z < -FLOOR_THICKNESS - 3.0):
-        raise ValueError("kill plane must sit well below the floor and above the engine KillZ")
+    maplib.validate(props(), KITS, CORRIDOR_LENGTH, CORRIDOR_WIDTH, START, GATE, KILL_PLANE, DITCH, LAWN_WIDTH,
+                    FLOOR_THICKNESS)
 
 
 def credits_missing(credits_text):
     """(kit, mesh) pairs and kit URLs that CREDITS.md does not list."""
-    missing = []
-    for kit, names in meshes_by_kit().items():
-        rows = [line for line in credits_text.splitlines() if KITS[kit].url in line]
-        if not rows:
-            missing.append((kit, KITS[kit].url))
-            continue
-        for name in names:
-            if not any(re.search(rf"`{re.escape(name)}`", row) for row in rows):
-                missing.append((kit, name))
-    return missing
+    return maplib.credits_missing(props(), KITS, credits_text)
