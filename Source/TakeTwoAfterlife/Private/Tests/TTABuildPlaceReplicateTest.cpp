@@ -43,6 +43,7 @@ bool FTTABuildPlaceReplicateTest::RunTest(const FString& Parameters)
 	World->InitializeActorsForPlay(FURL());
 	ATTAGameMode* Mode = Cast<ATTAGameMode>(World->GetAuthGameMode());
 	if (!TestNotNull(TEXT("game mode"), Mode)) return false;
+	if (!TestTrue(TEXT("spawned ATTAGameMode, not the engine default"), Mode->GetClass() == ATTAGameMode::StaticClass())) return false;
 	APlayerController* A = World->SpawnActor<APlayerController>();
 	APlayerController* B = World->SpawnActor<APlayerController>();
 	for (APlayerController* PC : {A, B})

@@ -71,6 +71,7 @@ bool FTTAMatchThreeRoundsTest::RunTest(const FString& Parameters)
 	ATTAGameState* State = World->GetGameState<ATTAGameState>();
 	if (TestNotNull(TEXT("game mode"), Mode) && TestNotNull(TEXT("game state"), State))
 	{
+		TestTrue(TEXT("spawned ATTAGameMode, not the engine default"), Mode->GetClass() == ATTAGameMode::StaticClass());
 		TestTrue(TEXT("settings file written"), FPaths::FileExists(ATTAGameMode::SettingsPath()));
 		TestFalse(TEXT("bad settings rejected"), Mode->ApplySettingsJson(TEXT("{\"rounds\": 0}")));
 		TestTrue(TEXT("host settings applied"), Mode->ApplySettingsJson(TEXT("{\"rounds\": 3, \"buildSeconds\": 30, \"runSeconds\": 20, \"editSeconds\": 15}")));
@@ -116,7 +117,10 @@ bool FTTAMatchThreeRoundsTest::RunTest(const FString& Parameters)
 				TestEqual(TEXT("leaver's hammer persists"), Traps, 1);
 				TestEqual(TEXT("absent owner recorded"), static_cast<int32>(Director->GetReplay().players().size()), 2);
 			}
-			Director->MarkFinished(Runner);
+			for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+			{
+				if (ATTARunnerPawn* Racing = Cast<ATTARunnerPawn>(It->Get()->GetPawn())) Director->MarkFinished(Racing);
+			}
 			Mode->Tick(0.f); // everyone through the gate: scored, then Edit
 			TestEqual(TEXT("edit after run"), State->GetPhase(), ETTAPhase::Edit);
 			TestFalse(TEXT("no joining in edit"), JoinOpen(Mode));
