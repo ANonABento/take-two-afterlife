@@ -7,11 +7,18 @@
 #include "Components/ComboBoxString.h"
 #include "Components/EditableTextBox.h"
 #include "Components/HorizontalBox.h"
+#include "Components/HorizontalBoxSlot.h"
+#include "Components/Overlay.h"
+#include "Components/OverlaySlot.h"
 #include "Components/ProgressBar.h"
+#include "Components/SizeBox.h"
 #include "Components/Slider.h"
 #include "Components/TextBlock.h"
 #include "Components/VerticalBox.h"
+#include "Components/VerticalBoxSlot.h"
 #include "Components/WidgetSwitcher.h"
+#include "Components/WidgetSwitcherSlot.h"
+#include "Brushes/SlateRoundedBoxBrush.h"
 #include "GameFramework/GameUserSettings.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Misc/Paths.h"
@@ -23,7 +30,29 @@ DEFINE_LOG_CATEGORY_STATIC(LogTTAMenu, Log, All);
 namespace
 {
 // Ref sizes at 1080p: H1 120, room code 160, body 32, small 24.
-constexpr int32 kH1 = 120, kCode = 160, kBody = 32, kSmall = 24;
+constexpr int32 kH1 = 120, kTitle = 96, kCode = 160, kBody = 32, kSmall = 24;
+// Layout: screens are a centred 520 px column (two of them for Lobby / How to play).
+constexpr float kScreenW = 520.f, kWideW = 2 * kScreenW + 40.f;
+constexpr float kButtonW = 480.f, kButtonH = 72.f, kGap = 12.f, kCorner = 18.f;
+constexpr float kRowLabelW = 180.f, kRowControlW = 280.f;  // fits inside a Card (520 - 2 * 30)
+constexpr float kTitleTilt = -4.f, kSkyOpacity = 0.5f;
+constexpr float kHoverDarken = 0.25f, kPressedDarken = 0.45f;  // lerp toward Ink
+const TCHAR* const kDisplayFontPath = TEXT("/Game/UI/Fonts/LilitaOne.LilitaOne");
+const TCHAR* const kBodyFontPath = TEXT("/Game/UI/Fonts/Nunito.Nunito");
+
+UObject* LoadMenuFont(const TCHAR* Path)
+{
+	UObject* Font = LoadObject<UObject>(nullptr, Path, nullptr, LOAD_NoWarn | LOAD_Quiet);
+	if (!Font) UE_LOG(LogTTAMenu, Warning, TEXT("Menu font %s not imported; using the engine font"), Path);
+	return Font;
+}
+
+// Puts a gap after the child along its box's direction.
+void GapAfter(UPanelSlot* Slot)
+{
+	if (UVerticalBoxSlot* V = Cast<UVerticalBoxSlot>(Slot)) V->SetPadding(FMargin(0.f, 0.f, 0.f, kGap));
+	if (UHorizontalBoxSlot* H = Cast<UHorizontalBoxSlot>(Slot)) H->SetPadding(FMargin(0.f, 0.f, kGap, 0.f));
+}
 
 // Switcher slot per screen, in tta::MenuScreen order.
 constexpr int32 SlotOf(tta::MenuScreen Screen) { return static_cast<int32>(Screen); }
@@ -55,9 +84,16 @@ UTextBlock* UTTAMenuWidget::Label(UPanelWidget* Parent, const FString& Text, int
 	Block->SetText(FText::FromString(Text));
 	FSlateFontInfo Font = Block->GetFont();
 	Font.Size = Size;
-	// Lilita One / Nunito ship as Runtime-cached Font assets once imported (ref); until
-	// then keep the default face with the 3 px Ink outline the ref asks for.
-	Font.TypefaceFontName = bDisplay ? FName("Bold") : FName("Regular");
+	// Lilita One / Nunito when imported; otherwise the engine face, Bold for display.
+	if (UObject* Face = bDisplay ? DisplayFont : BodyFont)
+	{
+		Font.FontObject = Face;
+		Font.TypefaceFontName = NAME_None;
+	}
+	else
+	{
+		Font.TypefaceFontName = bDisplay ? FName("Bold") : FName("Regular");
+	}
 	Font.OutlineSettings.OutlineSize = bDisplay ? 3 : 0;
 	Font.OutlineSettings.OutlineColor = Palette(tta::kInk);
 	Block->SetFont(Font);
@@ -68,33 +104,69 @@ UTextBlock* UTTAMenuWidget::Label(UPanelWidget* Parent, const FString& Text, int
 
 UButton* UTTAMenuWidget::MenuButton(UPanelWidget* Parent, const FString& Text, int32 Fill)
 {
+	return MenuButton(Parent, Text, Fill, kButtonW);
+}
+
+UButton* UTTAMenuWidget::MenuButton(UPanelWidget* Parent, const FString& Text, int32 Fill, float Width)
+{
+	const FLinearColor Base = Palette(Fill);
+	const FLinearColor Ink = Palette(tta::kInk);
+	FButtonStyle Style;
+	Style.SetNormal(FSlateRoundedBoxBrush(Base, kCorner));
+	Style.SetHovered(FSlateRoundedBoxBrush(FLinearColor::LerpUsingHSV(Base, Ink, kHoverDarken), kCorner));
+	Style.SetPressed(FSlateRoundedBoxBrush(FLinearColor::LerpUsingHSV(Base, Ink, kPressedDarken), kCorner));
+	Style.SetDisabled(FSlateRoundedBoxBrush(Base.CopyWithNewOpacity(0.4f), kCorner));
 	UButton* Button = WidgetTree->ConstructWidget<UButton>();
-	Button->SetBackgroundColor(Palette(Fill));
+	Button->SetStyle(Style);
 	Label(Button, Text, kBody, true);
-	Parent->AddChild(Button);
+	USizeBox* Size = WidgetTree->ConstructWidget<USizeBox>();
+	Size->SetWidthOverride(Width);
+	Size->SetHeightOverride(kButtonH);
+	Size->SetContent(Button);
+	GapAfter(Parent->AddChild(Size));
 	return Button;
+}
+
+UVerticalBox* UTTAMenuWidget::ScreenPanel(float Width)
+{
+	USizeBox* Size = WidgetTree->ConstructWidget<USizeBox>();
+	Size->SetWidthOverride(Width);
+	UVerticalBox* Box = WidgetTree->ConstructWidget<UVerticalBox>();
+	Size->SetContent(Box);
+	UWidgetSwitcherSlot* SwitchSlot = CastChecked<UWidgetSwitcherSlot>(Switcher->AddChild(Size));
+	SwitchSlot->SetHorizontalAlignment(HAlign_Center);
+	SwitchSlot->SetVerticalAlignment(VAlign_Center);
+	return Box;
+}
+
+void UTTAMenuWidget::SettingRow(UPanelWidget* Parent, const FString& Name, UWidget* Control)
+{
+	UHorizontalBox* Row = WidgetTree->ConstructWidget<UHorizontalBox>();
+	USizeBox* LabelSize = WidgetTree->ConstructWidget<USizeBox>();
+	LabelSize->SetWidthOverride(kRowLabelW);
+	Row->AddChild(LabelSize);
+	Label(LabelSize, Name, kSmall);
+	USizeBox* ControlSize = WidgetTree->ConstructWidget<USizeBox>();
+	ControlSize->SetWidthOverride(kRowControlW);
+	ControlSize->SetContent(Control);
+	Row->AddChild(ControlSize);
+	GapAfter(Parent->AddChild(Row));
 }
 
 USlider* UTTAMenuWidget::SettingSlider(UPanelWidget* Parent, const FString& Name, float Value01)
 {
-	UHorizontalBox* Row = WidgetTree->ConstructWidget<UHorizontalBox>();
-	Label(Row, Name, kSmall);
 	USlider* Slider = WidgetTree->ConstructWidget<USlider>();
 	Slider->SetValue(Value01);
 	Slider->SetSliderBarColor(Palette(tta::kInk));
 	Slider->SetSliderHandleColor(Palette(tta::kBlue));
-	Row->AddChild(Slider);
-	Parent->AddChild(Row);
+	SettingRow(Parent, Name, Slider);
 	return Slider;
 }
 
 UComboBoxString* UTTAMenuWidget::SettingCombo(UPanelWidget* Parent, const FString& Name)
 {
-	UHorizontalBox* Row = WidgetTree->ConstructWidget<UHorizontalBox>();
-	Label(Row, Name, kSmall);
 	UComboBoxString* Combo = WidgetTree->ConstructWidget<UComboBoxString>();
-	Row->AddChild(Combo);
-	Parent->AddChild(Row);
+	SettingRow(Parent, Name, Combo);
 	return Combo;
 }
 
@@ -102,27 +174,42 @@ void UTTAMenuWidget::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
+	DisplayFont = LoadMenuFont(kDisplayFontPath);
+	BodyFont = LoadMenuFont(kBodyFontPath);
+
+	// Overlay root: half-opacity Sky so a 3D backdrop shows through, screens on top.
+	UOverlay* Root = WidgetTree->ConstructWidget<UOverlay>();
+	WidgetTree->RootWidget = Root;
 	UBorder* Background = WidgetTree->ConstructWidget<UBorder>();
-	Background->SetBrushColor(Palette(tta::kSky));
-	WidgetTree->RootWidget = Background;
+	Background->SetBrushColor(Palette(tta::kSky).CopyWithNewOpacity(kSkyOpacity));
+	UOverlaySlot* BackgroundSlot = Root->AddChildToOverlay(Background);
+	BackgroundSlot->SetHorizontalAlignment(HAlign_Fill);
+	BackgroundSlot->SetVerticalAlignment(VAlign_Fill);
 	Switcher = WidgetTree->ConstructWidget<UWidgetSwitcher>();
-	Background->SetContent(Switcher);
+	UOverlaySlot* SwitcherSlot = Root->AddChildToOverlay(Switcher);
+	SwitcherSlot->SetHorizontalAlignment(HAlign_Fill);
+	SwitcherSlot->SetVerticalAlignment(VAlign_Fill);
 
 	// Title
 	{
-		UVerticalBox* Box = WidgetTree->ConstructWidget<UVerticalBox>();
-		Label(Card(Box, tta::kYellow), TEXT("TAKE TWO: AFTERLIFE"), kH1, true);
+		UVerticalBox* Box = ScreenPanel(kScreenW);
+		UVerticalBox* TitleRow = WidgetTree->ConstructWidget<UVerticalBox>();
+		UTextBlock* Title = Label(TitleRow, TEXT("TAKE TWO: AFTERLIFE"), kTitle, true);
+		Title->SetRenderTransformAngle(kTitleTilt);
+		Title->SetJustification(ETextJustify::Center);
+		Label(TitleRow, TEXT("Director's Cut"), kBody)->SetJustification(ETextJustify::Center);
+		Box->AddChild(TitleRow);
+		GapAfter(TitleRow->Slot);
 		MenuButton(Box, TEXT("HOST"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnHostClicked);
 		MenuButton(Box, TEXT("JOIN"), tta::kGrass)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnJoinClicked);
 		MenuButton(Box, TEXT("REELS"), tta::kTeal)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnReelsClicked);
 		MenuButton(Box, TEXT("SETTINGS"), tta::kPurple)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnSettingsClicked);
 		MenuButton(Box, TEXT("HOW TO PLAY"), tta::kPink)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnHowToClicked);
 		MenuButton(Box, TEXT("QUIT"), tta::kInk)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnQuitClicked);
-		Switcher->AddChild(Box);
 	}
 	// Join
 	{
-		UVerticalBox* Box = WidgetTree->ConstructWidget<UVerticalBox>();
+		UVerticalBox* Box = ScreenPanel(kScreenW);
 		JoinCard = Card(Box, tta::kBone);
 		UVerticalBox* Inner = WidgetTree->ConstructWidget<UVerticalBox>();
 		JoinCard->SetContent(Inner);
@@ -133,31 +220,44 @@ void UTTAMenuWidget::NativeOnInitialized()
 		Inner->AddChild(CodeBox);
 		JoinError = Label(Inner, TEXT(""), kSmall);
 		MenuButton(Box, TEXT("BACK"), tta::kInk)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnBackClicked);
-		Switcher->AddChild(Box);
 	}
 	// Lobby
 	{
-		UVerticalBox* Box = WidgetTree->ConstructWidget<UVerticalBox>();
-		RoomCodeText = Label(Card(Box, tta::kBone), TEXT("------"), kCode, true);
-		WaitingText = Label(Box, TEXT(""), kBody);
-		LookSwatch = Card(Box, tta::kRed);
+		// Two columns (players | cosmetics), action buttons in a bottom row.
+		UVerticalBox* Box = ScreenPanel(kWideW);
+		UHorizontalBox* Columns = WidgetTree->ConstructWidget<UHorizontalBox>();
+		Box->AddChild(Columns);
+		GapAfter(Columns->Slot);
+		auto Column = [&]()
+		{
+			USizeBox* Size = WidgetTree->ConstructWidget<USizeBox>();
+			Size->SetWidthOverride(kScreenW);
+			UVerticalBox* Inner = WidgetTree->ConstructWidget<UVerticalBox>();
+			Size->SetContent(Inner);
+			Columns->AddChild(Size);
+			return Inner;
+		};
+		UVerticalBox* Players = Column();
+		Cast<UHorizontalBoxSlot>(Players->GetParent()->Slot)->SetPadding(FMargin(0.f, 0.f, kWideW - 2 * kScreenW, 0.f));
+		RoomCodeText = Label(Card(Players, tta::kBone), TEXT("------"), kCode, true);
+		WaitingText = Label(Players, TEXT(""), kBody);
+		UVerticalBox* Cosmetics = Column();
+		LookSwatch = Card(Cosmetics, tta::kRed);
 		LookText = Label(LookSwatch, TEXT(""), kBody, true);
-		UHorizontalBox* Carousels = WidgetTree->ConstructWidget<UHorizontalBox>();
-		MenuButton(Carousels, TEXT("COLOUR >"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnColourNext);
-		MenuButton(Carousels, TEXT("HAT >"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnHatNext);
-		MenuButton(Carousels, TEXT("FACE >"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnFaceNext);
-		Box->AddChild(Carousels);
+		MenuButton(Cosmetics, TEXT("COLOUR >"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnColourNext);
+		MenuButton(Cosmetics, TEXT("HAT >"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnHatNext);
+		MenuButton(Cosmetics, TEXT("FACE >"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnFaceNext);
 		UHorizontalBox* Bottom = WidgetTree->ConstructWidget<UHorizontalBox>();
-		StartButton = MenuButton(Bottom, TEXT("START"), tta::kGrass);
+		const float ActionW = (kWideW - 2 * kGap) / 3.f;
+		StartButton = MenuButton(Bottom, TEXT("START"), tta::kGrass, ActionW);
 		StartButton->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnStartClicked);
-		MenuButton(Bottom, TEXT("SETTINGS"), tta::kPurple)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnSettingsClicked);
-		MenuButton(Bottom, TEXT("LEAVE"), tta::kInk)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnBackClicked);
+		MenuButton(Bottom, TEXT("SETTINGS"), tta::kPurple, ActionW)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnSettingsClicked);
+		MenuButton(Bottom, TEXT("LEAVE"), tta::kInk, ActionW)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnBackClicked);
 		Box->AddChild(Bottom);
-		Switcher->AddChild(Box);
 	}
 	// Settings
 	{
-		UVerticalBox* Box = WidgetTree->ConstructWidget<UVerticalBox>();
+		UVerticalBox* Box = ScreenPanel(kScreenW);
 		UBorder* Face = Card(Box, tta::kBone);
 		UVerticalBox* Inner = WidgetTree->ConstructWidget<UVerticalBox>();
 		Face->SetContent(Inner);
@@ -172,17 +272,15 @@ void UTTAMenuWidget::NativeOnInitialized()
 		ResolutionBox = SettingCombo(Inner, TEXT("Resolution"));
 		ResolutionBox->OnSelectionChanged.AddDynamic(this, &UTTAMenuWidget::OnResolutionChanged);
 		RefreshVideo();
-		Label(Inner, TEXT("Mic test"), kSmall);
 		MicMeter = WidgetTree->ConstructWidget<UProgressBar>();
 		MicMeter->SetFillColorAndOpacity(Palette(tta::kGrass));
-		Inner->AddChild(MicMeter);
+		SettingRow(Inner, TEXT("Mic test"), MicMeter);
 		SettingsText = Label(Inner, TEXT(""), kSmall);
 		MenuButton(Box, TEXT("BACK"), tta::kInk)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnBackClicked);
-		Switcher->AddChild(Box);
 	}
 	// How to play
 	{
-		UVerticalBox* Box = WidgetTree->ConstructWidget<UVerticalBox>();
+		UVerticalBox* Box = ScreenPanel(kWideW);
 		UHorizontalBox* Cards = WidgetTree->ConstructWidget<UHorizontalBox>();
 		const int32 Fills[] = {tta::kOrange, tta::kRed, tta::kTeal, tta::kPurple};
 		for (size_t i = 0; i < tta::kHowToPlay.size(); ++i)
@@ -194,16 +292,14 @@ void UTTAMenuWidget::NativeOnInitialized()
 		}
 		Box->AddChild(Cards);
 		MenuButton(Box, TEXT("BACK"), tta::kInk)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnBackClicked);
-		Switcher->AddChild(Box);
 	}
 	// Reels
 	{
-		UVerticalBox* Box = WidgetTree->ConstructWidget<UVerticalBox>();
+		UVerticalBox* Box = ScreenPanel(kScreenW);
 		Label(Box, TEXT("REELS"), kH1, true);
 		ReelList = WidgetTree->ConstructWidget<UVerticalBox>();
 		Box->AddChild(ReelList);
 		MenuButton(Box, TEXT("BACK"), tta::kInk)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnBackClicked);
-		Switcher->AddChild(Box);
 	}
 
 	SetPlayers(1, 0);
