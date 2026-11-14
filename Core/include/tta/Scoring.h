@@ -46,6 +46,8 @@ public:
     int roundsPlayed() const { return rounds_; }
     // Players by total, highest first; ties by lower player id.
     std::vector<int> podium() const;
+    // New match: every total is 0 for each of `players` (others dropped), no rounds played.
+    void reset(const std::vector<int>& players);
 
 private:
     std::map<int, double> totals_;

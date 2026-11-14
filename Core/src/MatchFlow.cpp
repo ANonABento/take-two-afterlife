@@ -42,4 +42,10 @@ RoundInput toPlayerIds(const RoundInput& run, const std::vector<int>& ids, std::
     return out;
 }
 
+bool returnToLobby(MatchStateMachine& match, MatchScore& score, const std::vector<int>& players) {
+    if (match.phase() != Phase::Podium || !match.transition(Phase::Lobby)) return false;
+    score.reset(players);
+    return true;
+}
+
 } // namespace tta

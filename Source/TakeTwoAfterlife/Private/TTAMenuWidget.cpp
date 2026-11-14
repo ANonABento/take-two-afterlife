@@ -1,4 +1,5 @@
 #include "TTAMenuWidget.h"
+#include "TTAPlayerState.h"
 
 #include "Blueprint/WidgetTree.h"
 #include "Components/Border.h"
@@ -291,6 +292,7 @@ void UTTAMenuWidget::CycleLook(tta::LookPart Part, int32 Step)
 {
 	Look = tta::cycleLook(Look, Part, Step);
 	RefreshLook();
+	if (ATTAPlayerState* State = GetOwningPlayerState<ATTAPlayerState>()) State->ServerSetLook(Look.colour, Look.hat, Look.face);
 }
 
 FLinearColor UTTAMenuWidget::GetLookColour() const

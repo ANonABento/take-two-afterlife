@@ -74,3 +74,33 @@ TEST_CASE("three rounds run Build-Run-Edit-Premiere, then Podium; ratings add up
     CHECK(score.total(1) == 4.5);
     CHECK(score.roundsPlayed() == 0);
 }
+
+TEST_CASE("podium returns to the lobby with scores reset and players kept") {
+    MatchStateMachine m{MatchSettings{}};
+    MatchScore score;
+    const std::vector<int> players{3, 5};
+    CHECK_FALSE(returnToLobby(m, score, players));
+    for (int r = 1; r <= m.settings().rounds; ++r) {
+        REQUIRE(m.transition(Phase::Build));
+        REQUIRE(m.transition(Phase::Run));
+        RoundInput in;
+        in.players = {3, 5};
+        in.finishers = {3};
+        score.addRound(in);
+        REQUIRE(m.transition(Phase::Edit));
+        REQUIRE(m.transition(Phase::Premiere));
+    }
+    REQUIRE(m.transition(Phase::Podium));
+    REQUIRE(score.total(3) > 0.0);
+
+    CHECK(returnToLobby(m, score, players));
+    CHECK(m.phase() == Phase::Lobby);
+    CHECK(m.round() == 0);
+    CHECK(score.roundsPlayed() == 0);
+    CHECK(score.totals().size() == players.size());
+    CHECK(score.total(3) == 0.0);
+    CHECK(score.total(5) == 0.0);
+    CHECK(score.podium() == players);
+    CHECK(m.transition(Phase::Build)); // the same room starts again
+    CHECK(m.round() == 1);
+}

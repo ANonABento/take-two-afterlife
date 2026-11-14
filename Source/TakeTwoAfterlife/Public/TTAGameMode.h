@@ -19,7 +19,7 @@ class ATTATrapActor;
 
 // Server-side owner of the match state machine; mirrors each accepted phase
 // into ATTAGameState so it replicates to every client.
-UCLASS()
+UCLASS(Config = Game)
 class TAKETWOAFTERLIFE_API ATTAGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
@@ -28,6 +28,9 @@ public:
 	ATTAGameMode();
 
 	// Returns false (and changes nothing) for an illegal transition.
+	// Premiere travels to HeavenMap and a later round's Build back to BackyardMap (seamless,
+	// match state kept in UTTAMatchCarry). Lobby (after the Podium) resets scores, keeps the
+	// players and travels to the session's lobby map with the same room.
 	// Entering Build gives every player an ATTABuildPawn. Entering Run reveals all placements,
 	// gives every player a runner at the PlayerStart, spawns the traps and starts the recording.
 	// Run ends (scored, then Edit) when everyone is through the gate or SmiteHoldSeconds after the timer.
@@ -49,6 +52,8 @@ public:
 
 	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
 	virtual void InitGameState() override;
+	// After seamless travel: a Build that arrived in the Backyard brings back markers and build pawns.
+	virtual void PostSeamlessTravel() override;
 	// Joining is only allowed between rounds (Lobby, Premiere, Podium).
 	virtual void PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
 
@@ -70,9 +75,15 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "TTA") TSubclassOf<ATTARunnerPawn> RunnerPawnClass;
 	// Time the Heaven Cam holds on the smite before Run ends.
 	UPROPERTY(EditDefaultsOnly, Category = "TTA") float SmiteHoldSeconds = 2.f;
+	// Maps from DefaultGame.ini [/Script/TakeTwoAfterlife.TTAGameMode].
+	UPROPERTY(Config) FString BackyardMap;
+	UPROPERTY(Config) FString HeavenMap;
 	UPROPERTY(EditDefaultsOnly, Category = "TTA") FTransform BuildCameraStart = FTransform(FRotator(-30.f, 0.f, 0.f), FVector(-500.f, 0.f, 800.f));
 
 private:
+	// Saves the match to UTTAMatchCarry and server-travels. False (logged) when Map isn't a package.
+	bool TravelTo(const FString& Map);
+	bool ReturnToLobby();
 	void EnterBuild();
 	void EnterRun();
 	void SpawnTraps();
