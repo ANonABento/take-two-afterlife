@@ -56,6 +56,19 @@ struct ClientSettings {
 };
 ClientSettings clampClientSettings(ClientSettings settings);
 
+// Video settings. Same order as Unreal's EWindowMode so the UE side can cast.
+enum class WindowMode { Fullscreen, WindowedFullscreen, Windowed };
+inline constexpr std::array<const char*, 3> kWindowModeNames = {"Fullscreen", "Windowed Fullscreen", "Windowed"};
+
+struct Resolution {
+    int width = 0, height = 0;
+    bool operator==(const Resolution& o) const { return width == o.width && height == o.height; }
+};
+// Resolution picker list: duplicates and non-positive sizes dropped, largest first.
+std::vector<Resolution> resolutionChoices(std::vector<Resolution> supported);
+// Index of `current` in `choices`; 0 (largest) when it isn't listed, -1 when empty.
+int resolutionIndex(const std::vector<Resolution>& choices, Resolution current);
+
 // Empty when START may be pressed; otherwise the tooltip saying why not.
 std::string startBlockedReason(int players, int readyPlayers);
 

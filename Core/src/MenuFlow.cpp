@@ -47,6 +47,23 @@ ClientSettings clampClientSettings(ClientSettings s) {
     return s;
 }
 
+std::vector<Resolution> resolutionChoices(std::vector<Resolution> supported) {
+    supported.erase(std::remove_if(supported.begin(), supported.end(),
+                                   [](const Resolution& r) { return r.width <= 0 || r.height <= 0; }),
+                    supported.end());
+    std::sort(supported.begin(), supported.end(), [](const Resolution& a, const Resolution& b) {
+        return a.width != b.width ? a.width > b.width : a.height > b.height;
+    });
+    supported.erase(std::unique(supported.begin(), supported.end()), supported.end());
+    return supported;
+}
+
+int resolutionIndex(const std::vector<Resolution>& choices, Resolution current) {
+    if (choices.empty()) return -1;
+    const auto it = std::find(choices.begin(), choices.end(), current);
+    return it == choices.end() ? 0 : static_cast<int>(it - choices.begin());
+}
+
 std::string startBlockedReason(int players, int readyPlayers) {
     if (players < 2) return "Need at least 2 players";
     if (readyPlayers < players) return "Waiting for everyone to be ready";
