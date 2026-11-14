@@ -158,6 +158,9 @@ def main():
     couch.set_static_mesh(load_mesh("SM_Heaven_Couch"))
     screen.set_static_mesh(load_mesh("SM_Heaven_Screen"))
     cloud.set_static_mesh(load_mesh("SM_Heaven_Cloud"))
+    # The cinema C++ defaults scale the engine cube/cylinder. The imported meshes are already in centimetres.
+    for comp in (cloud, couch, screen):
+        comp.set_relative_scale3d(unreal.Vector(1.0, 1.0, 1.0))
     couch.set_world_location(origin.transform_location(SEAT), False, False)
     screen.set_world_location(origin.transform_location(SCREEN), False, False)
     for comp, colour in ((cloud, "Bone"), (couch, "Pink"), (screen, "Ink")):
