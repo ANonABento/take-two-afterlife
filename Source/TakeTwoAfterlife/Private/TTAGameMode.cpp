@@ -1,4 +1,5 @@
 #include "TTAGameMode.h"
+#include "Engine/GameInstance.h"
 #include "GameFramework/PlayerState.h"
 #pragma warning(disable: 4458) // local Owner shadows AActor::Owner
 
@@ -24,6 +25,7 @@ ATTAGameMode::ATTAGameMode()
 	GameStateClass = ATTAGameState::StaticClass();
 	HUDClass = ATTABuildHUD::StaticClass();
 	PlayerStateClass = ATTAPlayerState::StaticClass();
+	PlayerControllerClass = ATTAPlayerController::StaticClass();
 	bUseSeamlessTravel = true;
 	BuildPawnClass = ATTABuildPawn::StaticClass();
 	RunnerPawnClass = ATTARunnerPawn::StaticClass();
@@ -56,7 +58,11 @@ bool ATTAGameMode::ReturnToLobby()
 	Layout = tta::Layout{};
 	GetGameState<ATTAGameState>()->SetPhase(ETTAPhase::Lobby, Match.round());
 	// Seamless travel keeps every connection and the session, so the room code stays.
-	TravelTo(GetGameInstance()->GetSubsystem<UTTASessionSubsystem>()->GetLobbyMap());
+	// A world with no game-instance subsystems (automation) has already reset; there is no map to travel to.
+	if (UTTASessionSubsystem* Session = GetGameInstance() ? GetGameInstance()->GetSubsystem<UTTASessionSubsystem>() : nullptr)
+	{
+		TravelTo(Session->GetLobbyMap());
+	}
 	return true;
 }
 
@@ -67,7 +73,13 @@ bool ATTAGameMode::TravelTo(const FString& Map)
 		UE_LOG(LogTemp, Error, TEXT("ATTAGameMode: can't travel to '%s' (set the map in DefaultGame.ini [/Script/TakeTwoAfterlife.TTAGameMode])"), *Map);
 		return false;
 	}
-	GetGameInstance()->GetSubsystem<UTTAMatchCarry>()->Save(Match, Score, Layout);
+	UTTAMatchCarry* Carry = GetGameInstance() ? GetGameInstance()->GetSubsystem<UTTAMatchCarry>() : nullptr;
+	if (!Carry)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ATTAGameMode: no match carry subsystem; staying on this map instead of '%s'"), *Map);
+		return false;
+	}
+	Carry->Save(Match, Score, Layout);
 	return GetWorld()->ServerTravel(Map + TEXT("?listen"));
 }
 
@@ -121,7 +133,10 @@ void ATTAGameMode::InitGame(const FString& MapName, const FString& Options, FStr
 		UE_LOG(LogTemp, Error, TEXT("ATTAGameMode: %s is invalid (%s); using DefaultGame.ini settings"), *Path, UTF8_TO_TCHAR(Error.what()));
 	}
 	// Arrived by travel mid-match: the carried state wins over the settings file.
-	GetGameInstance()->GetSubsystem<UTTAMatchCarry>()->Take(Match, Score, Layout);
+	if (UTTAMatchCarry* Carry = GetGameInstance() ? GetGameInstance()->GetSubsystem<UTTAMatchCarry>() : nullptr)
+	{
+		Carry->Take(Match, Score, Layout);
+	}
 }
 
 void ATTAGameMode::InitGameState()
