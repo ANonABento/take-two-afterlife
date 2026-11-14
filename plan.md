@@ -366,3 +366,8 @@ Scored 1-5 by judges on: ambition/innovation, theme, fun, gameplay, visuals, lev
 - Done: `docs/design/maps.md` (shared library; per map: route, every variant with length/turn/rise/kill volumes/build cells, start/finish, kill zones, build zones, CC0 packs from Kenney, KayKit and Quaternius with links), `docs/design/lobby.md` (podium -> gate -> fall as load screen until all loaded or 20 s -> server seed -> land at Start; late joiners drop in at Start), `Scripts/check_doc_links.py` (browser User-Agent, follows redirects, prints `<status> <url>`, exits 0 only if all 200). `Scripts/tests/test_design_docs.py` checks every map has every field and names every section and variant.
 - Left: the lobby flow is design only; no UE code for the load gate or seed replication yet. Core change for turned paths still pending.
 - Surprises: no pytest or cmake in the sandbox; the doc test is unittest-style like the others. maps.md is hand-maintained, so adding a variant fails the doc test until its table row is added.
+
+### Trap doc task 8 handoff: Commit trap doc
+- Done: `docs/design/traps.md` (7 traps, cameras, blocker proposal) checked against `Core/src/Placement.cpp`; costs and the 12 mapped settings already matched. `Scripts/tests/test_traps_doc.py` checks 7 sections with no empty fields, every setting name in the source, and costs/ranges/defaults for code-mapped traps.
+- Left: code changes the doc describes (TrapType rename, foam pendulum type, footprints/occupancy, blocker item).
+- Surprises: foam pendulum's `swingArc` is not in the code; renamed to `armLength` (same 1-3, default 2 as Spinner) so every doc setting name exists in source.
