@@ -1,0 +1,82 @@
+{
+ "crown": {
+  "dims_xyz_m(blender,Z up)": [
+   0.245,
+   0.25,
+   0.203
+  ],
+  "tris": 2845,
+  "scale": 1.348,
+  "sit_offset_from_head_hat_m": -0.05
+ },
+ "viking-helmet": {
+  "dims_xyz_m(blender,Z up)": [
+   0.19,
+   0.25,
+   0.207
+  ],
+  "tris": 2848,
+  "scale": 1.788,
+  "sit_offset_from_head_hat_m": -0.06
+ },
+ "propeller-beanie": {
+  "dims_xyz_m(blender,Z up)": [
+   0.248,
+   0.208,
+   0.25
+  ],
+  "tris": 2842,
+  "scale": 1.331,
+  "sit_offset_from_head_hat_m": -0.05
+ },
+ "party-cone": {
+  "dims_xyz_m(blender,Z up)": [
+   0.18,
+   0.181,
+   0.25
+  ],
+  "tris": 2802,
+  "scale": 1.164,
+  "sit_offset_from_head_hat_m": -0.02
+ },
+ "traffic-cone": {
+  "dims_xyz_m(blender,Z up)": [
+   0.21,
+   0.208,
+   0.277
+  ],
+  "tris": 2840,
+  "scale": 1.107,
+  "sit_offset_from_head_hat_m": -0.02
+ },
+ "devil-horns": {
+  "dims_xyz_m(blender,Z up)": [
+   0.051,
+   0.231,
+   0.25
+  ],
+  "tris": 2849,
+  "scale": 1.211,
+  "sit_offset_from_head_hat_m": -0.03
+ },
+ "bunny-ears": {
+  "dims_xyz_m(blender,Z up)": [
+   0.05,
+   0.213,
+   0.25
+  ],
+  "tris": 2842,
+  "scale": 1.128,
+  "sit_offset_from_head_hat_m": -0.03
+ },
+ "halo": {
+  "dims_xyz_m(blender,Z up)": [
+   0.3,
+   0.315,
+   0.074
+  ],
+  "tris": 2847,
+  "scale": 1.26,
+  "sit_offset_from_head_hat_m": 0.06
+ }
+}
