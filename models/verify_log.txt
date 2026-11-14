@@ -1,0 +1,14 @@
+rc=0
+CHK SM_Cam_Fixed         OK  tris= 172 pivot=(0.0,0.0,0.0) min=(-10.4,-11.7,0.7) max=(14.8,6.4,40.0) dims=(25.3,18.1,39.3)
+CHK SM_Cam_Follow        OK  tris= 548 pivot=(0.0,0.0,0.0) min=(-21.1,-21.1,-0.0) max=(21.1,21.1,17.1) dims=(42.3,42.3,17.1)
+CHK SM_Cam_Pan           OK  tris= 228 pivot=(0.0,0.0,0.0) min=(-19.0,-11.7,0.7) max=(14.8,6.4,43.0) dims=(33.8,18.1,42.3)
+CHK SM_Cam_TrapCam       OK  tris= 344 pivot=(0.0,0.0,0.0) min=(-20.0,-20.0,-0.0) max=(20.0,20.0,30.4) dims=(40.0,40.0,30.4)
+CHK SM_Trap_Banana       OK  tris=1124 pivot=(0.0,0.0,0.0) min=(-27.7,-15.0,-0.0) max=(27.7,15.0,15.0) dims=(55.5,30.0,15.0)
+CHK SM_Trap_Cannon       OK  tris= 460 pivot=(0.0,0.0,0.0) min=(-44.0,-31.0,-0.0) max=(46.0,31.0,67.5) dims=(90.0,62.0,67.5)
+CHK SM_Trap_CannonBall   OK  tris= 288 pivot=(0.0,0.0,0.0) min=(-50.0,-50.0,-50.0) max=(50.0,50.0,50.0) dims=(100.0,100.0,100.0)
+CHK SM_Trap_Hammer       OK  tris= 244 pivot=(0.0,0.0,0.0) min=(-14.1,-25.0,-91.5) max=(14.1,25.0,7.0) dims=(28.3,50.0,98.5)
+CHK SM_Trap_PusherWall   OK  tris=  36 pivot=(0.0,0.0,0.0) min=(-10.0,-50.0,-0.0) max=(10.2,50.0,100.0) dims=(20.2,100.0,100.0)
+CHK SM_Trap_Spinner      OK  tris= 316 pivot=(0.0,0.0,0.0) min=(-50.0,-22.0,-0.0) max=(50.0,22.0,62.0) dims=(100.0,44.0,62.0)
+CHK SM_Trap_Trapdoor     OK  tris= 268 pivot=(0.0,0.0,0.0) min=(0.0,-50.0,-0.0) max=(100.0,50.0,10.1) dims=(100.0,100.0,10.1)
+FAILS 0
+rc=0
