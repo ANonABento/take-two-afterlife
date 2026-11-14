@@ -1,7 +1,10 @@
 #include "Misc/AutomationTest.h"
 
 #include "Engine/Engine.h"
+#include "Engine/GameInstance.h"
 #include "Engine/World.h"
+#include "GameFramework/GameModeBase.h"
+#include "GameFramework/WorldSettings.h"
 #include "Misc/ScopeExit.h"
 #include "TTAGameMode.h"
 #include "TTAGameState.h"
@@ -34,9 +37,16 @@ bool FTTANetPhaseReplicationTest::RunTest(const FString& Parameters)
 		World->DestroyWorld(false);
 	};
 
-	ATTAGameMode* Mode = World->SpawnActor<ATTAGameMode>();
+	// Spawn through the world so this is the authority game mode, not a loose actor and not AGameModeBase.
+	World->SetGameInstance(NewObject<UGameInstance>(World));
+	World->GetWorldSettings()->DefaultGameMode = ATTAGameMode::StaticClass();
+	if (!TestTrue(TEXT("game mode starts"), World->SetGameMode(FURL()))) return false;
+	World->InitializeActorsForPlay(FURL());
+	ATTAGameMode* Mode = Cast<ATTAGameMode>(World->GetAuthGameMode());
 	if (!TestNotNull(TEXT("game mode"), Mode)) return false;
-	ATTAGameState* Server = Mode->GetGameState<ATTAGameState>();
+	TestTrue(TEXT("spawned ATTAGameMode, not the engine default"), Mode->GetClass() == ATTAGameMode::StaticClass());
+	TestFalse(TEXT("not AGameModeBase"), Mode->GetClass() == AGameModeBase::StaticClass());
+	ATTAGameState* Server = World->GetGameState<ATTAGameState>();
 	if (!TestNotNull(TEXT("game mode spawned ATTAGameState"), Server)) return false;
 	TestTrue(TEXT("game state replicates"), Server->GetIsReplicated());
 

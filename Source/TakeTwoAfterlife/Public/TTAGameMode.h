@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
+#include "GameFramework/PlayerController.h"
 #include "TTAGameState.h"
 #include "TTAPlacementMarker.h"
 #include "tta/MatchFlow.h"
@@ -16,6 +17,13 @@ class ATTABuildPawn;
 class ATTARunDirector;
 class ATTARunnerPawn;
 class ATTATrapActor;
+
+// Match player controller. Title uses ATTATitlePlayerController instead.
+UCLASS()
+class TAKETWOAFTERLIFE_API ATTAPlayerController : public APlayerController
+{
+	GENERATED_BODY()
+};
 
 // Server-side owner of the match state machine; mirrors each accepted phase
 // into ATTAGameState so it replicates to every client.
