@@ -336,3 +336,33 @@ Scored 1-5 by judges on: ambition/innovation, theme, fun, gameplay, visuals, lev
 - Done: `Scripts/make_sfx.py` synthesises 10 SFX (seeded, deterministic) as 16-bit 44.1 kHz mono WAVs in `Audio/SFX/`, 10 ms fades, -1 dBFS peak; WAVs committed. `Scripts/tests/test_make_sfx.py` runs the script into a temp dir and checks format, duration (±10%), peak ≤ 0 dBFS. CREDITS.md row added (in-house, CC0).
 - Left: import the WAVs in UE as the `SFX_*` cues (`trap_place.wav` → `SFX_TrapPlace`, etc.) and listen-test; drop the old Freesound SFX row in CREDITS.md if these replace it.
 - Surprises: file names follow the task (snake_case), not the `SFX_*` ids in `Core/src/AudioCues.cpp`, so import must rename. The sandbox has no cmake, so `make test` stops before the Python tests; they were run directly.
+
+### Maps task 1 handoff: Shared map library
+- Done: `Scripts/maplib/` (grid + corridor read from Placement.h, roles/Prop/footprint/palette, kill plane, credits, validate). `backyard_layout.py` keeps only its zones, kits, dressing, start and gate and calls maplib; public names unchanged, so `build_backyard_map.py` and old tests work as before. `Scripts/tests/data/backyard_golden.json` is the old script's output; `test_maplib.py` checks the new output equals it exactly (props, start, gate, kill plane, zones, kits, meshes), plus role/gap/kill-plane failure cases. `docs/design/path-assumptions.md` lists straight-corridor code.
+- Left: Segment + `generate(map, seed)` (task 2). A Core change task is needed before House: `inCorridor` bounds and 45° rotation steps block turned paths.
+- Surprises: repo tests run with `unittest` (no pytest in the sandbox); new tests are unittest-style and also run under pytest. `maplib.validate` still checks a straight +X path.
+
+### Maps task 2 handoff: Segments and seeds
+- Done: `Scripts/maplib/segment.py`: `Pose` (x, y, z, heading deg), `Segment` (length, exit turn, exit rise, local kill Boxes, local build cells), `place()` (local -> world, optional mirror), `MapDef` (sections of variants), `generate(map, seed)` (seeded `random.Random(f"{name}:{seed}")` picks a variant and a mirror per section, chains exit -> entry), `check_segment` (turn multiple of 15 deg, step up <= 1.5 m, cells on path and on the 0.5 m grid) and `check_layout` (chain <= 1 cm / <= 0.5 deg, length 54-75 m). `Scripts/tests/test_maplib_segment.py` uses a 3-section test map: seeds 0-99 pass, same seed same output, gap and heading-misaligned chain fail, under-1 cm passes, bad segments and short paths fail.
+- Left: map scripts (tasks 3-5) build their props per segment and should call `check_layout` plus the per-section prop checks; `maplib.validate` still checks only a straight +X prop list. Build-cell budget (Req 6) is not checked here yet. Core change for turned paths still pending (see task 1).
+- Surprises: the turn is a pivot at the exit centreline; segments that turn need a corner floor piece so the outer edge has no gap. Width comes from Placement.h (8 m), not per segment.
+
+### Maps task 3 handoff: House layout
+- Done: `Scripts/maps/house.py`: `HOUSE` MapDef, 5 sections in theme order (lawn, shed/drainpipe, bathroom window, counter/sink, bathtub), 2 variants each; `build(seed)` gives start (section 1), finish gate (1 m before section 5 ends), a kill plane spanning the turned path, extra kill volumes and world build cells; `validate()` runs `check_layout` plus Req 5-6. `maplib.grid.budget()` reads kBudget from Placement.h. `Scripts/tests/test_house_map.py` validates seeds 0-99.
+- Left: props/dressing per segment and the .umap build; Sky and Pirate (tasks 4-5) can copy this shape. Core change for turned paths still pending.
+- Surprises: "within kBudget rules" is read as total build cells per layout <= kBudget (100); the real per-player trap cost check stays in Core. Kill plane is computed from the chained path's bounds, since `maplib.kill.kill_plane` assumes a straight +X path.
+
+### Maps task 4 handoff: Sky Construction layout
+- Done: `Scripts/maps/sky.py`: `SKY` MapDef, 5 sections in theme order (crane jib, scaffolding, girders, hook ride, sandpit/dumpster), 2 variants each; `build(seed)`/`validate()` same shape as house.py. Fall gaps are the extra kill volumes; every hook-ride variant has one. `Scripts/tests/test_sky_map.py` validates seeds 0-99.
+- Left: props/dressing and the .umap; Pirate (task 5). Core change for turned paths still pending.
+- Surprises: none; sky.py duplicates house.py's build/validate. If Pirate copies them too, move them into maplib.
+
+### Maps task 5 handoff: Pirate Dungeon layout
+- Done: `Scripts/maps/pirate.py`: `PIRATE` MapDef, 5 sections in theme order (jail cell, torch corridor, sewer, dock planks, ship deck), 2 variants each; `build(seed)`/`validate()` same shape as sky.py. Every sewer variant has water, so every layout has an extra kill volume. `Scripts/tests/test_pirate_map.py` validates seeds 0-99.
+- Left: props/dressing and the .umap; maps + lobby docs (task 6). Core change for turned paths still pending.
+- Surprises: build/validate are now copied three times (house, sky, pirate); a follow-up should move them into maplib. Not done here to keep this patch to one change.
+
+### Maps task 6 handoff: Maps + lobby docs
+- Done: `docs/design/maps.md` (shared library; per map: route, every variant with length/turn/rise/kill volumes/build cells, start/finish, kill zones, build zones, CC0 packs from Kenney, KayKit and Quaternius with links), `docs/design/lobby.md` (podium -> gate -> fall as load screen until all loaded or 20 s -> server seed -> land at Start; late joiners drop in at Start), `Scripts/check_doc_links.py` (browser User-Agent, follows redirects, prints `<status> <url>`, exits 0 only if all 200). `Scripts/tests/test_design_docs.py` checks every map has every field and names every section and variant.
+- Left: the lobby flow is design only; no UE code for the load gate or seed replication yet. Core change for turned paths still pending.
+- Surprises: no pytest or cmake in the sandbox; the doc test is unittest-style like the others. maps.md is hand-maintained, so adding a variant fails the doc test until its table row is added.
