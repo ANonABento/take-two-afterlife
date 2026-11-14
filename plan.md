@@ -289,3 +289,8 @@ Scored 1-5 by judges on: ambition/innovation, theme, fun, gameplay, visuals, lev
 - Done: `Docs/ITCH_PAGE.md` — pitch, short/long description (Director's Cut), controls, how to play (rounds, traps, replay, premiere), tools used, team credits. `Scripts/tests/test_itch_page.py` checks sections and key terms.
 - Left: fill TODOs — gamepad/editor/rating/voice controls, team names/roles, team name, confirm no Meshy assets.
 - Surprises: keyboard bindings came from Config input mappings; editor/rating/voice inputs aren't there, so those are TODO. Plan forbids AI-generated assets, so Meshy is listed as "confirm none".
+
+### Phase timings config
+- Done: `tta::MatchSettings` holds every phase length (rounds 3, Build 120, Run 120, Edit 90, premiere intro 4 / rating 10 / reveal 4 s); `introSeconds`/`revealSeconds` added, `Premiere` takes the settings (the `kIntroMs/kRatingMs/kRevealMs` constants are gone). `parseMatchSettings(json, base)` keeps `base` for missing keys. UE: `UTTAMatchSettings` (UDeveloperSettings) reads `[/Script/TakeTwoAfterlife.TTAMatchSettings]` in DefaultGame.ini (section added with the defaults); `ATTAGameMode::IniSettings()` is the base for the saved host JSON; `ATTACinema::StartPremiere` uses the match's settings. New doctests for custom phase and premiere lengths.
+- Left: compile in UE on Windows (new UCLASS, regenerate project files). Tasks 2-4.
+- Surprises: an existing `Saved/TTA/MatchSettings.json` (written with all keys) still overrides the ini; delete it after changing ini timings. Bad ini values log an error and fall back to code defaults. `ratingSeconds` already existed but Premiere ignored it.

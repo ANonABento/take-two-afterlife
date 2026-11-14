@@ -12,7 +12,20 @@ TEST_CASE("empty object keeps defaults") {
     const MatchSettings s = parseMatchSettings("{}");
     CHECK(s.rounds == 3);
     CHECK(s.editSeconds == 90);
+    CHECK(s.introSeconds == 4);
     CHECK(s.ratingSeconds == 10);
+    CHECK(s.revealSeconds == 4);
+}
+
+TEST_CASE("missing fields keep the base values") {
+    MatchSettings base;
+    base.buildSeconds = 60;
+    base.revealSeconds = 6;
+    const MatchSettings s = parseMatchSettings("{\"runSeconds\": 30}", base);
+    CHECK(s.buildSeconds == 60);
+    CHECK(s.revealSeconds == 6);
+    CHECK(s.runSeconds == 30);
+    CHECK_THROWS_AS(parseMatchSettings("{\"introSeconds\": 0}"), std::invalid_argument);
 }
 
 TEST_CASE("fields load from JSON") {

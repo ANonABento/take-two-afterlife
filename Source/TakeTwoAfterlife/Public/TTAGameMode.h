@@ -38,6 +38,8 @@ public:
 	// then starts the next round's Build, or the Podium after the last round. False outside Premiere.
 	bool EndPremiere(const std::map<int, double>& RatingPoints);
 
+	// Timings from DefaultGame.ini (UTTAMatchSettings); code defaults if the ini is invalid.
+	static tta::MatchSettings IniSettings();
 	// Host settings (plan: Network). Loaded from SettingsPath() in InitGame (written with defaults
 	// when missing) and mirrored to ATTAGameState. Changes only in the Lobby; saved back to the file.
 	// False (nothing changes) outside the Lobby or on JSON tta::parseMatchSettings rejects.

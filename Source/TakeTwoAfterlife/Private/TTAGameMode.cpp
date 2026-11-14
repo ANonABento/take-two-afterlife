@@ -5,6 +5,7 @@
 #include "Engine/World.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "TTAMatchSettings.h"
 #include "GameFramework/PlayerController.h"
 #include "TTABuildHUD.h"
 #include "TTABuildPawn.h"
@@ -35,6 +36,19 @@ bool ATTAGameMode::RequestPhase(ETTAPhase To)
 	return true;
 }
 
+tta::MatchSettings ATTAGameMode::IniSettings()
+{
+	try
+	{
+		return GetDefault<UTTAMatchSettings>()->ToCore();
+	}
+	catch (const std::invalid_argument& Error)
+	{
+		UE_LOG(LogTemp, Error, TEXT("ATTAGameMode: [/Script/TakeTwoAfterlife.TTAMatchSettings] is invalid (%s); using code defaults"), UTF8_TO_TCHAR(Error.what()));
+		return tta::MatchSettings{};
+	}
+}
+
 FString ATTAGameMode::SettingsPath()
 {
 	return FPaths::ProjectSavedDir() / TEXT("TTA/MatchSettings.json");
@@ -43,11 +57,13 @@ FString ATTAGameMode::SettingsPath()
 void ATTAGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
 {
 	Super::InitGame(MapName, Options, ErrorMessage);
+	const tta::MatchSettings Base = IniSettings();
+	Match = tta::MatchStateMachine(Base);
 	const FString Path = SettingsPath();
 	FString Json;
 	if (!FFileHelper::LoadFileToString(Json, *Path))
 	{
-		Json = UTF8_TO_TCHAR(tta::toJson(tta::MatchSettings{}).c_str());
+		Json = UTF8_TO_TCHAR(tta::toJson(Base).c_str());
 		if (!FFileHelper::SaveStringToFile(Json, *Path))
 		{
 			UE_LOG(LogTemp, Error, TEXT("ATTAGameMode: can't write default settings to %s"), *Path);
@@ -55,11 +71,11 @@ void ATTAGameMode::InitGame(const FString& MapName, const FString& Options, FStr
 	}
 	try
 	{
-		Match = tta::MatchStateMachine(tta::parseMatchSettings(TCHAR_TO_UTF8(*Json)));
+		Match = tta::MatchStateMachine(tta::parseMatchSettings(TCHAR_TO_UTF8(*Json), Base));
 	}
 	catch (const std::invalid_argument& Error)
 	{
-		UE_LOG(LogTemp, Error, TEXT("ATTAGameMode: %s is invalid (%s); using default settings"), *Path, UTF8_TO_TCHAR(Error.what()));
+		UE_LOG(LogTemp, Error, TEXT("ATTAGameMode: %s is invalid (%s); using DefaultGame.ini settings"), *Path, UTF8_TO_TCHAR(Error.what()));
 	}
 }
 
@@ -75,7 +91,7 @@ bool ATTAGameMode::ApplySettingsJson(const FString& Json)
 	tta::MatchSettings Settings;
 	try
 	{
-		Settings = tta::parseMatchSettings(TCHAR_TO_UTF8(*Json));
+		Settings = tta::parseMatchSettings(TCHAR_TO_UTF8(*Json), IniSettings());
 	}
 	catch (const std::invalid_argument& Error)
 	{
