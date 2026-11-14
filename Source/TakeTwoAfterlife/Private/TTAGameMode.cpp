@@ -4,7 +4,12 @@
 
 #include "Engine/World.h"
 #include "Misc/FileHelper.h"
+#include "Misc/PackageName.h"
 #include "Misc/Paths.h"
+#include "TTAMatchCarry.h"
+#include "TTAPlayerState.h"
+#include "TTASessionSubsystem.h"
+#include "TTAMatchSettings.h"
 #include "GameFramework/PlayerController.h"
 #include "TTABuildHUD.h"
 #include "TTABuildPawn.h"
@@ -18,6 +23,8 @@ ATTAGameMode::ATTAGameMode()
 {
 	GameStateClass = ATTAGameState::StaticClass();
 	HUDClass = ATTABuildHUD::StaticClass();
+	PlayerStateClass = ATTAPlayerState::StaticClass();
+	bUseSeamlessTravel = true;
 	BuildPawnClass = ATTABuildPawn::StaticClass();
 	RunnerPawnClass = ATTARunnerPawn::StaticClass();
 	PrimaryActorTick.bCanEverTick = true;
@@ -25,14 +32,64 @@ ATTAGameMode::ATTAGameMode()
 
 bool ATTAGameMode::RequestPhase(ETTAPhase To)
 {
+	if (To == ETTAPhase::Lobby) return ReturnToLobby();
 	if (!Match.transition(ToCore(To)))
 	{
 		return false;
 	}
 	GetGameState<ATTAGameState>()->SetPhase(ToUE(Match.phase()), Match.round(), Match.phaseSeconds());
-	if (To == ETTAPhase::Build) EnterBuild();
+	// Round 1 is already in the Backyard; on a failed travel the round still goes on here.
+	if (To == ETTAPhase::Build && (Match.round() == 1 || !TravelTo(BackyardMap))) EnterBuild();
 	if (To == ETTAPhase::Run) EnterRun();
+	if (To == ETTAPhase::Premiere) TravelTo(HeavenMap);
 	return true;
+}
+
+bool ATTAGameMode::ReturnToLobby()
+{
+	std::vector<int> Players;
+	for (const APlayerState* PS : GetGameState<ATTAGameState>()->PlayerArray)
+	{
+		if (PS) Players.push_back(PS->GetPlayerId());
+	}
+	if (!tta::returnToLobby(Match, Score, Players)) return false;
+	Layout = tta::Layout{};
+	GetGameState<ATTAGameState>()->SetPhase(ETTAPhase::Lobby, Match.round());
+	// Seamless travel keeps every connection and the session, so the room code stays.
+	TravelTo(GetGameInstance()->GetSubsystem<UTTASessionSubsystem>()->GetLobbyMap());
+	return true;
+}
+
+bool ATTAGameMode::TravelTo(const FString& Map)
+{
+	if (Map.IsEmpty() || !FPackageName::DoesPackageExist(Map))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ATTAGameMode: can't travel to '%s' (set the map in DefaultGame.ini [/Script/TakeTwoAfterlife.TTAGameMode])"), *Map);
+		return false;
+	}
+	GetGameInstance()->GetSubsystem<UTTAMatchCarry>()->Save(Match, Score, Layout);
+	return GetWorld()->ServerTravel(Map + TEXT("?listen"));
+}
+
+void ATTAGameMode::PostSeamlessTravel()
+{
+	Super::PostSeamlessTravel();
+	if (Match.phase() != tta::Phase::Build) return;
+	for (const tta::Placement& P : Layout.all()) SyncMarker(P.id);
+	EnterBuild();
+}
+
+tta::MatchSettings ATTAGameMode::IniSettings()
+{
+	try
+	{
+		return GetDefault<UTTAMatchSettings>()->ToCore();
+	}
+	catch (const std::invalid_argument& Error)
+	{
+		UE_LOG(LogTemp, Error, TEXT("ATTAGameMode: [/Script/TakeTwoAfterlife.TTAMatchSettings] is invalid (%s); using code defaults"), UTF8_TO_TCHAR(Error.what()));
+		return tta::MatchSettings{};
+	}
 }
 
 FString ATTAGameMode::SettingsPath()
@@ -43,11 +100,13 @@ FString ATTAGameMode::SettingsPath()
 void ATTAGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
 {
 	Super::InitGame(MapName, Options, ErrorMessage);
+	const tta::MatchSettings Base = IniSettings();
+	Match = tta::MatchStateMachine(Base);
 	const FString Path = SettingsPath();
 	FString Json;
 	if (!FFileHelper::LoadFileToString(Json, *Path))
 	{
-		Json = UTF8_TO_TCHAR(tta::toJson(tta::MatchSettings{}).c_str());
+		Json = UTF8_TO_TCHAR(tta::toJson(Base).c_str());
 		if (!FFileHelper::SaveStringToFile(Json, *Path))
 		{
 			UE_LOG(LogTemp, Error, TEXT("ATTAGameMode: can't write default settings to %s"), *Path);
@@ -55,18 +114,22 @@ void ATTAGameMode::InitGame(const FString& MapName, const FString& Options, FStr
 	}
 	try
 	{
-		Match = tta::MatchStateMachine(tta::parseMatchSettings(TCHAR_TO_UTF8(*Json)));
+		Match = tta::MatchStateMachine(tta::parseMatchSettings(TCHAR_TO_UTF8(*Json), Base));
 	}
 	catch (const std::invalid_argument& Error)
 	{
-		UE_LOG(LogTemp, Error, TEXT("ATTAGameMode: %s is invalid (%s); using default settings"), *Path, UTF8_TO_TCHAR(Error.what()));
+		UE_LOG(LogTemp, Error, TEXT("ATTAGameMode: %s is invalid (%s); using DefaultGame.ini settings"), *Path, UTF8_TO_TCHAR(Error.what()));
 	}
+	// Arrived by travel mid-match: the carried state wins over the settings file.
+	GetGameInstance()->GetSubsystem<UTTAMatchCarry>()->Take(Match, Score, Layout);
 }
 
 void ATTAGameMode::InitGameState()
 {
 	Super::InitGameState();
-	GetGameState<ATTAGameState>()->SetSettingsJson(UTF8_TO_TCHAR(tta::toJson(Match.settings()).c_str()));
+	ATTAGameState* State = GetGameState<ATTAGameState>();
+	State->SetSettingsJson(UTF8_TO_TCHAR(tta::toJson(Match.settings()).c_str()));
+	if (Match.phase() != tta::Phase::Lobby) State->SetPhase(ToUE(Match.phase()), Match.round(), Match.phaseSeconds());
 }
 
 bool ATTAGameMode::ApplySettingsJson(const FString& Json)
@@ -75,7 +138,7 @@ bool ATTAGameMode::ApplySettingsJson(const FString& Json)
 	tta::MatchSettings Settings;
 	try
 	{
-		Settings = tta::parseMatchSettings(TCHAR_TO_UTF8(*Json));
+		Settings = tta::parseMatchSettings(TCHAR_TO_UTF8(*Json), IniSettings());
 	}
 	catch (const std::invalid_argument& Error)
 	{

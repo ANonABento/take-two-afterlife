@@ -8,18 +8,21 @@
 
 class UBorder;
 class UButton;
+class UComboBoxString;
 class UPanelWidget;
 class UProgressBar;
 class USlider;
 class UTextBlock;
 class UVerticalBox;
+class UWidget;
 class UWidgetSwitcher;
 
 DECLARE_DELEGATE(FTTAMenuAction);
 DECLARE_DELEGATE_OneParam(FTTAMenuCode, const FString&);
 
 // Front-end menus (plan task 24): Title, Join (code), Lobby (colour / hat / face, room
-// code, START gate), Settings (audio, sensitivity, mic test, accessibility), How to play,
+// code, START gate), Settings (audio, sensitivity, window mode, resolution, mic test,
+// accessibility), How to play,
 // Reels. Screen rules live in Core tta::MenuFlow; this widget builds the tree in C++ and
 // skins it per choomfie ref ui-party-games (sticker cards, Ink outlines, palette colours).
 // The owner binds the delegates to UTTASessionSubsystem / the cut player.
@@ -60,6 +63,11 @@ public:
 	const tta::ClientSettings& GetSettings() const { return Settings; }
 	void SetMicSamples(const int16* Samples, int32 Count);
 	float GetMicLevel() const { return MicLevel; }
+	// Video: applied and saved through UGameUserSettings (GameUserSettings.ini). One fixed
+	// graphics quality, so there are no scalability presets here.
+	void ApplyWindowMode(tta::WindowMode Mode);
+	bool ApplyResolution(int32 ChoiceIndex);
+	int32 NumResolutionChoices() const { return static_cast<int32>(ResolutionChoices.size()); }
 
 	// Reels: reload the gallery from TTAReels::List().
 	void RefreshReels();
@@ -78,6 +86,7 @@ private:
 	FString StartBlockedReason;
 	float MicLevel = 0.f;
 	TArray<FString> Reels;
+	std::vector<tta::Resolution> ResolutionChoices;
 
 	UPROPERTY() TObjectPtr<UWidgetSwitcher> Switcher;
 	UPROPERTY() TObjectPtr<UBorder> JoinCard;
@@ -91,12 +100,22 @@ private:
 	UPROPERTY() TObjectPtr<UButton> StartButton;
 	UPROPERTY() TObjectPtr<UProgressBar> MicMeter;
 	UPROPERTY() TObjectPtr<UTextBlock> SettingsText;
+	UPROPERTY() TObjectPtr<UComboBoxString> WindowModeBox;
+	UPROPERTY() TObjectPtr<UComboBoxString> ResolutionBox;
 	UPROPERTY() TObjectPtr<UVerticalBox> ReelList;
+	// Lilita One (display) / Nunito (body) from /Game/UI/Fonts; null = engine font.
+	UPROPERTY() TObjectPtr<UObject> DisplayFont;
+	UPROPERTY() TObjectPtr<UObject> BodyFont;
 
 	UBorder* Card(UPanelWidget* Parent, int32 Fill);
 	UTextBlock* Label(UPanelWidget* Parent, const FString& Text, int32 Size, bool bDisplay = false);
 	UButton* MenuButton(UPanelWidget* Parent, const FString& Text, int32 Fill);
+	UButton* MenuButton(UPanelWidget* Parent, const FString& Text, int32 Fill, float Width);
+	UVerticalBox* ScreenPanel(float Width);
+	void SettingRow(UPanelWidget* Parent, const FString& Name, UWidget* Control);
 	USlider* SettingSlider(UPanelWidget* Parent, const FString& Name, float Value01);
+	UComboBoxString* SettingCombo(UPanelWidget* Parent, const FString& Name);
+	void RefreshVideo();
 	void RefreshLook();
 	void RefreshSettings();
 
@@ -117,5 +136,7 @@ private:
 	UFUNCTION() void OnMusicChanged(float V) { Settings.music = FMath::RoundToInt(V * 100.f); RefreshSettings(); }
 	UFUNCTION() void OnVoChanged(float V) { Settings.vo = FMath::RoundToInt(V * 100.f); RefreshSettings(); }
 	UFUNCTION() void OnSfxChanged(float V) { Settings.sfx = FMath::RoundToInt(V * 100.f); RefreshSettings(); }
+	UFUNCTION() void OnWindowModeChanged(FString Item, ESelectInfo::Type Select);
+	UFUNCTION() void OnResolutionChanged(FString Item, ESelectInfo::Type Select);
 	UFUNCTION() void OnSensitivityChanged(float V) { Settings.sensitivity = FMath::RoundToInt(V * 500.f); RefreshSettings(); }
 };

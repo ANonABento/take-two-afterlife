@@ -205,3 +205,9 @@ Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prom
 - **Prompt:** clean compiler warnings in our code.
 - **Agent did:** checked the editor rebuilds and the Shipping build log.
 - **Failed / fixed by hand:** there were no `warning C` lines to fix.
+
+## Plan branch — submission docs, settings, heaven travel, menu
+
+- **Prompt:** fold `plan/take-two-afterlife-mwff6y6w` into main (submission text, phase timings, fullscreen and resolution, heaven travel, menu restyle).
+- **Agent did:** merged that branch. Kept the overnight devlog entries above. The other plan branch's task 28–31 notes described work that was already on main, so those notes were not copied over.
+- **Failed / fixed by hand:** Heaven.umap still has to be built before premiere travel works. Font assets `LilitaOne` and `Nunito` are still not imported.
