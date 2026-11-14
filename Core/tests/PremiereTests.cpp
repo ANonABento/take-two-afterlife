@@ -7,6 +7,11 @@
 using namespace tta;
 
 namespace {
+constexpr MatchSettings kDefaults{};
+constexpr std::uint32_t kIntroMs = kDefaults.introSeconds * 1000u;
+constexpr std::uint32_t kRatingMs = kDefaults.ratingSeconds * 1000u;
+constexpr std::uint32_t kRevealMs = kDefaults.revealSeconds * 1000u;
+
 std::vector<PremiereCut> fourCuts() {
     return {{10, {0, 1}, 1, 5000}, {11, {1, 2}, 2, 6000}, {12, {2, 3}, 3, 7000}, {13, {3, 0}, 0, 8000}};
 }
@@ -62,4 +67,23 @@ TEST_CASE("non-final round ends Done; a big tick crosses steps; bad lists throw"
     CHECK_THROWS_AS(p.ratings().averages(2), std::invalid_argument);
     CHECK_THROWS_AS(Premiere({}, 0, false), std::invalid_argument);
     CHECK_THROWS_AS(Premiere({{1, {0, 1}, 1, 10}, {1, {1, 2}, 2, 10}}, 0, false), std::invalid_argument);
+}
+
+TEST_CASE("custom timings change the premiere step lengths") {
+    MatchSettings timings;
+    timings.introSeconds = 2;
+    timings.ratingSeconds = 7;
+    timings.revealSeconds = 3;
+    Premiere p({{1, {0, 1}, 1, 1000}}, 0, false, timings);
+    CHECK(p.stepLengthMs() == 2000);
+    p.advance(2000);
+    CHECK(p.step() == PremiereStep::Playback);
+    p.advance(1000);
+    CHECK(p.stepLengthMs() == 7000);
+    p.advance(7000);
+    CHECK(p.stepLengthMs() == 3000);
+    p.advance(2999);
+    CHECK(p.step() == PremiereStep::Reveal);
+    p.advance(1);
+    CHECK(p.step() == PremiereStep::Done);
 }

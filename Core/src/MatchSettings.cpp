@@ -20,15 +20,17 @@ const Field kFields[] = {
     {"buildSeconds", &MatchSettings::buildSeconds, 10, 600},
     {"runSeconds", &MatchSettings::runSeconds, 10, 600},
     {"editSeconds", &MatchSettings::editSeconds, 10, 600},
+    {"introSeconds", &MatchSettings::introSeconds, 1, 60},
     {"ratingSeconds", &MatchSettings::ratingSeconds, 1, 60},
+    {"revealSeconds", &MatchSettings::revealSeconds, 1, 60},
 };
 
 class Parser {
 public:
-    explicit Parser(const std::string& text) : text_(text) {}
+    Parser(const std::string& text, const MatchSettings& base) : text_(text), base_(base) {}
 
     MatchSettings parse() {
-        MatchSettings settings;
+        MatchSettings settings = base_;
         expect('{');
         if (peek() == '}') {
             ++pos_;
@@ -97,13 +99,14 @@ private:
     }
 
     const std::string& text_;
+    const MatchSettings& base_;
     size_t pos_ = 0;
 };
 
 } // namespace
 
-MatchSettings parseMatchSettings(const std::string& json) {
-    return Parser(json).parse();
+MatchSettings parseMatchSettings(const std::string& json, const MatchSettings& base) {
+    return Parser(json, base).parse();
 }
 
 MatchSettings loadMatchSettings(const std::string& path) {
