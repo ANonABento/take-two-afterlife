@@ -22,6 +22,10 @@ std::vector<int> runPlayers(const std::vector<int>& runners, const Layout& layou
 // Maps a Run's RoundInput from replay ids (indices into `ids`) to player ids.
 // Replay ids below `runnerCount` are runners (`players`); the rest become
 // `absentOwners`. Throws std::invalid_argument on a replay id outside `ids`.
+// Podium -> Lobby (plan req 4): same room, new match. Round goes back to 0 and scores
+// to 0 for every player still in the room (`players`). False (nothing changes) outside Podium.
+bool returnToLobby(MatchStateMachine& match, MatchScore& score, const std::vector<int>& players);
+
 RoundInput toPlayerIds(const RoundInput& run, const std::vector<int>& ids, std::size_t runnerCount);
 
 } // namespace tta

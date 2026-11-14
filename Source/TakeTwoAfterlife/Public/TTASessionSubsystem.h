@@ -28,6 +28,8 @@ public:
 
 	// The code the host shows in the lobby; empty until HostLobby succeeds.
 	UFUNCTION(BlueprintPure) FString GetJoinCode() const { return JoinCode; }
+	// The lobby map; ATTAGameMode travels back here after the Podium.
+	const FString& GetLobbyMap() const { return LobbyMap; }
 
 	UPROPERTY(BlueprintAssignable) FTTASessionResultSignature OnLoginComplete;
 	// Message is the join code on success.

@@ -67,4 +67,10 @@ std::vector<int> MatchScore::podium() const {
     return order;
 }
 
+void MatchScore::reset(const std::vector<int>& players) {
+    totals_.clear();
+    for (int p : players) totals_[p] = 0.0;
+    rounds_ = 0;
+}
+
 } // namespace tta
