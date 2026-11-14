@@ -351,3 +351,8 @@ Scored 1-5 by judges on: ambition/innovation, theme, fun, gameplay, visuals, lev
 - Done: `Scripts/maps/house.py`: `HOUSE` MapDef, 5 sections in theme order (lawn, shed/drainpipe, bathroom window, counter/sink, bathtub), 2 variants each; `build(seed)` gives start (section 1), finish gate (1 m before section 5 ends), a kill plane spanning the turned path, extra kill volumes and world build cells; `validate()` runs `check_layout` plus Req 5-6. `maplib.grid.budget()` reads kBudget from Placement.h. `Scripts/tests/test_house_map.py` validates seeds 0-99.
 - Left: props/dressing per segment and the .umap build; Sky and Pirate (tasks 4-5) can copy this shape. Core change for turned paths still pending.
 - Surprises: "within kBudget rules" is read as total build cells per layout <= kBudget (100); the real per-player trap cost check stays in Core. Kill plane is computed from the chained path's bounds, since `maplib.kill.kill_plane` assumes a straight +X path.
+
+### Maps task 4 handoff: Sky Construction layout
+- Done: `Scripts/maps/sky.py`: `SKY` MapDef, 5 sections in theme order (crane jib, scaffolding, girders, hook ride, sandpit/dumpster), 2 variants each; `build(seed)`/`validate()` same shape as house.py. Fall gaps are the extra kill volumes; every hook-ride variant has one. `Scripts/tests/test_sky_map.py` validates seeds 0-99.
+- Left: props/dressing and the .umap; Pirate (task 5). Core change for turned paths still pending.
+- Surprises: none; sky.py duplicates house.py's build/validate. If Pirate copies them too, move them into maplib.
