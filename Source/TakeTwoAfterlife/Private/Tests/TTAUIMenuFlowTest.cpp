@@ -54,6 +54,7 @@ bool FTTAUIMenuFlowTest::RunTest(const FString& Parameters)
 	Menu->SetSettings(Loud);
 	TestEqual(TEXT("volume clamped"), Menu->GetSettings().master, 100);
 	TestEqual(TEXT("sensitivity clamped"), Menu->GetSettings().sensitivity, 10);
+	TestFalse(TEXT("out-of-range resolution refused"), Menu->ApplyResolution(Menu->NumResolutionChoices()));
 	const int16 Samples[] = {0, 16384, -8000};
 	Menu->SetMicSamples(Samples, 3);
 	TestTrue(TEXT("mic meter ~0.5"), FMath::IsNearlyEqual(Menu->GetMicLevel(), 0.5f, 0.01f));

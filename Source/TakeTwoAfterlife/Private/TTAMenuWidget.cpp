@@ -3,6 +3,7 @@
 #include "Blueprint/WidgetTree.h"
 #include "Components/Border.h"
 #include "Components/Button.h"
+#include "Components/ComboBoxString.h"
 #include "Components/EditableTextBox.h"
 #include "Components/HorizontalBox.h"
 #include "Components/ProgressBar.h"
@@ -10,6 +11,8 @@
 #include "Components/TextBlock.h"
 #include "Components/VerticalBox.h"
 #include "Components/WidgetSwitcher.h"
+#include "GameFramework/GameUserSettings.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "Misc/Paths.h"
 #include "TTAReels.h"
 #include "tta/JoinCode.h"
@@ -84,6 +87,16 @@ USlider* UTTAMenuWidget::SettingSlider(UPanelWidget* Parent, const FString& Name
 	return Slider;
 }
 
+UComboBoxString* UTTAMenuWidget::SettingCombo(UPanelWidget* Parent, const FString& Name)
+{
+	UHorizontalBox* Row = WidgetTree->ConstructWidget<UHorizontalBox>();
+	Label(Row, Name, kSmall);
+	UComboBoxString* Combo = WidgetTree->ConstructWidget<UComboBoxString>();
+	Row->AddChild(Combo);
+	Parent->AddChild(Row);
+	return Combo;
+}
+
 void UTTAMenuWidget::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
@@ -152,6 +165,12 @@ void UTTAMenuWidget::NativeOnInitialized()
 		SettingSlider(Inner, TEXT("Voice"), Settings.vo / 100.f)->OnValueChanged.AddDynamic(this, &UTTAMenuWidget::OnVoChanged);
 		SettingSlider(Inner, TEXT("SFX"), Settings.sfx / 100.f)->OnValueChanged.AddDynamic(this, &UTTAMenuWidget::OnSfxChanged);
 		SettingSlider(Inner, TEXT("Mouse sensitivity"), Settings.sensitivity / 500.f)->OnValueChanged.AddDynamic(this, &UTTAMenuWidget::OnSensitivityChanged);
+		WindowModeBox = SettingCombo(Inner, TEXT("Display"));
+		for (const char* Name : tta::kWindowModeNames) WindowModeBox->AddOption(UTF8_TO_TCHAR(Name));
+		WindowModeBox->OnSelectionChanged.AddDynamic(this, &UTTAMenuWidget::OnWindowModeChanged);
+		ResolutionBox = SettingCombo(Inner, TEXT("Resolution"));
+		ResolutionBox->OnSelectionChanged.AddDynamic(this, &UTTAMenuWidget::OnResolutionChanged);
+		RefreshVideo();
 		Label(Inner, TEXT("Mic test"), kSmall);
 		MicMeter = WidgetTree->ConstructWidget<UProgressBar>();
 		MicMeter->SetFillColorAndOpacity(Palette(tta::kGrass));
@@ -297,6 +316,67 @@ void UTTAMenuWidget::RefreshSettings()
 	Settings = tta::clampClientSettings(Settings);
 	SettingsText->SetText(FText::FromString(FString::Printf(TEXT("Master %d  Music %d  Voice %d  SFX %d  Sensitivity %d%%"),
 		Settings.master, Settings.music, Settings.vo, Settings.sfx, Settings.sensitivity)));
+}
+
+static_assert(static_cast<int32>(tta::WindowMode::Fullscreen) == EWindowMode::Fullscreen
+	&& static_cast<int32>(tta::WindowMode::WindowedFullscreen) == EWindowMode::WindowedFullscreen
+	&& static_cast<int32>(tta::WindowMode::Windowed) == EWindowMode::Windowed,
+	"tta::WindowMode must match EWindowMode");
+
+void UTTAMenuWidget::RefreshVideo()
+{
+	UGameUserSettings* Video = UGameUserSettings::GetGameUserSettings();
+	check(Video);
+	TArray<FIntPoint> Supported;
+	if (!UKismetSystemLibrary::GetSupportedFullscreenResolutions(Supported))
+	{
+		UE_LOG(LogTTAMenu, Warning, TEXT("No supported fullscreen resolutions reported; resolution list is empty"));
+	}
+	std::vector<tta::Resolution> Raw;
+	for (const FIntPoint& R : Supported) Raw.push_back({R.X, R.Y});
+	ResolutionChoices = tta::resolutionChoices(std::move(Raw));
+
+	ResolutionBox->ClearOptions();
+	for (const tta::Resolution& R : ResolutionChoices) ResolutionBox->AddOption(FString::Printf(TEXT("%d x %d"), R.width, R.height));
+	const FIntPoint Current = Video->GetScreenResolution();
+	const int32 Index = tta::resolutionIndex(ResolutionChoices, {Current.X, Current.Y});
+	if (Index >= 0) ResolutionBox->SetSelectedIndex(Index);
+	WindowModeBox->SetSelectedIndex(static_cast<int32>(Video->GetFullscreenMode()));
+}
+
+void UTTAMenuWidget::ApplyWindowMode(tta::WindowMode Mode)
+{
+	UGameUserSettings* Video = UGameUserSettings::GetGameUserSettings();
+	check(Video);
+	Video->SetFullscreenMode(EWindowMode::ConvertIntToWindowMode(static_cast<int32>(Mode)));
+	Video->ApplySettings(false);
+}
+
+bool UTTAMenuWidget::ApplyResolution(int32 ChoiceIndex)
+{
+	if (ChoiceIndex < 0 || ChoiceIndex >= NumResolutionChoices())
+	{
+		UE_LOG(LogTTAMenu, Warning, TEXT("Resolution choice %d out of range (%d choices)"), ChoiceIndex, NumResolutionChoices());
+		return false;
+	}
+	UGameUserSettings* Video = UGameUserSettings::GetGameUserSettings();
+	check(Video);
+	const tta::Resolution& R = ResolutionChoices[ChoiceIndex];
+	Video->SetScreenResolution(FIntPoint(R.width, R.height));
+	Video->ApplySettings(false);
+	return true;
+}
+
+void UTTAMenuWidget::OnWindowModeChanged(FString Item, ESelectInfo::Type Select)
+{
+	if (Select == ESelectInfo::Direct) return;  // set by RefreshVideo, not the player
+	ApplyWindowMode(static_cast<tta::WindowMode>(WindowModeBox->GetSelectedIndex()));
+}
+
+void UTTAMenuWidget::OnResolutionChanged(FString Item, ESelectInfo::Type Select)
+{
+	if (Select == ESelectInfo::Direct) return;
+	ApplyResolution(ResolutionBox->GetSelectedIndex());
 }
 
 void UTTAMenuWidget::SetMicSamples(const int16* Samples, int32 Count)

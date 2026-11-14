@@ -46,3 +46,21 @@ TEST_CASE("settings clamp, start gate and mic meter") {
     CHECK(micLevel(buf, 3) == doctest::Approx(1.f));
     CHECK(micLevel(buf, 1) == 0.f);
 }
+
+TEST_CASE("resolution picker list is deduped, largest first, and finds the current size") {
+    const auto choices = resolutionChoices({{1280, 720}, {1920, 1080}, {0, 0}, {1920, 1080}, {1920, 1200}, {800, -1}});
+    REQUIRE(choices.size() == 3);
+    CHECK(choices[0] == Resolution{1920, 1200});
+    CHECK(choices[1] == Resolution{1920, 1080});
+    CHECK(choices[2] == Resolution{1280, 720});
+    CHECK(resolutionIndex(choices, {1920, 1080}) == 1);
+    CHECK(resolutionIndex(choices, {1024, 768}) == 0);
+    CHECK(resolutionIndex({}, {1920, 1080}) == -1);
+}
+
+TEST_CASE("window modes follow Unreal's EWindowMode order") {
+    CHECK(static_cast<int>(WindowMode::Fullscreen) == 0);
+    CHECK(static_cast<int>(WindowMode::WindowedFullscreen) == 1);
+    CHECK(static_cast<int>(WindowMode::Windowed) == 2);
+    CHECK(std::string(kWindowModeNames[1]) == "Windowed Fullscreen");
+}
