@@ -44,6 +44,8 @@ ATTARunnerPawn::ATTARunnerPawn()
 
 void ATTARunnerPawn::BeginPlay()
 {
+	// CDO config can be missed on a pawn spawned before the class ini is applied; read DefaultGame.ini here.
+	LoadConfig();
 	if (!RunnerMesh.IsNull())
 	{
 		USkeletalMesh* Loaded = RunnerMesh.LoadSynchronous();
@@ -58,7 +60,10 @@ void ATTARunnerPawn::BeginPlay()
 	MeshRelative = GetMesh()->GetRelativeTransform();
 	for (int32 Slot = 0; Slot < GetMesh()->GetNumMaterials(); ++Slot)
 	{
-		FlashMaterials.Add(GetMesh()->CreateAndSetMaterialInstanceDynamic(Slot));
+		if (UMaterialInstanceDynamic* Mid = GetMesh()->CreateAndSetMaterialInstanceDynamic(Slot))
+		{
+			FlashMaterials.Add(Mid);
+		}
 	}
 	SetForm(Form);
 }
@@ -140,11 +145,17 @@ void ATTARunnerPawn::Tick(float DeltaSeconds)
 
 void ATTARunnerPawn::AdvanceLife(float WorldDeltaSeconds)
 {
-	switch (Life.advance(WorldDeltaSeconds))
+	// PawnLife applies one transition and drops the rest of dt. Feed it short slices so a
+	// hitch (or a test that passes the whole recovery) still walks Frozen -> Ragdoll -> Alive.
+	constexpr float Step = 0.05f;
+	for (float Left = WorldDeltaSeconds; Left > 0.f && Life.state() != tta::LifeState::Alive; Left -= Step)
 	{
-	case tta::LifeEvent::StartRagdoll: StartRagdoll(); break;
-	case tta::LifeEvent::Respawn: Respawn(); break;
-	case tta::LifeEvent::None: break;
+		switch (Life.advance(FMath::Min(Left, Step)))
+		{
+		case tta::LifeEvent::StartRagdoll: StartRagdoll(); break;
+		case tta::LifeEvent::Respawn: Respawn(); break;
+		case tta::LifeEvent::None: break;
+		}
 	}
 }
 
@@ -153,7 +164,7 @@ void ATTARunnerPawn::SetFlash(float Value)
 	Flash = Value;
 	for (UMaterialInstanceDynamic* Material : FlashMaterials)
 	{
-		Material->SetScalarParameterValue(FlashParam, Value);
+		if (Material) Material->SetScalarParameterValue(FlashParam, Value);
 	}
 }
 

@@ -3,8 +3,10 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/Engine.h"
+#include "Engine/GameInstance.h"
 #include "Engine/World.h"
 #include "GameFramework/WorldSettings.h"
+#include "TTAGameMode.h"
 #include "TTARunnerPawn.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -18,6 +20,10 @@ bool FTTAPawnRagdollTest::RunTest(const FString& Parameters)
 	UWorld* World = UWorld::CreateWorld(EWorldType::Game, false);
 	FWorldContext& Context = GEngine->CreateNewWorldContext(EWorldType::Game);
 	Context.SetCurrentWorld(World);
+	World->SetGameInstance(NewObject<UGameInstance>(World));
+	World->GetWorldSettings()->DefaultGameMode = ATTAGameMode::StaticClass();
+	if (!TestTrue(TEXT("game mode starts"), World->SetGameMode(FURL()))) return false;
+	TestTrue(TEXT("spawned ATTAGameMode, not the engine default"), World->GetAuthGameMode()->GetClass() == ATTAGameMode::StaticClass());
 	World->InitializeActorsForPlay(FURL());
 	World->BeginPlay();
 

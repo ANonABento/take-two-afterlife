@@ -2,6 +2,14 @@
 
 #include "TTAMenuWidget.h"
 #include "TTAReels.h"
+#include "TTAGameMode.h"
+
+#include "Engine/Engine.h"
+#include "Engine/GameInstance.h"
+#include "Engine/LocalPlayer.h"
+#include "Engine/World.h"
+#include "GameFramework/WorldSettings.h"
+#include "Misc/ScopeExit.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -13,7 +21,41 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTTAUIMenuFlowTest, "TTA.UI.MenuFlow",
 
 bool FTTAUIMenuFlowTest::RunTest(const FString& Parameters)
 {
-	UTTAMenuWidget* Menu = NewObject<UTTAMenuWidget>();
+	if (!GEngine)
+	{
+		AddInfo(TEXT("no engine; skipping"));
+		return true;
+	}
+	UWorld* World = UWorld::CreateWorld(EWorldType::Game, false);
+	if (!World)
+	{
+		AddInfo(TEXT("no world; skipping"));
+		return true;
+	}
+	FWorldContext& Context = GEngine->CreateNewWorldContext(EWorldType::Game);
+	Context.SetCurrentWorld(World);
+	ON_SCOPE_EXIT
+	{
+		GEngine->DestroyWorldContext(World);
+		World->DestroyWorld(false);
+	};
+
+	UGameInstance* Instance = NewObject<UGameInstance>(World);
+	World->SetGameInstance(Instance);
+	World->GetWorldSettings()->DefaultGameMode = ATTAGameMode::StaticClass();
+	if (!TestTrue(TEXT("game mode starts"), World->SetGameMode(FURL()))) return false;
+	World->InitializeActorsForPlay(FURL());
+	World->BeginPlay();
+
+	ULocalPlayer* LocalPlayer = NewObject<ULocalPlayer>(GEngine, GEngine->LocalPlayerClass);
+	const AGameModeBase* Mode = World->GetAuthGameMode();
+	APlayerController* PC = World->SpawnActor<APlayerController>(Mode ? Mode->PlayerControllerClass.Get() : ATTAPlayerController::StaticClass());
+	if (!TestNotNull(TEXT("local controller"), PC) || !TestNotNull(TEXT("local player"), LocalPlayer)) return false;
+	PC->SetPlayer(LocalPlayer);
+
+	UTTAMenuWidget* Menu = NewObject<UTTAMenuWidget>(PC);
+	Menu->SetPlayerContext(FLocalPlayerContext(LocalPlayer, World));
+	if (!TestNotNull(TEXT("widget created"), Menu)) return false;
 	if (!TestTrue(TEXT("widget initialized"), Menu->Initialize())) return false;
 	auto Shows = [&](tta::MenuScreen Screen, const TCHAR* What)
 	{
