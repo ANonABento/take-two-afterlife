@@ -356,3 +356,8 @@ Scored 1-5 by judges on: ambition/innovation, theme, fun, gameplay, visuals, lev
 - Done: `Scripts/maps/sky.py`: `SKY` MapDef, 5 sections in theme order (crane jib, scaffolding, girders, hook ride, sandpit/dumpster), 2 variants each; `build(seed)`/`validate()` same shape as house.py. Fall gaps are the extra kill volumes; every hook-ride variant has one. `Scripts/tests/test_sky_map.py` validates seeds 0-99.
 - Left: props/dressing and the .umap; Pirate (task 5). Core change for turned paths still pending.
 - Surprises: none; sky.py duplicates house.py's build/validate. If Pirate copies them too, move them into maplib.
+
+### Maps task 5 handoff: Pirate Dungeon layout
+- Done: `Scripts/maps/pirate.py`: `PIRATE` MapDef, 5 sections in theme order (jail cell, torch corridor, sewer, dock planks, ship deck), 2 variants each; `build(seed)`/`validate()` same shape as sky.py. Every sewer variant has water, so every layout has an extra kill volume. `Scripts/tests/test_pirate_map.py` validates seeds 0-99.
+- Left: props/dressing and the .umap; maps + lobby docs (task 6). Core change for turned paths still pending.
+- Surprises: build/validate are now copied three times (house, sky, pirate); a follow-up should move them into maplib. Not done here to keep this patch to one change.
