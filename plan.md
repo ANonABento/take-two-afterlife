@@ -336,3 +336,8 @@ Scored 1-5 by judges on: ambition/innovation, theme, fun, gameplay, visuals, lev
 - Done: `Scripts/make_sfx.py` synthesises 10 SFX (seeded, deterministic) as 16-bit 44.1 kHz mono WAVs in `Audio/SFX/`, 10 ms fades, -1 dBFS peak; WAVs committed. `Scripts/tests/test_make_sfx.py` runs the script into a temp dir and checks format, duration (±10%), peak ≤ 0 dBFS. CREDITS.md row added (in-house, CC0).
 - Left: import the WAVs in UE as the `SFX_*` cues (`trap_place.wav` → `SFX_TrapPlace`, etc.) and listen-test; drop the old Freesound SFX row in CREDITS.md if these replace it.
 - Surprises: file names follow the task (snake_case), not the `SFX_*` ids in `Core/src/AudioCues.cpp`, so import must rename. The sandbox has no cmake, so `make test` stops before the Python tests; they were run directly.
+
+### Maps task 1 handoff: Shared map library
+- Done: `Scripts/maplib/` (grid + corridor read from Placement.h, roles/Prop/footprint/palette, kill plane, credits, validate). `backyard_layout.py` keeps only its zones, kits, dressing, start and gate and calls maplib; public names unchanged, so `build_backyard_map.py` and old tests work as before. `Scripts/tests/data/backyard_golden.json` is the old script's output; `test_maplib.py` checks the new output equals it exactly (props, start, gate, kill plane, zones, kits, meshes), plus role/gap/kill-plane failure cases. `docs/design/path-assumptions.md` lists straight-corridor code.
+- Left: Segment + `generate(map, seed)` (task 2). A Core change task is needed before House: `inCorridor` bounds and 45° rotation steps block turned paths.
+- Surprises: repo tests run with `unittest` (no pytest in the sandbox); new tests are unittest-style and also run under pytest. `maplib.validate` still checks a straight +X path.
