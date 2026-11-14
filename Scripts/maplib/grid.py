@@ -23,6 +23,14 @@ def corridor():
     return _read("kCorridorLengthMeters"), _read("kCorridorWidthMeters")
 
 
+def budget():
+    """Per-player build budget (kBudget)."""
+    m = re.search(r"constexpr int kBudget = (\d+);", PLACEMENT_H.read_text(encoding="utf-8"))
+    if not m:
+        raise ValueError("Placement.h has no kBudget")
+    return int(m.group(1))
+
+
 def grid_meters():
     return _read("kGridMeters")
 
