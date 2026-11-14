@@ -14,6 +14,7 @@ class UProgressBar;
 class USlider;
 class UTextBlock;
 class UVerticalBox;
+class UWidget;
 class UWidgetSwitcher;
 
 DECLARE_DELEGATE(FTTAMenuAction);
@@ -99,10 +100,16 @@ private:
 	UPROPERTY() TObjectPtr<UComboBoxString> WindowModeBox;
 	UPROPERTY() TObjectPtr<UComboBoxString> ResolutionBox;
 	UPROPERTY() TObjectPtr<UVerticalBox> ReelList;
+	// Lilita One (display) / Nunito (body) from /Game/UI/Fonts; null = engine font.
+	UPROPERTY() TObjectPtr<UObject> DisplayFont;
+	UPROPERTY() TObjectPtr<UObject> BodyFont;
 
 	UBorder* Card(UPanelWidget* Parent, int32 Fill);
 	UTextBlock* Label(UPanelWidget* Parent, const FString& Text, int32 Size, bool bDisplay = false);
 	UButton* MenuButton(UPanelWidget* Parent, const FString& Text, int32 Fill);
+	UButton* MenuButton(UPanelWidget* Parent, const FString& Text, int32 Fill, float Width);
+	UVerticalBox* ScreenPanel(float Width);
+	void SettingRow(UPanelWidget* Parent, const FString& Name, UWidget* Control);
 	USlider* SettingSlider(UPanelWidget* Parent, const FString& Name, float Value01);
 	UComboBoxString* SettingCombo(UPanelWidget* Parent, const FString& Name);
 	void RefreshVideo();
