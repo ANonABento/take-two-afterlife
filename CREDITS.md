@@ -20,6 +20,7 @@ TODO: fill in track titles/artists, Freesound ids/authors and the ElevenLabs voi
 | Asset | Author | License | Source |
 |---|---|---|---|
 | Narrator voice, 60 lines `VO_*` (script exported by `Core/tools/vo_script.cpp` → `build/tta_vo_script`; voice/model: TODO) | ElevenLabs text-to-speech, script by Kevin | ElevenLabs Free tier: attribution required ("Voice generated with ElevenLabs, elevenlabs.io") | https://elevenlabs.io |
+| SFX pack `Audio/SFX/*.wav`: trap_place, countdown_beep, clock_tick, bonk, thunder, gate_chime, projector_start, rating_ding, applause, fanfare (synthesised by `Scripts/make_sfx.py`, numpy + wave) | generated in-house | CC0 1.0 | `Scripts/make_sfx.py` |
 | Music `MUS_Lobby`, `MUS_Build`, `MUS_Run`, `MUS_Edit`, `MUS_Premiere`, `MUS_Podium` (one track per phase; fill in track titles/artists) | WeLoveIndies artists | WeLoveIndies licence (check terms on download) | https://www.weloveindies.com |
 | SFX `SFX_TrapPlace`, `SFX_CountdownBeep`, `SFX_ClockTick`, `SFX_ImpactBonk`, `SFX_Thunder`, `SFX_GateChime`, `SFX_ProjectorStart`, `SFX_RatingDing`, `SFX_Applause`, `SFX_Fanfare` (fill in each Freesound sound id/author; CC0 preferred, CC-BY credited here) | Freesound / Kenney audio packs | CC0 1.0 / CC-BY 4.0 per sound | https://freesound.org, https://kenney.nl/assets/category:Audio |
 
