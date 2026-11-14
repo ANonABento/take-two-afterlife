@@ -1,5 +1,6 @@
 #pragma once
 
+#include "tta/MatchSettings.h"
 #include "tta/Ratings.h"
 
 #include <cstddef>
@@ -7,11 +8,6 @@
 #include <vector>
 
 namespace tta {
-
-// Premiere timing (plan: Cinema). Playback lasts the cut's own length.
-constexpr std::uint32_t kIntroMs = 4000;   // narrator: director + victim
-constexpr std::uint32_t kRatingMs = 10000; // everyone rates Funny + Evil
-constexpr std::uint32_t kRevealMs = 4000;  // score reveal
 
 enum class PremiereStep { Intro, Playback, Rating, Reveal, Podium, Done };
 
@@ -24,10 +20,11 @@ struct PremiereCut {
 
 // One round's premiere: cuts in a seeded random order, each going
 // Intro -> Playback -> Rating -> Reveal; then Podium on the final round, else Done.
+// Intro/Rating/Reveal lengths come from `timings`; Playback lasts the cut's own length.
 class Premiere {
 public:
     // Throws std::invalid_argument on an empty list or a repeated cut id.
-    Premiere(std::vector<PremiereCut> cuts, std::uint32_t seed, bool finalRound);
+    Premiere(std::vector<PremiereCut> cuts, std::uint32_t seed, bool finalRound, const MatchSettings& timings = {});
 
     // Moves the clock; may cross several steps. No-op on Podium / Done.
     void advance(std::uint32_t ms);
@@ -51,6 +48,9 @@ private:
     std::vector<PremiereCut> order_;
     RatingBook ratings_;
     bool finalRound_;
+    std::uint32_t introMs_;
+    std::uint32_t ratingMs_;
+    std::uint32_t revealMs_;
     std::size_t index_ = 0;
     PremiereStep step_ = PremiereStep::Intro;
     std::uint32_t elapsedMs_ = 0;

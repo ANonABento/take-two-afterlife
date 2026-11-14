@@ -4,6 +4,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Materials/MaterialParameterCollection.h"
 #include "TTACutPlayer.h"
+#include "TTAGameMode.h"
 #include "TTAMicPlayer.h"
 #include "TTAWorldLook.h"
 #include "UObject/ConstructorHelpers.h"
@@ -88,7 +89,10 @@ void ATTACinema::StartPremiere(const TArray<FTTACinemaCut>& Cuts, uint32 Seed, b
 		Core.push_back({C.CutId, C.Cut, C.Victim, C.Edit.durationMs()});
 		CutsById.emplace(C.CutId, C);
 	}
-	Premiere = std::make_unique<tta::Premiere>(std::move(Core), Seed, bFinalRound);
+	// The match's timings on a TTA server; ini timings when no TTA game mode runs (tests, preview).
+	const ATTAGameMode* Mode = GetWorld()->GetAuthGameMode<ATTAGameMode>();
+	const tta::MatchSettings Timings = Mode ? Mode->GetSettings() : ATTAGameMode::IniSettings();
+	Premiere = std::make_unique<tta::Premiere>(std::move(Core), Seed, bFinalRound, Timings);
 	FinalPodium = Podium;
 	ShownPodium.Reset();
 	StepRemainder = 0.f;

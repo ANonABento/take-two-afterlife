@@ -67,3 +67,21 @@ TEST_CASE("phase timers come from settings") {
 TEST_CASE("phase names") {
     CHECK(std::string(tta::phaseName(Phase::Premiere)) == "Premiere");
 }
+
+TEST_CASE("custom settings change phase lengths and round count") {
+    tta::MatchSettings s;
+    s.rounds = 1;
+    s.buildSeconds = 30;
+    s.runSeconds = 45;
+    s.editSeconds = 20;
+    MatchStateMachine m{s};
+    REQUIRE(m.transition(Phase::Build));
+    CHECK(m.phaseSeconds() == 30);
+    REQUIRE(m.transition(Phase::Run));
+    CHECK(m.phaseSeconds() == 45);
+    REQUIRE(m.transition(Phase::Edit));
+    CHECK(m.phaseSeconds() == 20);
+    REQUIRE(m.transition(Phase::Premiere));
+    CHECK_FALSE(m.transition(Phase::Build));
+    CHECK(m.transition(Phase::Podium));
+}

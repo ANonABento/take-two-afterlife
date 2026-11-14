@@ -8,8 +8,12 @@
 
 namespace tta {
 
-Premiere::Premiere(std::vector<PremiereCut> cuts, std::uint32_t seed, bool finalRound)
-    : order_(std::move(cuts)), finalRound_(finalRound) {
+Premiere::Premiere(std::vector<PremiereCut> cuts, std::uint32_t seed, bool finalRound, const MatchSettings& timings)
+    : order_(std::move(cuts)),
+      finalRound_(finalRound),
+      introMs_(static_cast<std::uint32_t>(timings.introSeconds) * 1000u),
+      ratingMs_(static_cast<std::uint32_t>(timings.ratingSeconds) * 1000u),
+      revealMs_(static_cast<std::uint32_t>(timings.revealSeconds) * 1000u) {
     if (order_.empty()) throw std::invalid_argument("premiere needs at least one cut");
     std::set<int> ids;
     for (const PremiereCut& c : order_) {
@@ -24,10 +28,10 @@ Premiere::Premiere(std::vector<PremiereCut> cuts, std::uint32_t seed, bool final
 
 std::uint32_t Premiere::stepLengthMs() const {
     switch (step_) {
-    case PremiereStep::Intro: return kIntroMs;
+    case PremiereStep::Intro: return introMs_;
     case PremiereStep::Playback: return current().durationMs;
-    case PremiereStep::Rating: return kRatingMs;
-    case PremiereStep::Reveal: return kRevealMs;
+    case PremiereStep::Rating: return ratingMs_;
+    case PremiereStep::Reveal: return revealMs_;
     case PremiereStep::Podium:
     case PremiereStep::Done: break;
     }
