@@ -361,3 +361,8 @@ Scored 1-5 by judges on: ambition/innovation, theme, fun, gameplay, visuals, lev
 - Done: `Scripts/maps/pirate.py`: `PIRATE` MapDef, 5 sections in theme order (jail cell, torch corridor, sewer, dock planks, ship deck), 2 variants each; `build(seed)`/`validate()` same shape as sky.py. Every sewer variant has water, so every layout has an extra kill volume. `Scripts/tests/test_pirate_map.py` validates seeds 0-99.
 - Left: props/dressing and the .umap; maps + lobby docs (task 6). Core change for turned paths still pending.
 - Surprises: build/validate are now copied three times (house, sky, pirate); a follow-up should move them into maplib. Not done here to keep this patch to one change.
+
+### Maps task 6 handoff: Maps + lobby docs
+- Done: `docs/design/maps.md` (shared library; per map: route, every variant with length/turn/rise/kill volumes/build cells, start/finish, kill zones, build zones, CC0 packs from Kenney, KayKit and Quaternius with links), `docs/design/lobby.md` (podium -> gate -> fall as load screen until all loaded or 20 s -> server seed -> land at Start; late joiners drop in at Start), `Scripts/check_doc_links.py` (browser User-Agent, follows redirects, prints `<status> <url>`, exits 0 only if all 200). `Scripts/tests/test_design_docs.py` checks every map has every field and names every section and variant.
+- Left: the lobby flow is design only; no UE code for the load gate or seed replication yet. Core change for turned paths still pending.
+- Surprises: no pytest or cmake in the sandbox; the doc test is unittest-style like the others. maps.md is hand-maintained, so adding a variant fails the doc test until its table row is added.
