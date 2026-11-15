@@ -32,9 +32,16 @@ class TAKETWOAFTERLIFE_API UTTAUIStyle : public UObject
 	GENERATED_BODY()
 
 public:
-	// Type sizes at 1080p.
-	static constexpr int32 kH1 = 120, kH2 = 64, kTimer = 96, kBody = 32, kSmall = 24;
-	static constexpr float kDesignHeight = 1080.f, kOutline = 6.f, kCardPadding = 24.f;
+	// Type sizes at 1080p. One declarator per line: MSVC gives C2487 on the 2nd+ name of a
+	// comma list of static members in an exported (TAKETWOAFTERLIFE_API) class.
+	static constexpr int32 kH1 = 120;
+	static constexpr int32 kH2 = 64;
+	static constexpr int32 kTimer = 96;
+	static constexpr int32 kBody = 32;
+	static constexpr int32 kSmall = 24;
+	static constexpr float kDesignHeight = 1080.f;
+	static constexpr float kOutline = 6.f;
+	static constexpr float kCardPadding = 24.f;
 
 	UPROPERTY(Config) FSoftObjectPath DisplayFont;
 	UPROPERTY(Config) FSoftObjectPath BodyFont;
