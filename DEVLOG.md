@@ -363,3 +363,6 @@ Added `tta::Punch` (wind-up/active/recovery + 1.5 s cooldown) and a PawnLife stu
 
 ## UI redo task 1 — drawn chrome
 Buttons, panel, pill, banner, text field and slider art are now drawn by `Scripts/build_ui_chrome.py` at fixed sizes (all buttons 512x160) with one 6 px Ink outline and 4 px shadow; 9-slice margins are written to `Art/UI/T_UI_Slices.json` and read by `UTTAUIStyle` instead of typed-in fractions. Editor compile + reimport pending.
+
+## UI redo task 2 — same-size icons
+`Scripts/normalize_ui_icons.py` trims faint alpha noise off every `T_UI_Icon*.png` and centres the glyph on a 256x256 canvas with 24 px padding, so icon buttons are all one size. Editor reimport pending.
