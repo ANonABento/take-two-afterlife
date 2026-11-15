@@ -20,6 +20,8 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/Texture2D.h"
 #include "tta/MenuFlow.h"
+#include "UObject/ConstructorHelpers.h"
+#include "Animation/AnimInstance.h"
 
 namespace
 {
@@ -43,11 +45,20 @@ ATTARunnerPawn::ATTARunnerPawn()
 	Handheld->bUsePawnControlRotation = true;
 	Handheld->FieldOfView = 70.f;
 	Handheld->SetAutoActivate(false);
-	Hat->SetupAttachment(GetMesh());
-	for (UStaticMeshComponent* Part : {Wings.Get(), Halo.Get(), Hat.Get()})
-	{
-		Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	}
+    Hat->SetupAttachment(GetMesh());
+    for (UStaticMeshComponent* Part : {Wings.Get(), Halo.Get(), Hat.Get()})
+    {
+        Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    }
+
+    // Gen 3 angel animation
+    static ConstructorHelpers::FClassFinder<UAnimInstance> AngelABP(
+        TEXT("/Game/Characters/Angel/Anims/ABP_Angel"));
+    if (AngelABP.Succeeded())
+    {
+        GetMesh()->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+        GetMesh()->SetAnimInstanceClass(AngelABP.Class);
+    }
 }
 
 void ATTARunnerPawn::BeginPlay()
