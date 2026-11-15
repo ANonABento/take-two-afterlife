@@ -32,9 +32,12 @@ class MenuInitTests(unittest.TestCase):
     def test_settings_screen_refreshes_video(self):
         self.assertIn("RefreshVideo()", body(self.cpp, "bool UTTAMenuWidget::Open("))
 
-    def test_automation_local_player_belongs_to_game_instance(self):
+    def test_automation_local_player_is_outered_to_engine(self):
+        # ULocalPlayer is UCLASS(Within=Engine): any other outer trips an ensure in UE 5.5
+        # (seen in a real `Automation RunTests TTA.` run with the game instance as outer).
         t = (SRC / "Tests/TTAUIMenuFlowTest.cpp").read_text()
-        self.assertNotIn("NewObject<ULocalPlayer>(GEngine", t)
+        self.assertIn("NewObject<ULocalPlayer>(GEngine", t)
+        self.assertNotIn("NewObject<ULocalPlayer>(Instance", t)
 
 
 if __name__ == "__main__":
