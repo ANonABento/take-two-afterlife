@@ -1,5 +1,5 @@
 {
- "units": "cm, ATTACinema space: couch at the origin, screen at +X (see dress_heaven.py)",
+ "units": "cm, ATTACinema space: couch at the origin facing +X, screen at x = 1200. Spawn behind the couch; the pearly lobby gate and its carpet are on the +Y side, the podium on the -Y side, so nothing stands between the couch and the screen. `half` is the world-axis half size; `yaw` turns the mesh.",
  "protected": [
   {
    "label": "PlayerStarts",
@@ -15,8 +15,8 @@
    "x": 0.0,
    "y": 0.0,
    "half": [
-    100.0,
-    150.0
+    60.0,
+    215.0
    ]
   },
   {
@@ -25,82 +25,102 @@
    "y": 0.0,
    "half": [
     30.0,
-    350.0
+    500.0
+   ]
+  },
+  {
+   "label": "ScreenView",
+   "x": 630.0,
+   "y": 0.0,
+   "half": [
+    540.0,
+    215.0
    ]
   },
   {
    "label": "Podium",
-   "x": 780.0,
-   "y": 0.0,
+   "x": 150.0,
+   "y": -820.0,
    "half": [
-    150.0,
-    150.0
-   ]
+    225.0,
+    76.0
+   ],
+   "yaw": 180
   },
   {
    "label": "RedCarpet",
-   "x": 390.0,
-   "y": 0.0,
+   "x": 150.0,
+   "y": 600.0,
    "half": [
-    240.0,
-    75.0
+    125.0,
+    350.0
    ]
+  },
+  {
+   "label": "Gate",
+   "x": 150.0,
+   "y": 870.0,
+   "half": [
+    305.0,
+    50.0
+   ],
+   "yaw": 0
   }
  ],
  "podium_dressing": [
   {
    "label": "Stanchion_L1",
    "mesh": "SM_Heaven_VelvetRopeStanchions",
-   "x": 400.0,
-   "y": -130.0,
-   "yaw": 0,
+   "x": -15.0,
+   "y": 440.0,
+   "yaw": 90,
    "colour": "Yellow",
    "half": [
-    40.0,
-    20.0
+    17.0,
+    117.0
    ]
   },
   {
    "label": "Stanchion_R1",
    "mesh": "SM_Heaven_VelvetRopeStanchions",
-   "x": 400.0,
-   "y": 130.0,
-   "yaw": 0,
+   "x": 315.0,
+   "y": 440.0,
+   "yaw": 90,
    "colour": "Yellow",
    "half": [
-    40.0,
-    20.0
+    17.0,
+    117.0
    ]
   },
   {
    "label": "Stanchion_L2",
    "mesh": "SM_Heaven_VelvetRopeStanchions",
-   "x": 560.0,
-   "y": -130.0,
-   "yaw": 0,
+   "x": -15.0,
+   "y": 680.0,
+   "yaw": 90,
    "colour": "Yellow",
    "half": [
-    40.0,
-    20.0
+    17.0,
+    117.0
    ]
   },
   {
    "label": "Stanchion_R2",
    "mesh": "SM_Heaven_VelvetRopeStanchions",
-   "x": 560.0,
-   "y": 130.0,
-   "yaw": 0,
+   "x": 315.0,
+   "y": 680.0,
+   "yaw": 90,
    "colour": "Yellow",
    "half": [
-    40.0,
-    20.0
+    17.0,
+    117.0
    ]
   },
   {
    "label": "PodiumCloud_L",
    "mesh": "SM_Heaven_Cloud_A",
-   "x": 780.0,
-   "y": -260.0,
+   "x": -180.0,
+   "y": -850.0,
    "yaw": 0,
    "colour": "Bone",
    "half": [
@@ -111,8 +131,8 @@
   {
    "label": "PodiumCloud_R",
    "mesh": "SM_Heaven_Cloud_C",
-   "x": 780.0,
-   "y": 260.0,
+   "x": 480.0,
+   "y": -850.0,
    "yaw": 0,
    "colour": "Bone",
    "half": [
@@ -125,9 +145,9 @@
   {
    "label": "Spectator_1",
    "mesh": "SM_Heaven_Cloud_A",
-   "x": 933.9,
-   "y": 422.9,
-   "yaw": 250,
+   "x": 533.7,
+   "y": -649.2,
+   "yaw": 204,
    "colour": "Bone",
    "half": [
     60.0,
@@ -137,9 +157,9 @@
   {
    "label": "Spectator_2",
    "mesh": "SM_Heaven_Cloud_B",
-   "x": 780.0,
-   "y": 450.0,
-   "yaw": 270,
+   "x": 441.8,
+   "y": -517.9,
+   "yaw": 226,
    "colour": "Sky",
    "half": [
     60.0,
@@ -149,9 +169,9 @@
   {
    "label": "Spectator_3",
    "mesh": "SM_Heaven_Cloud_C",
-   "x": 626.1,
-   "y": 422.9,
-   "yaw": 290,
+   "x": 307.3,
+   "y": -430.6,
+   "yaw": 248,
    "colour": "Bone",
    "half": [
     60.0,
@@ -161,9 +181,9 @@
   {
    "label": "Spectator_4",
    "mesh": "SM_Heaven_Cloud_A",
-   "x": 490.7,
-   "y": 344.7,
-   "yaw": 310,
+   "x": 150.0,
+   "y": -400.0,
+   "yaw": 270,
    "colour": "Bone",
    "half": [
     60.0,
@@ -173,9 +193,9 @@
   {
    "label": "Spectator_5",
    "mesh": "SM_Heaven_Cloud_B",
-   "x": 933.9,
-   "y": -422.9,
-   "yaw": 110,
+   "x": -7.3,
+   "y": -430.6,
+   "yaw": 292,
    "colour": "Sky",
    "half": [
     60.0,
@@ -185,9 +205,9 @@
   {
    "label": "Spectator_6",
    "mesh": "SM_Heaven_Cloud_C",
-   "x": 780.0,
-   "y": -450.0,
-   "yaw": 90,
+   "x": -141.8,
+   "y": -517.9,
+   "yaw": 314,
    "colour": "Bone",
    "half": [
     60.0,
@@ -197,22 +217,10 @@
   {
    "label": "Spectator_7",
    "mesh": "SM_Heaven_Cloud_A",
-   "x": 626.1,
-   "y": -422.9,
-   "yaw": 70,
+   "x": -233.7,
+   "y": -649.2,
+   "yaw": 336,
    "colour": "Bone",
-   "half": [
-    60.0,
-    60.0
-   ]
-  },
-  {
-   "label": "Spectator_8",
-   "mesh": "SM_Heaven_Cloud_B",
-   "x": 490.7,
-   "y": -344.7,
-   "yaw": 50,
-   "colour": "Sky",
    "half": [
     60.0,
     60.0

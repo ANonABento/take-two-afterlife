@@ -15,7 +15,9 @@ def _plain(value):
 
 
 class BackyardMatchesOldScript(unittest.TestCase):
-    """Req 1: Backyard rebuilt on maplib places exactly what the pre-maplib script placed."""
+    """The Backyard layout only changes on purpose: data/backyard_golden.json is its last agreed state
+    (first the pre-maplib script's output, since Nov 15 the redesigned garden). After a deliberate layout
+    change, rewrite the file from L.props() and friends (same keys) and rebuild the map."""
 
     @classmethod
     def setUpClass(cls):
