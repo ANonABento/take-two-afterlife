@@ -21,6 +21,8 @@ const char* audioEventName(AudioEvent event) {
         case AudioEvent::PremiereIntro: return "PremiereIntro";
         case AudioEvent::RatingOpen: return "RatingOpen";
         case AudioEvent::RatingReveal: return "RatingReveal";
+        case AudioEvent::PunchWindUp: return "PunchWindUp";
+        case AudioEvent::PunchHit: return "PunchHit";
         case AudioEvent::Count: break;
     }
     throw std::invalid_argument("audioEventName: not an event");
@@ -104,6 +106,8 @@ const std::vector<AudioCue>& audioCues() {
         {"SFX_RatingDing", AudioKind::Sfx, AudioEvent::RatingOpen, ""},
         {"SFX_Applause", AudioKind::Sfx, AudioEvent::RatingReveal, ""},
         {"SFX_Fanfare", AudioKind::Sfx, AudioEvent::PhasePodium, ""},
+        {"SFX_PunchWhoosh", AudioKind::Sfx, AudioEvent::PunchWindUp, ""},
+        {"SFX_PunchHit", AudioKind::Sfx, AudioEvent::PunchHit, ""},
     };
     return table;
 }

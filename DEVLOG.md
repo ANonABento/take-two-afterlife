@@ -355,3 +355,8 @@ Added `tta::Punch` (wind-up/active/recovery + 1.5 s cooldown) and a PawnLife stu
 - **Prompt:** LMB/gamepad punch with Server RPC, server sphere overlap during Active, Multicast ragdoll + impulse, get up in place.
 - **Agent did:** `Punch` input, `ServerPunch`, server `AdvancePunch`/`PunchHitCheck`, `MulticastPunched`, `StopStun` (capsule sweep to pelvis), shared `RestoreBody`; static test `test_punch_net.py`.
 - **Failed / fixed by hand:** punch immunity never ticked (life loop stopped at Alive); loop now runs while immune. Editor compile + PIE host/client test pending.
+
+## Punch task 3 — readable wind-up
+- **Prompt:** wind-up pose or scale-up placeholder, whoosh + hit cues via AudioCues, short camera shake on the victim.
+- **Agent did:** `AudioEvent::PunchWindUp`/`PunchHit` with `SFX_PunchWhoosh`/`SFX_PunchHit` (doctest). Server `ServerPunch` now fires `MulticastWindUp` (Unreliable) when the punch starts: every client swells the runner mesh to `WindUpScale` 1.15 over the 0.45 s wind-up and plays the whoosh. `MulticastPunched` plays the hit and starts `ImpactShake` on the victim's own camera.
+- **Failed / fixed by hand:** no SFX files yet; run `create_placeholder_audio.py` (silent placeholders) or drop real ones in `/Game/Audio/SFX/`. Editor compile + PIE feel check pending.

@@ -17,6 +17,7 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Net/VoiceConfig.h"
 #include "Sound/SoundAttenuation.h"
+#include "TTAAudioDirector.h"
 #include "TTAMicRecorder.h"
 #include "TTACosmetics.h"
 #include "TTAPlayerState.h"
@@ -210,7 +211,26 @@ void ATTARunnerPawn::Punch()
 
 void ATTARunnerPawn::ServerPunch_Implementation()
 {
-	PunchState.start(Life.state()); // refuses while not Alive, mid-punch or on cooldown
+	if (PunchState.start(Life.state())) // refuses while not Alive, mid-punch or on cooldown
+	{
+		MulticastWindUp();
+	}
+}
+
+void ATTARunnerPawn::MulticastWindUp_Implementation()
+{
+	WindUpLeft = static_cast<float>(tta::kPunchWindUpSeconds);
+	GetWorld()->GetSubsystem<UTTAAudioDirector>()->PlayEvent(tta::AudioEvent::PunchWindUp);
+}
+
+void ATTARunnerPawn::UpdateWindUpPose(float WorldDeltaSeconds)
+{
+	if (WindUpLeft <= 0.f) return;
+	WindUpLeft = FMath::Max(0.f, WindUpLeft - WorldDeltaSeconds);
+	const bool bShow = WindUpLeft > 0.f && Life.state() == tta::LifeState::Alive;
+	if (!bShow) WindUpLeft = 0.f;
+	const float Alpha = bShow ? 1.f - WindUpLeft / static_cast<float>(tta::kPunchWindUpSeconds) : 0.f;
+	GetMesh()->SetRelativeScale3D(MeshRelative.GetScale3D() * FMath::Lerp(1.f, WindUpScale, Alpha));
 }
 
 void ATTARunnerPawn::AdvancePunch(float WorldDeltaSeconds)
@@ -258,6 +278,12 @@ void ATTARunnerPawn::MulticastPunched_Implementation(FVector_NetQuantizeNormal D
 	if (!Life.stun(tta::kStunSeconds)) return;
 	StartRagdoll();
 	GetMesh()->SetAllPhysicsLinearVelocity(Direction * PunchSpeed + FVector(0.f, 0.f, PunchLift), true);
+	GetWorld()->GetSubsystem<UTTAAudioDirector>()->PlayEvent(tta::AudioEvent::PunchHit);
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (IsLocallyControlled() && PC && ImpactShake)
+	{
+		PC->ClientStartCameraShake(ImpactShake);
+	}
 }
 
 void ATTARunnerPawn::SetForm(ETTAForm NewForm)
@@ -295,6 +321,7 @@ void ATTARunnerPawn::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	// DeltaSeconds is scaled by CustomTimeDilation (0 while frozen); timers need world time.
 	AdvanceLife(GetWorld()->GetDeltaSeconds());
+	UpdateWindUpPose(GetWorld()->GetDeltaSeconds());
 	if (HasAuthority())
 	{
 		AdvancePunch(GetWorld()->GetDeltaSeconds());

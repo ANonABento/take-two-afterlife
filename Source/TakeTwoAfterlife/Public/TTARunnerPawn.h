@@ -79,6 +79,8 @@ public:
 	UPROPERTY(EditAnywhere, Category = "TTA") float PunchReach = 90.f;
 	UPROPERTY(EditAnywhere, Category = "TTA") float PunchSpeed = 600.f;
 	UPROPERTY(EditAnywhere, Category = "TTA") float PunchLift = 200.f;
+	// Placeholder wind-up pose: the body swells to this scale over the wind-up, then snaps back.
+	UPROPERTY(EditAnywhere, Category = "TTA") float WindUpScale = 1.15f;
 	// Bone the capsule is snapped to when a stunned runner gets up.
 	UPROPERTY(EditAnywhere, Category = "TTA") FName PelvisBone = TEXT("pelvis");
 
@@ -128,6 +130,10 @@ private:
 
 	UFUNCTION(Server, Reliable) void ServerPunch();
 	UFUNCTION(NetMulticast, Reliable) void MulticastPunched(FVector_NetQuantizeNormal Direction);
+	// Server -> everyone: a punch started, show the wind-up and play the whoosh.
+	UFUNCTION(NetMulticast, Unreliable) void MulticastWindUp();
+	void UpdateWindUpPose(float WorldDeltaSeconds);
+	float WindUpLeft = 0.f;
 
 	tta::PawnLife Life;
 	tta::Punch PunchState;
