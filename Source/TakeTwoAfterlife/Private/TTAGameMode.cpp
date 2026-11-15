@@ -1,4 +1,5 @@
 #include "TTAGameMode.h"
+#include "TTACinema.h"
 #include "EngineUtils.h"
 #include "Kismet/GameplayStatics.h"
 #include "TTABotController.h"
@@ -23,6 +24,7 @@
 #include "TTATrapActor.h"
 
 #include <algorithm>
+#include <stdexcept>
 
 ATTAGameMode::ATTAGameMode()
 {
@@ -49,7 +51,8 @@ bool ATTAGameMode::RequestPhase(ETTAPhase To)
 	// Round 1 is already in the Backyard; on a failed travel the round still goes on here.
 	if (To == ETTAPhase::Build && (Match.round() == 1 || !TravelTo(BackyardMap))) EnterBuild();
 	if (To == ETTAPhase::Run) EnterRun();
-	if (To == ETTAPhase::Premiere) TravelTo(HeavenMap);
+	// On a failed travel the premiere still runs (and ends) here.
+	if (To == ETTAPhase::Premiere && !TravelTo(HeavenMap)) BeginPremiere();
 	return true;
 }
 
@@ -135,6 +138,11 @@ bool ATTAGameMode::TravelTo(const FString& Map)
 void ATTAGameMode::PostSeamlessTravel()
 {
 	Super::PostSeamlessTravel();
+	if (Match.phase() == tta::Phase::Premiere)
+	{
+		BeginPremiere();
+		return;
+	}
 	if (Match.phase() != tta::Phase::Build) return;
 	for (const tta::Placement& P : Layout.all()) SyncMarker(P.id);
 	EnterBuild();
@@ -232,8 +240,81 @@ void ATTAGameMode::PreLogin(const FString& Options, const FString& Address, cons
 bool ATTAGameMode::EndPremiere(const std::map<int, double>& RatingPoints)
 {
 	if (Match.phase() != tta::Phase::Premiere) return false;
+	bPremiereLive = false;
+	PremiereDeadline = 0.f;
+	if (Cinema) Cinema->OnStep.RemoveAll(this);
 	Score.addRatings(RatingPoints);
 	return RequestPhase(Match.canTransition(tta::Phase::Build) ? ETTAPhase::Build : ETTAPhase::Podium);
+}
+
+void ATTAGameMode::BeginPremiere()
+{
+	if (Match.phase() != tta::Phase::Premiere) return;
+	TArray<FTTACinemaCut> Cuts;
+	for (TActorIterator<ATTABotController> It(GetWorld()); It; ++It)
+	{
+		const tta::EditList* Edit = It->GetCut();
+		if (!Edit || !It->PlayerState) continue;
+		const int32 Id = It->PlayerState->GetPlayerId();
+		FTTACinemaCut& C = Cuts.AddDefaulted_GetRef();
+		C.CutId = Cuts.Num();
+		// A bot's cut is its own run; the trap builder isn't tracked per cut yet.
+		C.Cut = tta::Cut{Id, Id};
+		C.Victim = Id;
+		C.Edit = *Edit;
+	}
+	const tta::MatchSettings& S = Match.settings();
+	double LengthSeconds = 0.0;
+	for (const FTTACinemaCut& C : Cuts)
+	{
+		LengthSeconds += S.introSeconds + C.Edit.durationMs() / 1000.0 + S.ratingSeconds + S.revealSeconds;
+	}
+	bPremiereLive = true;
+	PremiereElapsed = 0.f;
+	PremiereDeadline = static_cast<float>(LengthSeconds) + PremiereTimeoutSlack;
+
+	Cinema = nullptr;
+	for (TActorIterator<ATTACinema> It(GetWorld()); It; ++It)
+	{
+		Cinema = *It;
+		break;
+	}
+	if (!Cinema || Cuts.IsEmpty())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ATTAGameMode: premiere with %s and %d cuts; ending after %.1f s"), Cinema ? TEXT("a cinema") : TEXT("no cinema"), Cuts.Num(), PremiereDeadline);
+		return;
+	}
+	TArray<int32> Podium;
+	for (int P : Score.podium()) Podium.Add(P);
+	Cinema->OnStep.RemoveAll(this);
+	Cinema->OnStep.AddUObject(this, &ATTAGameMode::OnCinemaStep);
+	try
+	{
+		Cinema->StartPremiere(Cuts, static_cast<uint32>(FDateTime::UtcNow().GetTicks()), !Match.canTransition(tta::Phase::Build), Podium);
+	}
+	catch (const std::exception& Error)
+	{
+		Cinema->OnStep.RemoveAll(this);
+		UE_LOG(LogTemp, Error, TEXT("ATTAGameMode: cinema rejected the premiere (%hs); ending after %.1f s"), Error.what(), PremiereDeadline);
+	}
+}
+
+void ATTAGameMode::OnCinemaStep(tta::PremiereStep Step)
+{
+	if (Step == tta::PremiereStep::Rating)
+	{
+		for (TActorIterator<ATTABotController> It(GetWorld()); It; ++It) It->RateCurrent(Cinema);
+	}
+	if (Step == tta::PremiereStep::Podium || Step == tta::PremiereStep::Done) FinishPremiere();
+}
+
+void ATTAGameMode::FinishPremiere()
+{
+	if (!bPremiereLive) return;
+	const tta::Premiere* Premiere = Cinema ? Cinema->GetPremiere() : nullptr;
+	const std::map<int, double> Points = Premiere ? Premiere->ratings().ratingPoints() : std::map<int, double>{};
+	if (!EndPremiere(Points)) UE_LOG(LogTemp, Warning, TEXT("ATTAGameMode: premiere finished outside the Premiere phase"));
+	bPremiereLive = false;
 }
 
 void ATTAGameMode::StartPlay()
@@ -333,6 +414,7 @@ void ATTAGameMode::Tick(float DeltaSeconds)
 	const bool bTimerDone = Match.phaseSeconds() > 0 && State->GetSecondsLeft() == 0;
 	if (State->GetPhase() == ETTAPhase::Build && bTimerDone) verify(RequestPhase(ETTAPhase::Run));
 	if (State->GetPhase() == ETTAPhase::Edit && bTimerDone) verify(RequestPhase(ETTAPhase::Premiere));
+	if (bPremiereLive && (PremiereElapsed += DeltaSeconds) >= PremiereDeadline) FinishPremiere();
 	if (State->GetPhase() != ETTAPhase::Run || !Director || !Director->IsRunning()) return;
 	if (Director->IsTimedOut()) TimedOutFor += DeltaSeconds;
 	if (Director->AllFinished() || TimedOutFor >= SmiteHoldSeconds) EndRun();

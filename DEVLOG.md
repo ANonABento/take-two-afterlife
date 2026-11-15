@@ -243,3 +243,17 @@ Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prom
 - **Rechecked, no change:** premiere advance. Core `MatchStateMachine` allows Premiere -> Build (or Podium on the last round); `ATTAGameMode::EndPremiere` asks exactly that and `TTA.Match.ThreeRounds` drives it. In-game, nothing calls `EndPremiere` yet (cinema not wired: separate task).
 - **Rechecked, no change:** respawn timing. `ATTARunnerPawn::AdvanceLife` slices dt at 0.05 s so `PawnLife` walks Frozen (0.12 s) -> Ragdoll (1.5 s) -> Alive even when a test passes the whole delay at once; ticks use world dt so the frozen pawn still counts down.
 - **Untested here:** UE compile and Automation (no Unreal in the sandbox). On Windows, in the editor console: `RunTests TTA.` (or `UnrealEditor-Cmd.exe TakeTwoAfterlife.uproject -ExecCmds="Automation RunTests TTA.;Quit" -unattended -nullrhi -log`).
+
+
+## MVP task 9 — premiere ends
+- **Cause:** nothing in game started the Heaven `ATTACinema` or listened for its end, so `ATTAGameMode::EndPremiere` was never called and the match sat in Premiere forever.
+- **Fix:** on arrival in Heaven (`PostSeamlessTravel`, or right away if the travel fails) the server runs `BeginPremiere`: finds the level's cinema, gives it the bots' auto-edited cuts, binds `OnStep`. Bots vote on each Rating step. Podium/Done calls `EndPremiere` with the cinema's rating points. A timeout (premiere length + `PremiereTimeoutSlack` 3 s; just 3 s with no cinema or no cuts) ends it anyway. Build-item meshes are now KayKit Prototype Bits. Locked by `Scripts/tests/test_premiere_end.py`.
+- **Untested here:** UE compile and play (no Unreal in the sandbox).
+
+## Solo round to the Heaven podium (user PC)
+1. Build the editor target. Launch to Title, set rounds to 1 in host settings (or play all rounds), click PLAY SOLO.
+2. START; Build, Run and Edit play out with the 3 bots.
+3. Heaven loads; the cinema plays each bot cut: intro, playback, rating (bots vote), reveal.
+4. After the last cut the server calls `EndPremiere`; on the final round the phase goes to Podium and the Heaven podium shows the totals. Earlier rounds go back to the Backyard Build.
+5. In a test copy of Heaven with the cinema actor deleted, repeat: the premiere ends 3 s after Heaven loads and the round still reaches the podium.
+6. Build items in Build show KayKit pieces, no grey engine cubes/cones.
