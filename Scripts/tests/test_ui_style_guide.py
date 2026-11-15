@@ -4,7 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "Source" / "TakeTwoAfterlife"
-DOC = ROOT / "docs" / "design" / "ui-style.md"
+DOC = ROOT / "Docs" / "design" / "ui-style.md"
 ART = ROOT / "Art" / "UI"
 HEADER = (SRC / "Public" / "TTAUIStyle.h").read_text()
 CPP = (SRC / "Private" / "TTAUIStyle.cpp").read_text()
