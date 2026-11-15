@@ -8,3 +8,6 @@ Dist/
 .vs/
 *.sln
 __pycache__/
+build.log
+# Local API keys / tokens - never commit
+tripo.txt

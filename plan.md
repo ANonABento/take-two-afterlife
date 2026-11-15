@@ -71,7 +71,7 @@ Build → Run → Edit → Premiere, repeated each round, then Podium.
 - UI: Jackbox-style host feel with Fall Guys-style big, clean type, game-show cards and bouncy motion.
 - Narrator: about 60 lines, ElevenLabs TTS baked into audio files. Free-tier attribution goes in CREDITS.
 - Music: WeLoveIndies tracks, one per phase.
-- **Assets: human-made only. No AI-generated assets.** Sources: Kenney, Quaternius, KayKit, Poly Haven, Freesound, free items on Fab. Log every asset in CREDITS.md.
+- **Assets: AI-generated assets are allowed** (e.g. Tripo/Meshy 3D models, ElevenLabs VO) alongside CC0 kits: Kenney, Quaternius, KayKit, Poly Haven, Freesound, free items on Fab. Log every asset in CREDITS.md, including which tool generated it (the jam's tools list must name every AI tool used).
 
 **Network:**
 - Epic Online Services lobby with a **join code**, using EOS P2P relay, running as a listen server. Direct IP is a dev fallback. No Steam.
