@@ -12,6 +12,7 @@
 #include "TTAResultsWidget.h"
 #include "TTAUIStyle.h"
 #include "tta/MenuFlow.h"
+#include "GameFramework/PlayerController.h"
 
 namespace
 {

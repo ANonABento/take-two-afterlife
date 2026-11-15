@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Engine/HitResult.h"
 #include "TTAFinishGate.generated.h"
 
 class ATTARunnerPawn;

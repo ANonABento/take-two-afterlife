@@ -10,6 +10,7 @@
 #include "Engine/World.h"
 #include "GameFramework/WorldSettings.h"
 #include "Misc/ScopeExit.h"
+#include "GameFramework/PlayerController.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -47,7 +48,8 @@ bool FTTAUIMenuFlowTest::RunTest(const FString& Parameters)
 	World->InitializeActorsForPlay(FURL());
 	World->BeginPlay();
 
-	ULocalPlayer* LocalPlayer = NewObject<ULocalPlayer>(Instance, GEngine->LocalPlayerClass) // owned by the game instance, like a real local player;
+	// Owned by the game instance, like a real local player.
+	ULocalPlayer* LocalPlayer = NewObject<ULocalPlayer>(Instance, GEngine->LocalPlayerClass);
 	const AGameModeBase* Mode = World->GetAuthGameMode();
 	APlayerController* PC = World->SpawnActor<APlayerController>(Mode ? Mode->PlayerControllerClass.Get() : ATTAPlayerController::StaticClass());
 	if (!TestNotNull(TEXT("local controller"), PC) || !TestNotNull(TEXT("local player"), LocalPlayer)) return false;

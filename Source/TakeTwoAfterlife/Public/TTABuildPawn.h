@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/DefaultPawn.h"
 #include "TTAPlacementMarker.h"
+#include "Engine/HitResult.h"
 #include "TTABuildPawn.generated.h"
 
 // Free-fly Build camera (DefaultPawn WASD/E/Q + mouse look) with a ghost preview of the

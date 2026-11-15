@@ -374,8 +374,14 @@ void ATTAGameMode::EnterRun()
 	if (Bots.Num() > 0)
 	{
 		const TArray<FVector> Route = ATTABotController::FindRoute(GetWorld());
-		if (Route.IsEmpty()) UE_LOG(LogTemp, Error, TEXT("ATTAGameMode: no TTARoute markers or finish gate; bots stand still"));
-		else for (ATTABotController* Bot : Bots) Bot->StartRun(Route);
+		if (Route.IsEmpty())
+		{
+			UE_LOG(LogTemp, Error, TEXT("ATTAGameMode: no TTARoute markers or finish gate; bots stand still"));
+		}
+		else
+		{
+			for (ATTABotController* Bot : Bots) Bot->StartRun(Route);
+		}
 	}
 	RunPlayerIds = tta::runPlayers(RunnerIds, Layout);
 	RunnerCount = Runners.Num();

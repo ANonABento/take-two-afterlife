@@ -257,3 +257,13 @@ Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prom
 4. After the last cut the server calls `EndPremiere`; on the final round the phase goes to Podium and the Heaven podium shows the totals. Earlier rounds go back to the Backyard Build.
 5. In a test copy of Heaven with the cinema actor deleted, repeat: the premiere ends 3 s after Heaven loads and the round still reaches the podium.
 6. Build items in Build show KayKit pieces, no grey engine cubes/cones.
+
+## MVP task 5 (plan 2) — editor won't compile on UE 5.5
+- **Cause:** the code leaned on transitive engine includes (no PCH, no unity) that UE 5.5 doesn't give, so `FHitResult`/`FCollisionQueryParams`/`UStaticMeshComponent` were undeclared. `ATTAGameMode::EnterRun` had `if (...) UE_LOG(...); else ...`; `UE_LOG` expands to a braced block, so the `;` orphaned the `else` (C2181). `TTA.UI.MenuFlow` had its `;` inside a trailing `//` comment, so the next `const` line hit C2143.
+- **Fix:** IWYU includes in the four reported files plus every Source file the bots/menu/cosmetics/look/premiere tasks touched (`Engine/HitResult.h`, `CollisionQueryParams.h`, `Components/StaticMeshComponent.h`, `GameFramework/PlayerController.h`, `Engine/World.h`); braces on that if/else; comment moved off the statement. `TakeTwoAfterlife.Build.cs` public deps now list AIModule, NavigationSystem, GameplayTasks, UMG, Slate, SlateCore, EnhancedInput. Locked by `Scripts/tests/test_ue55_compile.py`.
+- **Untested here:** real UE compile (no Unreal in the sandbox). Confirm on your PC from the repo folder in PowerShell:
+
+```powershell
+& "C:\Program Files\Epic Games\UE_5.5\Engine\Build\BatchFiles\Build.bat" TakeTwoAfterlifeEditor Win64 Development -Project="$PWD\TakeTwoAfterlife.uproject" -WaitMutex -NoHotReload
+```
+It should end with `Result: Succeeded`. If not, paste the first `error C` lines.
