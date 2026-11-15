@@ -58,6 +58,8 @@ ATTARunnerPawn::ATTARunnerPawn()
     {
         GetMesh()->SetAnimationMode(EAnimationMode::AnimationBlueprint);
         GetMesh()->SetAnimInstanceClass(AngelABP.Class);
+		// Gen 3 mesh faces -X; turn to face +X
+		GetMesh()->SetRelativeRotation(FRotator(0.f, 180.f, 0.f));
     }
 }
 

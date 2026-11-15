@@ -1,5 +1,10 @@
 """Engine-free layout of the Backyard map (task 17): corridor floor, set dressing, start, gate, kill plane.
 
+The picture: a fenced suburban back garden seen from its patio deck. The run goes down the middle (deck,
+lawn, sandpit, lawn, stone patio) to a finish arch in front of the house; a water-filled trench runs down
+each side; the garden beside it is furnished (barbecue, trampoline, paddling pool, shed); beyond the fences
+are next-door gardens on one side and a street with houses on the other.
+
 Units are metres, +X runs from start to gate, +Z is up, the corridor floor top is at Z = 0.
 Built on Scripts/maplib (grid, roles, kill plane, credits, validate); this file keeps only the Backyard itself.
 Scripts/build_backyard_map.py places this in UE; `make test` checks it (bounds, clear route, credits).
@@ -9,7 +14,7 @@ import math
 from pathlib import Path
 
 import maplib
-from maplib import WORLD_KILL_Z, Box, Kit, Point, Prop, footprint, palette_index  # noqa: F401  (map API)
+from maplib import ROLES, WORLD_KILL_Z, Box, Kit, Point, Prop, footprint, palette_index  # noqa: F401  (map API)
 
 REPO = maplib.REPO
 MAP_PATH = "/Game/Maps/Backyard"
@@ -26,15 +31,37 @@ KITS = {
     "KenneyCitySuburban": Kit("City Kit (Suburban)", "Kenney", "https://kenney.nl/assets/city-kit-suburban",
                               "CC0 1.0", False),
     "KenneyNature": Kit("Nature Kit", "Kenney", "https://kenney.nl/assets/nature-kit", "CC0 1.0", False),
+    # Our own Blender-scripted models (models/*.py), imported by Scripts/import_mac_assets.py.
+    "TTAProps": Kit("Backyard props", "Take Two: Afterlife team", "models/build_backyard_props.py", "own work", True),
+    "TTACourse": Kit("Course kit", "Take Two: Afterlife team", "models/build_course_kit.py", "own work", True),
 }
+# Where the meshes of a kit live in /Game. Kits not listed are under THIRDPARTY_ROOT/<kit>.
+KIT_ROOTS = {"TTAProps": "/Game/Art/Props", "TTACourse": "/Game/Art/Course"}
 
-FLOOR_THICKNESS = 0.2
-DITCH = 2.0                                  # open gap each side of the corridor, down to the kill plane
-LAWN_WIDTH = 8.0
+
+def kit_root(kit):
+    """/Game folder holding the meshes of `kit`."""
+    return KIT_ROOTS.get(kit, f"{THIRDPARTY_ROOT}/{kit}")
+
+
+def kit_content_dir(kit):
+    """The same folder on disk, under Content/."""
+    return REPO / "Content" / kit_root(kit)[len("/Game/"):]
+
+
+# The yard is solid ground: every slab is this deep, so each ditch is a trench with water at the bottom
+# instead of a gap between floating plates. Fallers drop through the water onto the kill plane.
+FLOOR_THICKNESS = 4.5
+DITCH = 2.0                                  # open trench each side of the corridor, down to the kill plane
+LAWN_WIDTH = 8.0                             # our yard each side, up to the fence
+WATER_Z = -4.2                               # water surface in the trenches
+GROUND_X = (-16.0, CORRIDOR_LENGTH + 16.0)   # the block runs past both ends of the corridor
+NEIGHBOUR_WIDTH = 16.0                       # +Y: next-door gardens behind the fence
+SIDEWALK, ROAD, VERGE = 3.0, 8.0, 10.0       # -Y: sidewalk, street, front gardens across the street
 START = Point(1.0, 0.0, 0.1)                 # PlayerStart, on the patio deck
 GATE = Point(CORRIDOR_LENGTH - 1.0, 0.0, 0.0)
 GATE_TRIGGER_HALF = (0.5, HALF_WIDTH, 2.0)   # half extents of the finish trigger
-KILL_PLANE = maplib.kill_plane(CORRIDOR_LENGTH)
+KILL_PLANE = maplib.kill_plane(CORRIDOR_LENGTH, margin=24.0, half_y=44.0)
 
 # Corridor zones, start to gate: (from x, to x, palette name, reading of the route).
 ZONES = (
@@ -56,17 +83,40 @@ def _tiles(x0, x1):
     return [(x0 + step * (i + 0.5), step) for i in range(n)]
 
 
+def _slab(x0, x1, y0, y1, colour, top=0.0, depth=FLOOR_THICKNESS, role="floor"):
+    """Touching Primitive_Floor boxes filling the rectangle, top face at `top`."""
+    return [Prop("KayKitPrototypeBits", "Primitive_Floor", role, x, y, top - depth, 0, colour,
+                 ("box", (lx, ly, depth)))
+            for x, lx in _tiles(x0, x1) for y, ly in _tiles(y0, y1)]
+
+
 def _floor():
+    edge = HALF_WIDTH + DITCH
+    fence = edge + LAWN_WIDTH
+    gx0, gx1 = GROUND_X
     props = []
     for x0, x1, colour, _ in ZONES:
-        for x, length in _tiles(x0, x1):
-            props.append(Prop("KayKitPrototypeBits", "Primitive_Floor", "floor", x, 0.0, -FLOOR_THICKNESS, 0,
-                              colour, ("box", (length, CORRIDOR_WIDTH, FLOOR_THICKNESS))))
-    lawn_y = HALF_WIDTH + DITCH + LAWN_WIDTH / 2
+        props += _slab(x0, x1, -HALF_WIDTH, HALF_WIDTH, colour)
+    # End caps close the trenches: lawn behind the start, the patio runs on to the house past the gate.
+    props += _slab(gx0, 0.0, -edge, edge, "Grass")
+    props += _slab(CORRIDOR_LENGTH, gx1, -edge, edge, "Bone")
     for side in (-1, 1):
-        for x, length in _tiles(-8.0, CORRIDOR_LENGTH + 8.0):
-            props.append(Prop("KayKitPrototypeBits", "Floor_Dirt", "floor", x, side * lawn_y,
-                              -FLOOR_THICKNESS, 0, "Grass", ("box", (length, LAWN_WIDTH, FLOOR_THICKNESS))))
+        y0, y1 = sorted((side * edge, side * fence))
+        props += _slab(gx0, gx1, y0, y1, "Grass")
+    props += _slab(gx0, gx1, fence, fence + NEIGHBOUR_WIDTH, "Grass")
+    y = -fence
+    for width, colour in ((SIDEWALK, "Bone"), (ROAD, "Ink"), (VERGE, "Grass")):
+        props += _slab(gx0, gx1, y - width, y, colour)
+        y -= width
+    return props
+
+
+def _water():
+    """Water in both trenches (no collision): the fall reads as a splash, not a hole in the world."""
+    props = []
+    for side in (-1, 1):
+        y0, y1 = sorted((side * HALF_WIDTH, side * (HALF_WIDTH + DITCH)))
+        props += _slab(0.0, CORRIDOR_LENGTH, y0, y1, "Sky", top=WATER_Z, depth=0.2, role="backdrop")
     return props
 
 
@@ -94,63 +144,147 @@ def _shortcuts():
     return props
 
 
-def _route_dressing(edge):
-    """Garden clutter lining the route on the inner lawn strip, using meshes the layout already resolves."""
-    pieces = ((9, 1, "KenneyNature", "rock_smallA", "Ink", 0.4), (13, -1, "KayKitPrototypeBits", "Barrel_A", "Blue", 0.8),
-              (20, 1, "KayKitPrototypeBits", "Box_A", "Red", 0.8), (25, -1, "KenneyNature", "flower_redA", "Pink", 0.5),
-              (31, -1, "KenneyNature", "plant_bushLarge", "Teal", 1.0), (37, 1, "KayKitPrototypeBits", "Box_B", "Purple", 0.8),
-              (42, 1, "KenneyNature", "flower_yellowA", "Yellow", 0.5), (46, -1, "KenneyNature", "rock_smallA", "Ink", 0.4),
-              (54, 1, "KayKitPrototypeBits", "Pallet_Small", "Wood", 0.8),
-              (57, -1, "KayKitPrototypeBits", "Barrel_A", "Orange", 0.8))
-    return [Prop(kit, mesh, "dressing", x, side * (edge + 2.5), 0.0, 0, colour, ("height", h))
-            for x, side, kit, mesh, colour, h in pieces]
+FENCE_STEP = 2.1   # one `fence` panel fitted to 1.2 m tall is 2.1 m long: panels touch
+
+
+def _fences(fence):
+    """Unbroken garden fence down both long edges of the yard and across both ends."""
+    gx0, gx1 = GROUND_X
+    props = []
+    n = math.ceil((gx1 - gx0) / FENCE_STEP)
+    for i in range(n):
+        x = gx0 + (gx1 - gx0) * (i + 0.5) / n
+        for side in (-1, 1):
+            props.append(Prop("KenneyCitySuburban", "fence", "dressing", x, side * (fence - 0.3), 0.0, 0,
+                              "Bone", ("height", 1.2)))
+    m = math.ceil(2 * (fence - 0.3) / FENCE_STEP)
+    for i in range(m):
+        y = -(fence - 0.3) + 2 * (fence - 0.3) * (i + 0.5) / m
+        for x in (gx0 + 0.3, gx1 - 0.3):
+            props.append(Prop("KenneyCitySuburban", "fence", "dressing", x, y, 0.0, 90, "Bone", ("height", 1.2)))
+    return props
+
+
+def _height(v):
+    return ("height", v)
+
+
+def _box(*v):
+    return ("box", v)
+
+
+def _yard(edge):
+    """Our garden, start to gate. +Y: barbecue, trampoline, paddling pool, tea table. -Y: tool corner, flower
+    border, rockery, the shed. Rows are (x, d, kit, mesh, colour, fit, yaw); d is the distance in from the
+    trench edge, its sign picks the side."""
+    P, K, N, S = "TTAProps", "KayKitPrototypeBits", "KenneyNature", "KenneyCitySuburban"
+    h, b = _height, _box
+    rows = (
+        # +Y side, by the deck: barbecue corner
+        (3.0, 3.5, P, "SM_Backyard_PicnicTable", "Wood", b(1.8, 1.5, 0.773), 0),
+        (6.5, 2.0, P, "SM_Backyard_Grill", "Ink", b(0.97, 0.64, 0.997), 90),
+        (1.0, 6.2, S, "planter", "Wood", h(0.8), 0),
+        (9.5, 6.0, S, "tree-small", "Grass", h(4.0), 0),
+        # front lawn: trampoline, a gnome keeping watch
+        (12.5, 1.2, N, "plant_bushLarge", "Teal", h(1.0), 0),
+        (14.0, 1.0, N, "flower_redA", "Red", h(0.5), 0),
+        (18.0, 4.0, P, "SM_Backyard_Trampoline", "Blue", b(3.0, 3.0, 0.889), 0),
+        (22.5, 1.0, P, "SM_Backyard_Gnome", "Red", h(0.7), 180),
+        (23.5, 6.5, N, "plant_bushLarge", "Teal", h(1.2), 0),
+        # sandpit: paddling pool and toy blocks
+        (29.0, 3.0, P, "SM_Backyard_KiddiePool", "Sky", b(1.8, 1.8, 0.36), 0),
+        (26.5, 5.5, K, "Barrel_A", "Blue", h(0.8), 0),
+        (31.8, 5.2, K, "Box_A", "Red", h(0.8), 0),
+        (32.8, 6.2, K, "Box_B", "Purple", h(0.8), 20),
+        (33.5, 1.0, N, "flower_yellowA", "Yellow", h(0.5), 0),
+        (36.0, 5.8, S, "tree-large", "Grass", h(6.5), 0),
+        # back lawn: clipped hedge
+        (39.0, 1.2, N, "plant_bushLarge", "Teal", h(1.0), 0),
+        (41.0, 1.2, N, "plant_bushLarge", "Teal", h(1.0), 0),
+        (43.0, 1.2, N, "plant_bushLarge", "Teal", h(1.0), 0),
+        (45.5, 1.0, N, "flower_redA", "Pink", h(0.5), 0),
+        # stone patio: tea table and planters up to the gate
+        (51.0, 3.0, K, "table_medium", "Wood", h(0.75), 0),
+        (47.5, 6.0, S, "planter", "Wood", h(0.8), 45),
+        (54.5, 1.5, S, "planter", "Wood", h(0.8), 0),
+        (57.5, 1.5, S, "planter", "Wood", h(0.8), 0),
+        (56.0, 5.5, S, "tree-small", "Grass", h(3.5), 0),
+        # -Y side, by the deck: tool corner
+        (2.0, -3.0, K, "Pallet_Small", "Wood", h(0.8), 0),
+        (3.6, -2.2, K, "Barrel_A", "Orange", h(0.8), 0),
+        (0.8, -5.5, K, "Box_A", "Wood", h(0.8), 15),
+        (9.0, -5.5, S, "tree-large", "Grass", h(6.0), 0),
+        # front lawn: gnome and a flower border along the trench
+        (12.0, -1.0, P, "SM_Backyard_Gnome", "Blue", h(0.7), 0),
+        (13.5, -1.0, N, "flower_yellowA", "Yellow", h(0.5), 0),
+        (15.0, -1.0, N, "flower_redA", "Red", h(0.5), 0),
+        (16.5, -1.0, N, "flower_yellowA", "Orange", h(0.5), 0),
+        (18.0, -1.0, N, "flower_redA", "Pink", h(0.5), 0),
+        (20.5, -1.4, N, "rock_smallA", "Ink", h(0.4), 0),
+        (22.0, -5.0, N, "plant_bushLarge", "Teal", h(1.4), 0),
+        # sandpit side: rockery
+        (26.0, -1.5, N, "rock_smallA", "Ink", h(0.5), 0),
+        (27.5, -2.6, N, "rock_smallA", "Ink", h(0.8), 40),
+        (29.5, -1.3, N, "plant_bushLarge", "Teal", h(0.9), 0),
+        (31.5, -1.0, N, "flower_yellowA", "Yellow", h(0.5), 0),
+        (33.0, -5.5, S, "tree-small", "Grass", h(4.0), 0),
+        # back lawn: the shed and its clutter
+        (41.5, -4.5, P, "SM_Backyard_Shed", "Red", b(2.5, 2.0, 2.3), 0),
+        (38.5, -3.5, K, "Pallet_Small", "Wood", h(0.8), 30),
+        (44.5, -3.0, K, "Barrel_A", "Blue", h(0.8), 0),
+        (45.5, -4.2, K, "Box_B", "Wood", h(0.8), 0),
+        (37.0, -1.0, P, "SM_Backyard_Gnome", "Yellow", h(0.7), 90),
+        # stone patio
+        (49.0, -5.5, S, "tree-small", "Grass", h(3.5), 0),
+        (52.0, -1.5, S, "planter", "Wood", h(0.8), 0),
+        (55.0, -1.5, S, "planter", "Wood", h(0.8), 0),
+        (58.0, -1.2, N, "plant_bushLarge", "Teal", h(1.0), 0),
+        (53.5, -5.0, N, "rock_smallA", "Ink", h(0.5), 0),
+    )
+    return [Prop(kit, mesh, "dressing", x, (edge + abs(d)) * (1 if d > 0 else -1), 0.0, yaw, colour, fit)
+            for x, d, kit, mesh, colour, fit, yaw in rows]
+
+
+def _neighbourhood(fence):
+    """Houses all round: the one the gate leads into, the one behind the start, next-door gardens on +Y and
+    a street with houses across it on -Y."""
+    S = "KenneyCitySuburban"
+    props = [
+        Prop(S, "building-type-a", "dressing", CORRIDOR_LENGTH + 7.0, 0.0, 0.0, 180, "Sky", ("height", 7.0)),
+        Prop(S, "building-type-c", "dressing", -8.5, 0.0, 0.0, 0, "Orange", ("height", 7.0)),
+    ]
+    next_door = (("building-type-b", "Yellow"), ("building-type-d", "Pink"), ("building-type-e", "Teal"),
+                 ("building-type-f", "Purple"), ("building-type-b", "Orange"))
+    for i, (mesh, colour) in enumerate(next_door):
+        x = -6.0 + 18.0 * i
+        props.append(Prop(S, mesh, "dressing", x, fence + 9.5, 0.0, 270, colour, ("height", 7.0)))
+        props.append(Prop(S, "tree-large" if i % 2 else "tree-small", "dressing", x + 9.0, fence + 5.0, 0.0, 0,
+                          "Grass", ("height", 5.5 if i % 2 else 4.0)))
+    street = -fence - SIDEWALK - ROAD
+    across = (("building-type-d", "Sky"), ("building-type-f", "Yellow"), ("building-type-a", "Pink"),
+              ("building-type-e", "Orange"), ("building-type-c", "Teal"))
+    for i, (mesh, colour) in enumerate(across):
+        x = 2.0 + 17.0 * i
+        props.append(Prop(S, mesh, "dressing", x, street - 6.0, 0.0, 90, colour, ("height", 7.0)))
+    for x in range(-10, int(CORRIDOR_LENGTH) + 12, 12):                       # street trees on the sidewalk
+        props.append(Prop(S, "tree-small", "dressing", float(x), -fence - 1.5, 0.0, 0, "Grass", ("height", 4.5)))
+    return props
 
 
 def _dressing():
     edge = HALF_WIDTH + DITCH                     # inner edge of each side lawn
-    far = edge + LAWN_WIDTH
-    props = []
-    for i, x in enumerate(range(0, int(CORRIDOR_LENGTH) + 1, 4)):   # garden fence on both outer edges
-        for side in (-1, 1):
-            props.append(Prop("KenneyCitySuburban", "fence", "dressing", x, side * (far - 0.3), 0.0, 0,
-                              "Bone", ("height", 1.2)))
-    trees = ((10, -1, "tree-large", 6.0), (30, 1, "tree-large", 6.5), (44, -1, "tree-small", 4.0),
-             (18, 1, "tree-small", 3.5), (52, 1, "tree-large", 6.0))
-    for x, side, mesh, h in trees:
-        props.append(Prop("KenneyCitySuburban", mesh, "dressing", x, side * (edge + 5.0), 0.0, 0, "Grass",
-                          ("height", h)))
-    for x, side in ((7, 1), (15, -1), (26, -1), (38, 1), (47, 1), (56, -1)):
-        props.append(Prop("KenneyNature", "plant_bushLarge", "dressing", x, side * (edge + 1.0), 0.0, 0, "Teal",
-                          ("height", 1.0)))
-    for x, side, mesh, colour in ((12, 1, "flower_redA", "Red"), (21, -1, "flower_yellowA", "Yellow"),
-                                  (33, 1, "flower_redA", "Pink"), (41, -1, "flower_yellowA", "Orange")):
-        props.append(Prop("KenneyNature", mesh, "dressing", x, side * (edge + 0.8), 0.0, 0, colour, ("height", 0.5)))
-    for x, side in ((23, 1), (36, -1)):
-        props.append(Prop("KenneyNature", "rock_smallA", "dressing", x, side * (edge + 1.5), 0.0, 0, "Ink",
-                          ("height", 0.4)))
-    for x, side in ((5, -1), (50, -1)):
-        props.append(Prop("KenneyCitySuburban", "planter", "dressing", x, side * (edge + 2.0), 0.0, 45, "Wood",
-                          ("height", 0.8)))
-    # Sandpit toys and garden clutter on the lawns beside the sandpit zone.
-    for x, side, mesh, colour in ((27, 1, "Barrel_A", "Blue"), (29, -1, "Box_A", "Red"), (34, 1, "Box_B", "Purple"),
-                                  (4, 1, "table_medium", "Wood"), (2, -1, "Pallet_Small", "Wood")):
-        props.append(Prop("KayKitPrototypeBits", mesh, "dressing", x, side * (edge + 3.0), 0.0, 0, colour,
-                          ("height", 0.8 if mesh != "table_medium" else 0.75)))
-    # The house the gate leads into, behind the finish, and a neighbour's house behind the start.
-    props.append(Prop("KenneyCitySuburban", "building-type-a", "dressing", CORRIDOR_LENGTH + 6.0, 0.0, 0.0, 180,
-                      "Sky", ("height", 7.0)))
-    props.append(Prop("KenneyCitySuburban", "building-type-c", "dressing", -7.0, 0.0, 0.0, 0, "Orange",
-                      ("height", 7.0)))
-    return props + _route_dressing(edge)
+    fence = edge + LAWN_WIDTH
+    return _fences(fence) + _yard(edge) + _neighbourhood(fence)
 
 
 def _gate():
-    return [Prop("KayKitPrototypeBits", "Primitive_Doorway", "gate", GATE.x, GATE.y, GATE.z, 0, "Red",
-                 ("box", (1.0, CORRIDOR_WIDTH, 4.0)))]
+    # SM_Course_GateFinish is 3 m wide along its own X: turned to span the corridor and scaled to its width.
+    return [Prop("TTACourse", "SM_Course_GateFinish", "gate", GATE.x, GATE.y, GATE.z, 90, "Red",
+                 ("width", CORRIDOR_WIDTH))]
 
 
 def props():
-    return _floor() + _markers() + _shortcuts() + _dressing() + _gate()
+    return _floor() + _water() + _markers() + _shortcuts() + _dressing() + _gate()
 
 
 def downloads_dir(args):
@@ -205,7 +339,7 @@ def closest(mesh, asset_names):
 
 
 def resolve_all(listing):
-    """listing: {kit: [asset names in /Game/ThirdParty/<kit>]}.
+    """listing: {kit: [asset names in kit_root(kit)]}.
 
     Returns ({(kit, mesh): asset name}, [(kit, mesh, closest asset name or None)]) for every layout mesh.
     """
