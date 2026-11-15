@@ -27,8 +27,7 @@ bool FTTAUIMenuFlowTest::RunTest(const FString& Parameters)
 		AddInfo(TEXT("no engine; skipping"));
 		return true;
 	}
-	// A real, initialized game instance (it creates its own world + world context), so a
-	// LocalPlayer outered to it passes ULocalPlayer's GameInstance ensure.
+	// A real, initialized game instance (it creates its own world + world context).
 	UGameInstance* Instance = NewObject<UGameInstance>(GEngine);
 	Instance->InitializeStandalone();
 	UWorld* World = Instance->GetWorld();
@@ -47,8 +46,8 @@ bool FTTAUIMenuFlowTest::RunTest(const FString& Parameters)
 	World->InitializeActorsForPlay(FURL());
 	World->BeginPlay();
 
-	// Owned by the game instance, like a real local player.
-	ULocalPlayer* LocalPlayer = NewObject<ULocalPlayer>(Instance, GEngine->LocalPlayerClass);
+	// ULocalPlayer is Within=Engine, so the engine is its outer (as in UGameInstance::CreateLocalPlayer).
+	ULocalPlayer* LocalPlayer = NewObject<ULocalPlayer>(GEngine, GEngine->LocalPlayerClass);
 	const AGameModeBase* Mode = World->GetAuthGameMode();
 	APlayerController* PC = World->SpawnActor<APlayerController>(Mode ? Mode->PlayerControllerClass.Get() : ATTAPlayerController::StaticClass());
 	if (!TestNotNull(TEXT("local controller"), PC) || !TestNotNull(TEXT("local player"), LocalPlayer)) return false;
