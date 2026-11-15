@@ -323,3 +323,6 @@ Title is Play Solo / Host Game / Join (code or IP) / Settings / Quit. Logo and b
 - Merged `origin/main` (build-watch test fixes) into the plan branch. Only DEVLOG.md and plan.md conflicted; both sides' entries kept. The three test files merged cleanly.
 - First real UE 5.5 compile of the plan-branch features needed two fixes: `TTAGameMode.cpp` includes `UObject/Package.h` (`IsOnMap` calls `GetOutermost()->GetName()`), and `InputCore` is now a module dependency (`EKeys::Enter` / `Gamepad_Special_Right` for the host's START key failed to link).
 - **Verified on this PC:** Build.bat exits 0 (DLL linked); `Automation RunTests TTA.` 16/16 pass headless (`-nullrhi`); `Scripts/test.ps1` green (doctest + 196 Python tests). The manual checks listed above (lobby gate, 3 rounds, podium, voice, menu) are still unplayed.
+
+## Backyard fit: kit units and axes (plan task 7)
+The patio floor tile (KayKit `Primitive_Floor`, imported as 4 x 1 x 4 cm: metres read as cm, Y-up) stopped the Backyard build at the fit guard. Fits now apply a x100 unit fix for sub-10 cm meshes and roll Y-up slabs 90 deg about X before the per-axis fit; a prop that still can't fit is logged and skipped instead of aborting the build (Backyard and Heaven). Needs an editor run to confirm the slab lands flat.
