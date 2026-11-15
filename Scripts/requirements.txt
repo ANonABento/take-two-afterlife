@@ -1,0 +1,3 @@
+# Host-side Python deps for `make test` / Scripts/test.ps1 (not the UE editor Python).
+cmake>=3.20   # Core doctest build when cmake isn't installed system-wide
+numpy         # Scripts/make_sfx.py + its test
