@@ -1,131 +1,268 @@
 {
- "_note": "Gen 3 angel (59,972 tris). Hat parented to bone head_hat (rest head at world z=1.0). Apply: rotate rot_z_deg about Z, uniform scale, then translate offset (world axes, rest pose; hat origin = base centre).",
+ "_note": "Gen 3 angel, faces +X. Hats are baked (turn, scale, tilt/splay applied); origin = base centre over the head. Parent to head_hat, place origin at offset_from_head_hat_m (world, rest pose, head_hat head z=1.0). Head width 0.554 m, hat width cap 0.637 m (head +15%).",
  "crown": {
-  "tris": 19972,
+  "class": "band",
   "rot_z_deg": 0,
-  "scale": 1.2969,
+  "scale": 1.3537,
+  "tilt_fwd_deg": 0,
+  "seat_z": 0.9,
   "offset_from_head_hat_m": [
    0.0,
+   -0.0033,
+   -0.1082
+  ],
+  "bone_local_location": [
    0.0,
-   0.0008
+   -0.5599,
+   0.0033
   ],
-  "dims_m(blender,Z up)": [
-   0.428,
-   0.438,
-   0.353
+  "dims_m": [
+   0.447,
+   0.457,
+   0.376
   ],
-  "verts_inside_head": 0
+  "tris": 19972,
+  "trimmed_hidden_verts": 0,
+  "checks": {
+   "verts_inside_head": 0,
+   "width_m": 0.457,
+   "width_ok": true,
+   "rim_gap_ok": true,
+   "rim_gap_max_mm": 3.4
+  }
  },
  "propeller-beanie": {
-  "tris": 19970,
-  "rot_z_deg": 90,
-  "scale": 1.5071,
+  "class": "band",
+  "rot_z_deg": 180,
+  "scale": 1.8532,
+  "tilt_fwd_deg": 8,
+  "seat_z": 0.83,
   "offset_from_head_hat_m": [
    0.0,
+   -0.0033,
+   -0.1711
+  ],
+  "bone_local_location": [
    0.0,
-   -0.0639
+   -0.6228,
+   0.0033
   ],
-  "dims_m(blender,Z up)": [
-   0.416,
-   0.498,
-   0.499
+  "dims_m": [
+   0.613,
+   0.511,
+   0.632
   ],
-  "verts_inside_head": 0
+  "tris": 19970,
+  "trimmed_hidden_verts": 0,
+  "checks": {
+   "verts_inside_head": 0,
+   "width_m": 0.613,
+   "width_ok": true,
+   "rim_gap_ok": true,
+   "rim_gap_max_mm": 2.0
+  }
  },
  "viking-helmet": {
-  "tris": 19986,
-  "rot_z_deg": 0,
-  "scale": 1.4743,
+  "class": "band",
+  "rot_z_deg": 180,
+  "scale": 1.4262,
+  "tilt_fwd_deg": 6,
+  "seat_z": 0.82,
   "offset_from_head_hat_m": [
    0.0,
+   -0.0033,
+   -0.1749
+  ],
+  "bone_local_location": [
    0.0,
-   -0.0886
+   -0.6266,
+   0.0033
   ],
-  "dims_m(blender,Z up)": [
-   0.502,
-   0.658,
-   0.547
+  "dims_m": [
+   0.492,
+   0.637,
+   0.528
   ],
-  "verts_inside_head": 0
+  "tris": 19986,
+  "trimmed_hidden_verts": 0,
+  "checks": {
+   "verts_inside_head": 0,
+   "width_m": 0.637,
+   "width_ok": true,
+   "rim_gap_ok": true,
+   "rim_gap_max_mm": 2.0
+  }
  },
  "party-cone": {
-  "tris": 19906,
-  "rot_z_deg": 0,
-  "scale": 1.04,
+  "class": "perch",
+  "rot_z_deg": 0.0,
+  "scale": 0.872,
   "offset_from_head_hat_m": [
    0.0,
+   -0.0033,
+   -0.0159
+  ],
+  "bone_local_location": [
    0.0,
-   0.0028
+   -0.4676,
+   0.0033
   ],
-  "dims_m(blender,Z up)": [
-   0.218,
-   0.218,
-   0.302
+  "dims_m": [
+   0.167,
+   0.169,
+   0.27
   ],
-  "verts_inside_head": 0
+  "tris": 19906,
+  "trimmed_hidden_verts": 0,
+  "checks": {
+   "verts_inside_head": 0,
+   "width_m": 0.169,
+   "width_ok": true,
+   "rim_gap_ok": true,
+   "rim_gap_max_mm": 3.9
+  }
  },
  "traffic-cone": {
-  "tris": 19988,
-  "rot_z_deg": 0,
-  "scale": 1.0481,
+  "class": "perch",
+  "rot_z_deg": 0.0,
+  "scale": 0.8789,
   "offset_from_head_hat_m": [
    0.0,
+   -0.0033,
+   -0.0196
+  ],
+  "bone_local_location": [
    0.0,
-   0.0029
+   -0.4713,
+   0.0033
   ],
-  "dims_m(blender,Z up)": [
-   0.22,
-   0.218,
-   0.289
+  "dims_m": [
+   0.181,
+   0.181,
+   0.262
   ],
-  "verts_inside_head": 0
+  "tris": 19988,
+  "trimmed_hidden_verts": 0,
+  "checks": {
+   "verts_inside_head": 0,
+   "width_m": 0.181,
+   "width_ok": true,
+   "rim_gap_ok": false,
+   "rim_gap_max_mm": 4.4
+  }
  },
  "devil-horns": {
-  "tris": 19994,
+  "class": "pair",
   "rot_z_deg": 90,
-  "scale": 1.2,
+  "scale": 1.1863,
+  "splay_deg": 8,
+  "part_bases_world": [
+   [
+    0.0,
+    0.0909,
+    0.9863
+   ],
+   [
+    0.0,
+    -0.0974,
+    0.9805
+   ]
+  ],
   "offset_from_head_hat_m": [
    0.0,
+   -0.0033,
+   -0.0183
+  ],
+  "bone_local_location": [
    0.0,
-   -0.0046
+   -0.47,
+   0.0033
   ],
-  "dims_m(blender,Z up)": [
+  "dims_m": [
    0.074,
-   0.336,
-   0.362
+   0.456,
+   0.351
   ],
-  "verts_inside_head": 0
+  "tris": 19994,
+  "trimmed_hidden_verts": 0,
+  "checks": {
+   "verts_inside_head": 0,
+   "width_m": 0.456,
+   "width_ok": true,
+   "span_m": 0.456,
+   "span_ok": true,
+   "mirror_err_m": 0.0044
+  }
  },
  "bunny-ears": {
-  "tris": 19996,
+  "class": "pair",
   "rot_z_deg": 90,
-  "scale": 1.15,
+  "scale": 1.384,
+  "splay_deg": 8,
+  "part_bases_world": [
+   [
+    0.0,
+    0.0909,
+    0.9865
+   ],
+   [
+    0.0,
+    -0.0974,
+    0.9807
+   ]
+  ],
   "offset_from_head_hat_m": [
    0.0,
+   -0.0033,
+   -0.0187
+  ],
+  "bone_local_location": [
    0.0,
-   0.0006
+   -0.4704,
+   0.0033
   ],
-  "dims_m(blender,Z up)": [
-   0.065,
-   0.276,
-   0.325
+  "dims_m": [
+   0.078,
+   0.5,
+   0.38
   ],
-  "verts_inside_head": 0
+  "tris": 19996,
+  "trimmed_hidden_verts": 0,
+  "checks": {
+   "verts_inside_head": 0,
+   "width_m": 0.5,
+   "width_ok": true,
+   "span_m": 0.5,
+   "span_ok": true,
+   "mirror_err_m": 0.0087
+  }
  },
  "halo": {
-  "tris": 19994,
+  "class": "float",
   "rot_z_deg": 0,
   "scale": 1.0,
+  "levelled_tilt_deg": 1.16,
   "offset_from_head_hat_m": [
    0.0,
+   -0.0033,
+   0.06
+  ],
+  "bone_local_location": [
    0.0,
-   0.0592
+   -0.3917,
+   0.0033
   ],
-  "dims_m(blender,Z up)": [
-   0.3,
+  "dims_m": [
+   0.301,
    0.314,
-   0.073
+   0.074
   ],
-  "verts_inside_head": 0
+  "tris": 19994,
+  "trimmed_hidden_verts": 0,
+  "checks": {
+   "verts_inside_head": 0,
+   "width_m": 0.314,
+   "width_ok": true
+  }
  }
 }
