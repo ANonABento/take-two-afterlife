@@ -16,6 +16,9 @@ WORLD_MPC = f"{TOON_DIR}/MPC_TTA_World"
 PALETTE_TEXTURE = f"{TOON_DIR}/T_TTA_Palette"
 INSTANCE_DIR = f"{TOON_DIR}/Instances"
 ART_TEST_MAP = "/Game/Maps/TTA_ArtTest"
+LOOK_TAG = "TTAWorldLook"
+# Map -> TTAWorldLookSettings preset applied by apply_world_look.py.
+LOOK_MAPS = {"/Game/Maps/Title": "Course", "/Game/Maps/Backyard": "Course", "/Game/Maps/Heaven": "Heaven"}
 
 # Shared 12-colour palette. Index i sits in texel column i of the 12x1 palette texture.
 PALETTE = (
