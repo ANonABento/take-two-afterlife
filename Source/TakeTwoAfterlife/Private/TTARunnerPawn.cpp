@@ -14,10 +14,18 @@
 #include "Net/VoiceConfig.h"
 #include "Sound/SoundAttenuation.h"
 #include "TTAMicRecorder.h"
+#include "TTACosmetics.h"
+#include "TTAPlayerState.h"
+#include "Engine/DataTable.h"
+#include "Engine/StaticMesh.h"
+#include "Engine/Texture2D.h"
+#include "tta/MenuFlow.h"
 
 namespace
 {
 const FName FlashParam(TEXT("Flash")); // M_TTA_Toon emissive override (task 11b)
+const FName FaceParam(TEXT("FaceTexture")); // runner material face texture slot
+const FName TintParam(TEXT("Tint"));
 }
 
 ATTARunnerPawn::ATTARunnerPawn()
@@ -66,6 +74,44 @@ void ATTARunnerPawn::BeginPlay()
 		}
 	}
 	SetForm(Form);
+	if (const ATTAPlayerState* PS = GetPlayerState<ATTAPlayerState>())
+	{
+		const tta::PlayerLook Look = PS->GetLook();
+		ApplyLook(Look.hat, Look.face);
+	}
+}
+
+void ATTARunnerPawn::ApplyLook(int32 HatIndex, int32 FaceIndex)
+{
+	const UDataTable* Table = CosmeticsTable.LoadSynchronous();
+	if (!Table)
+	{
+		UE_LOG(LogTemp, Error, TEXT("ATTARunnerPawn: CosmeticsTable %s failed to load"), *CosmeticsTable.ToString());
+		return;
+	}
+	const TArray<FName> Rows = Table->GetRowNames();
+	const FTTACosmeticRow* HatRow = Rows.IsValidIndex(HatIndex) ? Table->FindRow<FTTACosmeticRow>(Rows[HatIndex], TEXT("Hat")) : nullptr;
+	const FTTACosmeticRow* FaceRow = Rows.IsValidIndex(FaceIndex) ? Table->FindRow<FTTACosmeticRow>(Rows[FaceIndex], TEXT("Face")) : nullptr;
+	if (!HatRow || !FaceRow)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ATTARunnerPawn: no cosmetic row for hat %d / face %d (%d rows)"), HatIndex, FaceIndex, Rows.Num());
+		return;
+	}
+	Hat->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, HatSocket);
+	Hat->SetStaticMesh(HatRow->HatMesh.LoadSynchronous());
+	Hat->SetRelativeTransform(FTransform(HatRow->Rotation, HatRow->SocketOffset, HatRow->Scale));
+	if (tta::kPaletteHex.size() > static_cast<size_t>(HatRow->PaletteIndex) && HatRow->PaletteIndex >= 0)
+	{
+		if (UMaterialInstanceDynamic* HatMid = Hat->CreateAndSetMaterialInstanceDynamic(0))
+		{
+			HatMid->SetVectorParameterValue(TintParam, FLinearColor(FColor::FromHex(UTF8_TO_TCHAR(tta::kPaletteHex[HatRow->PaletteIndex]))));
+		}
+	}
+	UTexture2D* Face = FaceRow->FaceTexture.LoadSynchronous();
+	for (UMaterialInstanceDynamic* Material : FlashMaterials)
+	{
+		if (Material && Face) Material->SetTextureParameterValue(FaceParam, Face);
+	}
 }
 
 void ATTARunnerPawn::SetupPlayerInputComponent(UInputComponent* Input)
@@ -208,6 +254,11 @@ bool ATTARunnerPawn::IsFilming() const
 void ATTARunnerPawn::OnPlayerStateChanged(APlayerState* NewPlayerState, APlayerState* OldPlayerState)
 {
 	Super::OnPlayerStateChanged(NewPlayerState, OldPlayerState);
+	if (const ATTAPlayerState* PS = Cast<ATTAPlayerState>(NewPlayerState); PS && HasActorBegunPlay())
+	{
+		const tta::PlayerLook Look = PS->GetLook();
+		ApplyLook(Look.hat, Look.face);
+	}
 	if (!NewPlayerState || Talker || IsLocallyControlled() || GetNetMode() == NM_DedicatedServer) return;
 	VoiceAttenuation = NewObject<USoundAttenuation>(this);
 	VoiceAttenuation->Attenuation.bAttenuate = true;

@@ -13,6 +13,7 @@ class UTTAMicRecorder;
 class UMaterialInstanceDynamic;
 class USoundBase;
 class UStaticMeshComponent;
+class UDataTable;
 
 UENUM(BlueprintType)
 enum class ETTAForm : uint8
@@ -39,6 +40,8 @@ public:
 	UFUNCTION(BlueprintCallable) void Dive();
 	// Angel shows wings + halo; human (runner) form hides both and shows the hat.
 	UFUNCTION(BlueprintCallable) void SetForm(ETTAForm NewForm);
+	// Hat mesh/transform/tint from DT_Cosmetics row HatIndex, face texture from row FaceIndex.
+	UFUNCTION(BlueprintCallable) void ApplyLook(int32 HatIndex, int32 FaceIndex);
 	UFUNCTION(BlueprintCallable) void SetStartLocation(const FVector& Location) { StartLocation = Location; }
 
 	// Advances the hit timers in world seconds (not slowed by the freeze). Called from Tick.
@@ -53,6 +56,8 @@ public:
 	UPROPERTY(BlueprintAssignable) FTTAImpactSignature OnImpact;
 
 	UPROPERTY(Config, EditAnywhere, Category = "TTA") TSoftObjectPtr<USkeletalMesh> RunnerMesh;
+	UPROPERTY(Config, EditAnywhere, Category = "TTA") TSoftObjectPtr<UDataTable> CosmeticsTable;
+	UPROPERTY(EditAnywhere, Category = "TTA") FName HatSocket = TEXT("head");
 	UPROPERTY(EditAnywhere, Category = "TTA") TObjectPtr<USoundBase> ImpactSound;
 	UPROPERTY(EditAnywhere, Category = "TTA") TSubclassOf<UCameraShakeBase> ImpactShake;
 	UPROPERTY(EditAnywhere, Category = "TTA") float DiveSpeed = 900.f;
