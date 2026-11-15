@@ -10,6 +10,7 @@ import sys
 import unreal
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import layout_spawn as S  # noqa: E402
 import toon_spec  # noqa: E402
 
 EAL = unreal.EditorAssetLibrary
@@ -58,20 +59,6 @@ def load_mesh(name):
     raise RuntimeError(f"missing mesh {name}")
 
 
-def sensible_scale(mesh):
-    """Imported centimetre meshes stay at 1. A metres-sized import (a podium under 20 cm) is scaled up."""
-    box = mesh.get_bounding_box()
-    height = box.max.z - box.min.z
-    if height < 20.0:
-        return unreal.Vector(100.0, 100.0, 100.0)
-    return unreal.Vector(1.0, 1.0, 1.0)
-
-
-def ground_location(mesh, x, y, scale, ground_z=0.0):
-    box = mesh.get_bounding_box()
-    return unreal.Vector(x, y, ground_z - box.min.z * scale.z)
-
-
 def paint(comp, colour, toon):
     material = palette_instance(colour, toon)
     for slot in range(max(comp.get_num_materials(), 1)):
@@ -82,19 +69,13 @@ def by_label(actors, label):
     return next((actor for actor in actors if actor.get_actor_label() == label), None)
 
 
-def spawn_mesh(subsystem, existing, label, mesh, location, rotation, colour, toon, scale):
-    actor = existing.get(label)
-    if actor is None:
-        actor = subsystem.spawn_actor_from_class(unreal.StaticMeshActor, location, rotation)
-        actor.set_actor_label(label)
-    else:
-        actor.set_actor_location(location, False, False)
-        actor.set_actor_rotation(rotation, False)
-    comp = actor.static_mesh_component
-    comp.set_static_mesh(mesh)
-    comp.set_relative_scale3d(scale)
-    paint(comp, colour, toon)
-    return actor
+def spawn_mesh(subsystem, piece, toon):
+    """piece: one S.heaven_pieces() entry. Fitted once from the mesh bounds, tagged TTA_Layout."""
+    mesh = load_mesh(piece["mesh"])
+    actor, scale = S.spawn_fitted(unreal, subsystem, piece["label"], mesh, piece["fit"], piece["at"], piece["yaw"])
+    paint(actor.static_mesh_component, piece["colour"], toon)
+    box = mesh.get_bounding_box()
+    return actor, (box.max.z - box.min.z) * scale[2], (box.max.y - box.min.y) * scale[1]
 
 
 def main():
@@ -105,8 +86,9 @@ def main():
     if not level.load_level(MAP_PATH):
         raise RuntimeError(f"could not load {MAP_PATH}")
     subsystem = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
+    # Reruns: delete what the last run spawned (TTA_Layout). PlayerStarts, cinema, sky, fog, sun stay.
+    unreal.log(f"removed {S.delete_previous(subsystem)} old {S.LAYOUT_TAG} actors")
     actors = subsystem.get_all_level_actors()
-    existing = {actor.get_actor_label(): actor for actor in actors}
 
     if by_label(actors, "Sky") is None or not any(isinstance(a, unreal.SkyAtmosphere) for a in actors):
         sky = subsystem.spawn_actor_from_class(unreal.SkyAtmosphere, unreal.Vector(0, 0, 0))
@@ -168,71 +150,28 @@ def main():
     for comp, colour in ((cloud, "Bone"), (couch, "Pink"), (screen, "Ink")):
         paint(comp, colour, toon)
 
-    cloud_spots = (("SM_Heaven_Cloud_A", -600.0, -1400.0, 280.0),
-                   ("SM_Heaven_Cloud_B", 1800.0, 1100.0, 420.0),
-                   ("SM_Heaven_Cloud_C", 1600.0, -1600.0, 180.0))
-    for name, x, y, z in cloud_spots:
-        mesh = load_mesh(name)
-        scale = sensible_scale(mesh)
-        loc = unreal.Vector(x, y, z - mesh.get_bounding_box().min.z * scale.z)
-        spawn_mesh(subsystem, existing, name, mesh, loc, unreal.Rotator(0, 0, 0), COLOUR[name], toon, scale)
+    with open(LAYOUT_JSON, encoding="utf-8") as f:
+        layout = json.load(f)
+    pieces = {p["label"]: p for p in S.heaven_pieces(layout)}
+    for piece in pieces.values():
+        if piece["label"] not in ("Podium", "Trophy", "Halo"):
+            spawn_mesh(subsystem, piece, toon)
 
-    podium_mesh = load_mesh("SM_Heaven_Podium")
-    podium_scale = sensible_scale(podium_mesh)
-    podium_loc = ground_location(podium_mesh, PODIUM_X, 0.0, podium_scale)
-    podium = spawn_mesh(subsystem, existing, "Podium", podium_mesh, podium_loc,
-                        unreal.Rotator(0, 180.0, 0), COLOUR["SM_Heaven_Podium"], toon, podium_scale)
-    podium_box = podium_mesh.get_bounding_box()
-    top_z = podium_loc.z + podium_box.max.z * podium_scale.z
-    width = (podium_box.max.y - podium_box.min.y) * podium_scale.y
-
-    trophy_mesh = load_mesh("SM_Heaven_FilmReelTrophy")
-    trophy_scale = sensible_scale(trophy_mesh)
-    trophy_loc = unreal.Vector(PODIUM_X, 0.0, top_z - trophy_mesh.get_bounding_box().min.z * trophy_scale.z)
-    trophy = spawn_mesh(subsystem, existing, "Trophy", trophy_mesh, trophy_loc, unreal.Rotator(0, 180.0, 0),
-                        COLOUR["SM_Heaven_FilmReelTrophy"], toon, trophy_scale)
-    trophy_top = trophy_loc.z + trophy_mesh.get_bounding_box().max.z * trophy_scale.z
-
-    halo_mesh = load_mesh("SM_Heaven_Halo")
-    halo_scale = sensible_scale(halo_mesh)
-    halo_loc = unreal.Vector(PODIUM_X, 0.0, trophy_top + 25.0 - halo_mesh.get_bounding_box().min.z * halo_scale.z)
-    spawn_mesh(subsystem, existing, "Halo", halo_mesh, halo_loc, unreal.Rotator(0, 0, 0),
-               COLOUR["SM_Heaven_Halo"], toon, halo_scale)
-
-    carpet_mesh = load_mesh("SM_Heaven_RedCarpet")
-    carpet_scale = sensible_scale(carpet_mesh)
-    carpet_box = carpet_mesh.get_bounding_box()
-    carpet_length = (carpet_box.max.x - carpet_box.min.x) * carpet_scale.x
-    # Lay the carpet from the couch toward the podium, sitting on the cloud.
-    carpet_x = PODIUM_X - (podium_box.max.x - podium_box.min.x) * podium_scale.x * 0.5 - carpet_length * 0.5
-    carpet_loc = ground_location(carpet_mesh, carpet_x, 0.0, carpet_scale)
-    spawn_mesh(subsystem, existing, "RedCarpet", carpet_mesh, carpet_loc, unreal.Rotator(0, 0, 0),
-               COLOUR["SM_Heaven_RedCarpet"], toon, carpet_scale)
+    podium, podium_h, width = spawn_mesh(subsystem, pieces["Podium"], toon)
+    top_z = pieces["Podium"]["at"][2] + podium_h
+    trophy = dict(pieces["Trophy"], at=(PODIUM_X, 0.0, top_z))
+    _, trophy_h, _ = spawn_mesh(subsystem, trophy, toon)
+    spawn_mesh(subsystem, dict(pieces["Halo"], at=(PODIUM_X, 0.0, top_z + trophy_h + 25.0)), toon)
 
     # No ATTACinema lookup for podium marks. Tags 1st/2nd/3rd are the spots.
     spots = (("Podium_1st", "1st", 0.0, 12.0),
              ("Podium_2nd", "2nd", -width * 0.28, 0.0),
              ("Podium_3rd", "3rd", width * 0.28, 0.0))
-    fresh = {actor.get_actor_label(): actor for actor in subsystem.get_all_level_actors()}
     for label, tag, y, lift in spots:
-        loc = unreal.Vector(PODIUM_X, y, top_z + lift)
-        point = fresh.get(label)
-        if point is None:
-            point = subsystem.spawn_actor_from_class(unreal.TargetPoint, loc, unreal.Rotator(0, 180.0, 0))
-            point.set_actor_label(label)
-        else:
-            point.set_actor_location(loc, False, False)
-            point.set_actor_rotation(unreal.Rotator(0, 180.0, 0), False)
-        point.set_editor_property("tags", [unreal.Name(tag)])
-
-    with open(LAYOUT_JSON, encoding="utf-8") as f:
-        layout = json.load(f)
-    for piece in layout["podium_dressing"] + layout["spectator_ring"]:
-        mesh = load_mesh(piece["mesh"])
-        scale = sensible_scale(mesh)
-        loc = ground_location(mesh, piece["x"], piece["y"], scale)
-        spawn_mesh(subsystem, existing, piece["label"], mesh, loc, unreal.Rotator(0, piece["yaw"], 0),
-                   piece["colour"], toon, scale)
+        point = subsystem.spawn_actor_from_class(unreal.TargetPoint, unreal.Vector(PODIUM_X, y, top_z + lift),
+                                                 unreal.Rotator(0, 180.0, 0))
+        point.set_actor_label(label)
+        S.tag(unreal, point, tag)
 
     if not level.save_current_level():
         raise RuntimeError(f"could not save {MAP_PATH}")

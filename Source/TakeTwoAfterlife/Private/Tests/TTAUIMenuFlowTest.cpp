@@ -27,22 +27,21 @@ bool FTTAUIMenuFlowTest::RunTest(const FString& Parameters)
 		AddInfo(TEXT("no engine; skipping"));
 		return true;
 	}
-	UWorld* World = UWorld::CreateWorld(EWorldType::Game, false);
+	// A real, initialized game instance (it creates its own world + world context), so a
+	// LocalPlayer outered to it passes ULocalPlayer's GameInstance ensure.
+	UGameInstance* Instance = NewObject<UGameInstance>(GEngine);
+	Instance->InitializeStandalone();
+	UWorld* World = Instance->GetWorld();
 	if (!World)
 	{
 		AddInfo(TEXT("no world; skipping"));
 		return true;
 	}
-	FWorldContext& Context = GEngine->CreateNewWorldContext(EWorldType::Game);
-	Context.SetCurrentWorld(World);
 	ON_SCOPE_EXIT
 	{
 		GEngine->DestroyWorldContext(World);
 		World->DestroyWorld(false);
 	};
-
-	UGameInstance* Instance = NewObject<UGameInstance>(World);
-	World->SetGameInstance(Instance);
 	World->GetWorldSettings()->DefaultGameMode = ATTAGameMode::StaticClass();
 	if (!TestTrue(TEXT("game mode starts"), World->SetGameMode(FURL()))) return false;
 	World->InitializeActorsForPlay(FURL());
@@ -98,7 +97,7 @@ bool FTTAUIMenuFlowTest::RunTest(const FString& Parameters)
 	Menu->SetSettings(Loud);
 	TestEqual(TEXT("volume clamped"), Menu->GetSettings().master, 100);
 	TestEqual(TEXT("sensitivity clamped"), Menu->GetSettings().sensitivity, 10);
-	TestFalse(TEXT("out-of-range resolution refused"), Menu->ApplyResolution(Menu->NumResolutionChoices()));
+	TestEqual(TEXT("saved resolution index clamped"), tta::clampResolutionIndex(17, 17), 16);
 	const int16 Samples[] = {0, 16384, -8000};
 	Menu->SetMicSamples(Samples, 3);
 	TestTrue(TEXT("mic meter ~0.5"), FMath::IsNearlyEqual(Menu->GetMicLevel(), 0.5f, 0.01f));

@@ -66,8 +66,16 @@ void ATTARunnerPawn::BeginPlay()
 	Super::BeginPlay();
 	StartLocation = GetActorLocation();
 	MeshRelative = GetMesh()->GetRelativeTransform();
-	for (int32 Slot = 0; Slot < GetMesh()->GetNumMaterials(); ++Slot)
+	// Only make MIDs for slots the loaded SK_Angel really has; with no mesh (or an empty slot)
+	// CreateAndSetMaterialInstanceDynamic logs "Material index N invalid".
+	const int32 NumSlots = GetMesh()->GetSkeletalMeshAsset() ? GetMesh()->GetNumMaterials() : 0;
+	if (NumSlots == 0)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("ATTARunnerPawn: %s has no skeletal mesh/materials; flash disabled"), *GetMesh()->GetName());
+	}
+	for (int32 Slot = 0; Slot < NumSlots; ++Slot)
+	{
+		if (!GetMesh()->GetMaterial(Slot)) continue;
 		if (UMaterialInstanceDynamic* Mid = GetMesh()->CreateAndSetMaterialInstanceDynamic(Slot))
 		{
 			FlashMaterials.Add(Mid);
@@ -102,7 +110,7 @@ void ATTARunnerPawn::ApplyLook(int32 HatIndex, int32 FaceIndex)
 	Hat->SetRelativeTransform(FTransform(HatRow->Rotation, HatRow->SocketOffset, HatRow->Scale));
 	if (tta::kPaletteHex.size() > static_cast<size_t>(HatRow->PaletteIndex) && HatRow->PaletteIndex >= 0)
 	{
-		if (UMaterialInstanceDynamic* HatMid = Hat->CreateAndSetMaterialInstanceDynamic(0))
+		if (UMaterialInstanceDynamic* HatMid = Hat->GetNumMaterials() > 0 && Hat->GetMaterial(0) ? Hat->CreateAndSetMaterialInstanceDynamic(0) : nullptr)
 		{
 			HatMid->SetVectorParameterValue(TintParam, FLinearColor(FColor::FromHex(UTF8_TO_TCHAR(tta::kPaletteHex[HatRow->PaletteIndex]))));
 		}
