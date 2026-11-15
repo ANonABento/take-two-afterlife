@@ -1,0 +1,96 @@
+{
+  "outline": 6,
+  "shadow": 4,
+  "assets": {
+    "T_UI_Button": {
+      "width": 512,
+      "height": 160,
+      "radius": 32,
+      "left": 38,
+      "top": 38,
+      "right": 38,
+      "bottom": 42
+    },
+    "T_UI_ButtonHover": {
+      "width": 512,
+      "height": 160,
+      "radius": 32,
+      "left": 38,
+      "top": 38,
+      "right": 38,
+      "bottom": 42
+    },
+    "T_UI_ButtonPressed": {
+      "width": 512,
+      "height": 160,
+      "radius": 32,
+      "left": 38,
+      "top": 38,
+      "right": 38,
+      "bottom": 42
+    },
+    "T_UI_ButtonPrimary": {
+      "width": 512,
+      "height": 160,
+      "radius": 32,
+      "left": 38,
+      "top": 38,
+      "right": 38,
+      "bottom": 42
+    },
+    "T_UI_Panel": {
+      "width": 256,
+      "height": 256,
+      "radius": 32,
+      "left": 38,
+      "top": 38,
+      "right": 38,
+      "bottom": 42
+    },
+    "T_UI_CodePill": {
+      "width": 384,
+      "height": 128,
+      "radius": 56,
+      "left": 62,
+      "top": 62,
+      "right": 62,
+      "bottom": 66
+    },
+    "T_UI_Banner": {
+      "width": 512,
+      "height": 128,
+      "radius": 24,
+      "left": 30,
+      "top": 30,
+      "right": 30,
+      "bottom": 34
+    },
+    "T_UI_TextField": {
+      "width": 512,
+      "height": 128,
+      "radius": 20,
+      "left": 26,
+      "top": 26,
+      "right": 26,
+      "bottom": 30
+    },
+    "T_UI_SliderBar": {
+      "width": 512,
+      "height": 48,
+      "radius": 16,
+      "left": 22,
+      "top": 22,
+      "right": 22,
+      "bottom": 26
+    },
+    "T_UI_SliderKnob": {
+      "width": 96,
+      "height": 100,
+      "radius": 48,
+      "left": 0,
+      "top": 0,
+      "right": 0,
+      "bottom": 0
+    }
+  }
+}

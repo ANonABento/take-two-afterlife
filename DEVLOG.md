@@ -360,3 +360,6 @@ Added `tta::Punch` (wind-up/active/recovery + 1.5 s cooldown) and a PawnLife stu
 - **Prompt:** wind-up pose or scale-up placeholder, whoosh + hit cues via AudioCues, short camera shake on the victim.
 - **Agent did:** `AudioEvent::PunchWindUp`/`PunchHit` with `SFX_PunchWhoosh`/`SFX_PunchHit` (doctest). Server `ServerPunch` now fires `MulticastWindUp` (Unreliable) when the punch starts: every client swells the runner mesh to `WindUpScale` 1.15 over the 0.45 s wind-up and plays the whoosh. `MulticastPunched` plays the hit and starts `ImpactShake` on the victim's own camera.
 - **Failed / fixed by hand:** no SFX files yet; run `create_placeholder_audio.py` (silent placeholders) or drop real ones in `/Game/Audio/SFX/`. Editor compile + PIE feel check pending.
+
+## UI redo task 1 — drawn chrome
+Buttons, panel, pill, banner, text field and slider art are now drawn by `Scripts/build_ui_chrome.py` at fixed sizes (all buttons 512x160) with one 6 px Ink outline and 4 px shadow; 9-slice margins are written to `Art/UI/T_UI_Slices.json` and read by `UTTAUIStyle` instead of typed-in fractions. Editor compile + reimport pending.

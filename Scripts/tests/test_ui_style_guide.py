@@ -65,12 +65,12 @@ class UIStyleGuideTests(unittest.TestCase):
         names = [tick(r[0]) for r in rows]
         self.assertEqual(names, ["T_UI_" + n for n in enum("ETTAAsset")])
         self.assertEqual(sorted(names), sorted(p.stem for p in ART.glob("*.png")))
-        table = re.findall(r"\{ETTAAsset::(\w+), ETTAColor::(\w+), ([\d.]+)f, ([\d.]+)f\}", CPP)
-        self.assertEqual([("T_UI_" + a, c, float(x), float(y)) for a, c, x, y in table],
-                         [(tick(r[0]), r[3], float(r[1]), float(r[2])) for r in rows])
+        table = re.findall(r"\{ETTAAsset::(\w+), ETTAColor::(\w+), (true|false)\}", CPP)
+        self.assertEqual([("T_UI_" + a, c, s == "true") for a, c, s in table],
+                         [(tick(r[0]), r[2], r[1] == "yes") for r in rows])
         colours = enum("ETTAColor")
         for row in rows:
-            self.assertIn(row[3], colours, row[0])
+            self.assertIn(row[2], colours, row[0])
 
     def test_builders_and_kinds_match_both_ways(self):
         declared = re.findall(r"^\tstatic [\w*: ]+?\b(Color|Font|Space|PadAfter|Brush|Make(?!Font)\w+)\(", HEADER, re.M)
