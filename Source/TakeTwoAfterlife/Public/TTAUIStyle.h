@@ -52,6 +52,11 @@ public:
 	UPROPERTY(Config) FSoftObjectPath HUDBackground;
 	UPROPERTY(Config) FSoftObjectPath ResultsBackground;
 	UPROPERTY(Config) FSoftObjectPath PodiumBackground;
+	// Art slots for the title menu. Empty = text title / palette rounded buttons.
+	UPROPERTY(Config) FSoftObjectPath MenuLogo;
+	UPROPERTY(Config) FSoftObjectPath ButtonNormal;
+	UPROPERTY(Config) FSoftObjectPath ButtonHovered;
+	UPROPERTY(Config) FSoftObjectPath ButtonPressed;
 
 	static const UTTAUIStyle& Get() { return *GetDefault<UTTAUIStyle>(); }
 	// Palette index (tta::kInk ...) to colour. The only colour source for UI code.
@@ -64,6 +69,8 @@ public:
 	UFont* LoadCanvasFont(bool bDisplay) const;
 	// Configured image for Screen, null when none is set. A set path that fails to load is logged.
 	UTexture2D* LoadBackground(ETTAUIScreen Screen) const;
+	// Texture at an art slot (MenuLogo, Button*), null when empty. A set path that fails to load is logged.
+	UTexture2D* LoadSlotTexture(const FSoftObjectPath& Path) const;
 	// Image when configured, else palette Fill at Opacity.
 	void ApplyBackground(UBorder* Border, ETTAUIScreen Screen, int32 Fill, float Opacity) const;
 
