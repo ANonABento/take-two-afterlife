@@ -20,7 +20,8 @@ class UWidgetSwitcher;
 DECLARE_DELEGATE(FTTAMenuAction);
 DECLARE_DELEGATE_OneParam(FTTAMenuCode, const FString&);
 
-// Front-end menus (plan task 24): Title, Join (code), Lobby (colour / hat / face, room
+// Front-end menus (plan task 24): Title (Play Solo / Host / Join / Settings / Quit;
+// logo, background and button art come from UTTAUIStyle slots), Join (code or IP), Lobby (colour / hat / face, room
 // code, START gate), Settings (audio, sensitivity, window mode, resolution, mic test,
 // accessibility), How to play,
 // Reels. Screen rules live in Core tta::MenuFlow; this widget builds the tree in C++ and
@@ -125,9 +126,7 @@ private:
 	UFUNCTION() void OnHostClicked() { Host(); }
 	UFUNCTION() void OnPlaySoloClicked() { PlaySolo(); }
 	UFUNCTION() void OnJoinClicked() { Open(tta::MenuScreen::Join); }
-	UFUNCTION() void OnReelsClicked() { Open(tta::MenuScreen::Reels); }
 	UFUNCTION() void OnSettingsClicked() { Open(tta::MenuScreen::Settings); }
-	UFUNCTION() void OnHowToClicked() { Open(tta::MenuScreen::HowToPlay); }
 	UFUNCTION() void OnQuitClicked() { OnQuit.ExecuteIfBound(); }
 	UFUNCTION() void OnBackClicked() { Back(); }
 	UFUNCTION() void OnCodeCommitted(const FText& Text, ETextCommit::Type Method);
