@@ -86,14 +86,16 @@ bool FTTABotsSoloRoundTest::RunTest(const FString& Parameters)
 			TestTrue(TEXT("bot is steering"), Bot->IsRunning());
 			StartX.Add(Bot, Bot->GetPawn()->GetActorLocation().X);
 		}
-		for (int32 i = 0; i < 90; ++i) World->Tick(LEVELTICK_All, 1.f / 30.f); // 3 s
+		// Tick functions run once per GFrameCounter, so each simulated frame needs its own.
+		auto TickWorld = [World]() { ++GFrameCounter; World->Tick(LEVELTICK_All, 1.f / 30.f); };
+		for (int32 i = 0; i < 90; ++i) TickWorld(); // 3 s
 		for (ATTABotController* Bot : Bots)
 		{
 			ATTARunnerPawn* Runner = Cast<ATTARunnerPawn>(Bot->GetPawn());
 			const bool bMoved = Runner && Runner->GetActorLocation().X > StartX[Bot] + 200.f;
 			TestTrue(TEXT("bot moved toward the gate or finished"), bMoved || Mode->GetRunDirector()->HasFinished(Runner));
 		}
-		for (int32 i = 0; i < 30 * 25 && State->GetPhase() == ETTAPhase::Run; ++i) World->Tick(LEVELTICK_All, 1.f / 30.f);
+		for (int32 i = 0; i < 30 * 25 && State->GetPhase() == ETTAPhase::Run; ++i) TickWorld();
 		TestTrue(TEXT("run ended into Edit"), State->GetPhase() == ETTAPhase::Edit);
 		for (ATTABotController* Bot : Bots)
 		{
