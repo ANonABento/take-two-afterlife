@@ -58,6 +58,13 @@ TEST_CASE("resolution picker list is deduped, largest first, and finds the curre
     CHECK(resolutionIndex({}, {1920, 1080}) == -1);
 }
 
+TEST_CASE("saved resolution index is clamped, 0-based") {
+    CHECK(clampResolutionIndex(17, 17) == 16);
+    CHECK(clampResolutionIndex(0, 17) == 0);
+    CHECK(clampResolutionIndex(-3, 17) == 0);
+    CHECK(clampResolutionIndex(5, 0) == -1);
+}
+
 TEST_CASE("window modes follow Unreal's EWindowMode order") {
     CHECK(static_cast<int>(WindowMode::Fullscreen) == 0);
     CHECK(static_cast<int>(WindowMode::WindowedFullscreen) == 1);

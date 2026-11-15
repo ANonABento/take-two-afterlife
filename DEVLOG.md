@@ -289,3 +289,10 @@ It should end with `Result: Succeeded`. If not, paste the first `error C` lines.
 - **Found:** `ATTABotController` already had `bWantsPlayerState = true`, straight-line `BotRoute` steering (no NavMesh anywhere) and EndRun -> Edit with `FillCut` per bot. The "runner has no PlayerState" log came from `UTTAMicRecorder`: AI pawns are locally controlled on the server, so each bot's lobby runner opened the mic at Run; EnterRun then unpossessed and destroyed that pawn, and `StopAndSave` read the (now null) PlayerState at EndPlay.
 - **Fix:** mic records only player-controlled pawns and takes the PlayerState id when capture starts. Bot steering logs under `LogTTABots` (start line + once a second at Verbose). `Scripts/tests/test_bots_round.py`.
 - **To run (UE 5.5 editor console or Session Frontend):** `Automation RunTests TTA.Bots`. If "bot moved toward the gate" still fails, run `log LogTTABots Verbose` first and send the LogTTABots lines.
+
+## Menu test, resolution and materials (plan 3 task 3)
+- MenuFlow test now builds its world from `UGameInstance::InitializeStandalone()` (LocalPlayer outer = an initialized game instance, no ensure).
+- Resolution index is 0-based and clamped via `tta::clampResolutionIndex` (no more "choice 17 out of range (17 choices)").
+- Runner body MIDs only for slots the loaded SK_Angel has (`RunnerMesh=/Game/Characters/Angel/SK_Angel.SK_Angel`); hat MID guarded.
+- KayKit `prototype_texture` -> Masked: in the editor, `py Scripts/fix_prototype_material.py`.
+- **To run (UE 5.5):** `Automation RunTests TTA.` — TTA.UI.MenuFlow expected to pass. Untested here (no Unreal in the sandbox).

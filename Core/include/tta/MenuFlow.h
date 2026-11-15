@@ -68,6 +68,8 @@ struct Resolution {
 std::vector<Resolution> resolutionChoices(std::vector<Resolution> supported);
 // Index of `current` in `choices`; 0 (largest) when it isn't listed, -1 when empty.
 int resolutionIndex(const std::vector<Resolution>& choices, Resolution current);
+// 0-based picker index clamped into [0, count-1]; -1 when the list is empty.
+int clampResolutionIndex(int index, int count);
 
 // Empty when START may be pressed; otherwise the tooltip saying why not.
 std::string startBlockedReason(int players, int readyPlayers);

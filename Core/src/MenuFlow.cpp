@@ -64,6 +64,11 @@ int resolutionIndex(const std::vector<Resolution>& choices, Resolution current) 
     return it == choices.end() ? 0 : static_cast<int>(it - choices.begin());
 }
 
+int clampResolutionIndex(int index, int count) {
+    if (count <= 0) return -1;
+    return std::clamp(index, 0, count - 1);
+}
+
 std::string startBlockedReason(int players, int readyPlayers) {
     if (players < 2) return "Need at least 2 players";
     if (readyPlayers < players) return "Waiting for everyone to be ready";
