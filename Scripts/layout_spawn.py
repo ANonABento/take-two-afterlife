@@ -146,7 +146,7 @@ def tag(unreal, actor, *extra):
     actor.set_editor_property("tags", [unreal.Name(LAYOUT_TAG)] + [unreal.Name(t) for t in extra])
 
 
-def spawn_fitted(unreal, subsystem, label, mesh, fit, target, yaw, extra_tags=()):
+def spawn_fitted(unreal, subsystem, label, mesh, fit, target, yaw, extra_tags=(), collide=True):
     """StaticMeshActor of `mesh` fitted to `fit` with its bottom-centre at `target` (cm), tagged TTA_Layout.
 
     Unit and axis fixes come from fit_mesh (x100 for sub-10 cm imports, roll 90 for Y-up slabs).
@@ -168,10 +168,10 @@ def spawn_fitted(unreal, subsystem, label, mesh, fit, target, yaw, extra_tags=()
     return actor, tuple(h - l for h, l in zip(rhi, rlo))
 
 
-def spawn_or_skip(unreal, subsystem, label, mesh, fit, target, yaw, extra_tags=()):
+def spawn_or_skip(unreal, subsystem, label, mesh, fit, target, yaw, extra_tags=(), collide=True):
     """spawn_fitted, but a mesh that can't fit is logged and skipped: (None, None) instead of aborting the build."""
     try:
-        return spawn_fitted(unreal, subsystem, label, mesh, fit, target, yaw, extra_tags)
+        return spawn_fitted(unreal, subsystem, label, mesh, fit, target, yaw, extra_tags, collide)
     except BadFit as err:
         unreal.log_warning(f"skipped {label}: {err}")
         return None, None
