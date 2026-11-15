@@ -326,3 +326,11 @@ Title is Play Solo / Host Game / Join (code or IP) / Settings / Quit. Logo and b
 
 ## Backyard fit: kit units and axes (plan task 7)
 The patio floor tile (KayKit `Primitive_Floor`, imported as 4 x 1 x 4 cm: metres read as cm, Y-up) stopped the Backyard build at the fit guard. Fits now apply a x100 unit fix for sub-10 cm meshes and roll Y-up slabs 90 deg about X before the per-axis fit; a prop that still can't fit is logged and skipped instead of aborting the build (Backyard and Heaven). Needs an editor run to confirm the slab lands flat.
+
+## Lobby spawn + camera check (user PC)
+Code only; Heaven.umap untouched. Needs an editor compile first. To keep `dress_heaven.py` off the hand-dressed map, add the actor tag `TTA_HandDressed` to Heaven's World Settings (or any actor) and save.
+1. Open Heaven, press Play Solo from the title menu.
+2. The angel appears about 3 m above the Heaven floor and drops onto it; it does not start inside a cloud or under the floor.
+3. The camera is behind the angel and turns with the mouse.
+4. Back the angel into a cloud or the gate: the camera slides in toward the angel instead of going inside the mesh.
+5. Hold RaiseCamera: the view switches to the handheld; release: back behind the angel.

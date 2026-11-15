@@ -6,6 +6,7 @@
 #include "TTARunnerPawn.generated.h"
 
 class UCameraComponent;
+class USpringArmComponent;
 class UCameraShakeBase;
 class USoundAttenuation;
 class UVOIPTalker;
@@ -72,6 +73,9 @@ public:
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> Hat;
 	// Content Warning-style handheld: hold [RMB] to look (and later edit) through it.
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UCameraComponent> Handheld;
+	// Third-person view: boom behind the angel, pulled in by its collision probe instead of clipping meshes.
+	UPROPERTY(VisibleAnywhere) TObjectPtr<USpringArmComponent> CameraBoom;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UCameraComponent> FollowCamera;
 	// Records this runner's mic during Run (locally controlled runner only).
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UTTAMicRecorder> MicRecorder;
 	// Proximity voice: full volume inside VoiceFullVolumeCm, silent past VoiceSilentCm.

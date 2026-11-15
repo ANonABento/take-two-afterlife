@@ -10,6 +10,7 @@ import sys
 import unreal
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import hand_dressed  # noqa: E402
 import layout_spawn as S  # noqa: E402
 import toon_spec  # noqa: E402
 
@@ -87,6 +88,11 @@ def main():
     if not level.load_level(MAP_PATH):
         raise RuntimeError(f"could not load {MAP_PATH}")
     subsystem = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
+    world = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()
+    world_settings = world.get_world_settings() if world else None
+    if hand_dressed.is_hand_dressed(subsystem.get_all_level_actors(), world_settings):
+        unreal.log_warning(f"{MAP_PATH} is tagged {hand_dressed.HAND_DRESSED_TAG}: dress_heaven.py skipped, map left as is")
+        return
     # Reruns: delete what the last run spawned (TTA_Layout). PlayerStarts, cinema, sky, fog, sun stay.
     unreal.log(f"removed {S.delete_previous(subsystem)} old {S.LAYOUT_TAG} actors")
     actors = subsystem.get_all_level_actors()
