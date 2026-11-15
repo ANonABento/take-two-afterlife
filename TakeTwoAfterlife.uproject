@@ -8,7 +8,10 @@
 			"Name": "TakeTwoAfterlife",
 			"Type": "Runtime",
 			"LoadingPhase": "Default",
-			"AdditionalDependencies": [ "Engine", "TTACore" ]
+			"AdditionalDependencies": [
+				"Engine",
+				"TTACore"
+			]
 		},
 		{
 			"Name": "TTACore",
@@ -17,11 +20,32 @@
 		}
 	],
 	"Plugins": [
-		{ "Name": "PythonScriptPlugin", "Enabled": true, "TargetAllowList": [ "Editor" ] },
-		{ "Name": "OnlineSubsystem", "Enabled": true },
-		{ "Name": "OnlineSubsystemUtils", "Enabled": true },
-		{ "Name": "OnlineSubsystemEOS", "Enabled": true },
-		{ "Name": "EOSShared", "Enabled": true },
-		{ "Name": "EOSVoiceChat", "Enabled": true }
+		{
+			"Name": "PythonScriptPlugin",
+			"Enabled": true,
+			"TargetAllowList": [
+				"Editor"
+			]
+		},
+		{
+			"Name": "OnlineSubsystem",
+			"Enabled": true
+		},
+		{
+			"Name": "OnlineSubsystemUtils",
+			"Enabled": true
+		},
+		{
+			"Name": "OnlineSubsystemEOS",
+			"Enabled": true
+		},
+		{
+			"Name": "EOSShared",
+			"Enabled": true
+		},
+		{
+			"Name": "EOSVoiceChat",
+			"Enabled": true
+		}
 	]
 }
