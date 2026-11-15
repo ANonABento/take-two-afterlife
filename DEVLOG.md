@@ -236,3 +236,10 @@ Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prom
 4. Press START; in Build, bot traps and cameras appear on the course.
 5. In Run, the 3 bots run the stepping stones toward the gate and jump the gaps; a bot that falls or gets stuck respawns at the start.
 6. Run ends (all at the gate or the timer); Edit opens and the round goes on to the Heaven podium.
+
+## MVP task 5 — automation crashes
+
+- **Fixed:** `TTA.UI.MenuFlow` crash. `UTTAMenuWidget::NativeOnInitialized` (run by `Menu->Initialize()`) built the Settings screen and called `RefreshVideo()`, which `check`ed `UGameUserSettings` and asked the RHI for fullscreen resolutions. In a bare automation world that assert takes down the whole run. Video options now fill in when Settings opens; `RefreshVideo`/`ApplyWindowMode`/`ApplyResolution` log and skip instead of `check`. The test's `ULocalPlayer` is now owned by the game instance, not `GEngine`. Locked by `Scripts/tests/test_menu_init.py`.
+- **Rechecked, no change:** premiere advance. Core `MatchStateMachine` allows Premiere -> Build (or Podium on the last round); `ATTAGameMode::EndPremiere` asks exactly that and `TTA.Match.ThreeRounds` drives it. In-game, nothing calls `EndPremiere` yet (cinema not wired: separate task).
+- **Rechecked, no change:** respawn timing. `ATTARunnerPawn::AdvanceLife` slices dt at 0.05 s so `PawnLife` walks Frozen (0.12 s) -> Ragdoll (1.5 s) -> Alive even when a test passes the whole delay at once; ticks use world dt so the frozen pawn still counts down.
+- **Untested here:** UE compile and Automation (no Unreal in the sandbox). On Windows, in the editor console: `RunTests TTA.` (or `UnrealEditor-Cmd.exe TakeTwoAfterlife.uproject -ExecCmds="Automation RunTests TTA.;Quit" -unattended -nullrhi -log`).
