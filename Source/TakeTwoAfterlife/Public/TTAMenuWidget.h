@@ -6,6 +6,7 @@
 #include "tta/MenuFlow.h"
 #include "TTAMenuWidget.generated.h"
 
+class UImage;
 class UBorder;
 class UButton;
 class UComboBoxString;
@@ -27,6 +28,14 @@ DECLARE_DELEGATE_OneParam(FTTAMenuCode, const FString&);
 // Reels. Screen rules live in Core tta::MenuFlow; this widget builds the tree in C++ and
 // skins it per choomfie ref ui-party-games (sticker cards, Ink outlines, palette colours).
 // The owner binds the delegates to UTTASessionSubsystem / the cut player.
+// One lobby card: avatar tint, name, ready tick.
+struct FTTALobbyPlayer
+{
+	FString Name;
+	FLinearColor Colour;
+	bool bReady = false;
+};
+
 UCLASS()
 class TAKETWOAFTERLIFE_API UTTAMenuWidget : public UUserWidget
 {
@@ -56,6 +65,12 @@ public:
 	// Lobby
 	void SetRoomCode(const FString& Code, bool bIsHost);
 	void SetPlayers(int32 Players, int32 Ready);
+	// Fills the card row (first kMaxLobbyCards players, rest hidden) and the Start state.
+	void SetPlayerCards(const TArray<FTTALobbyPlayer>& InPlayers);
+	int32 NumVisibleCards() const;
+	bool IsStartEnabled() const;
+	bool IsCustomizeOpen() const;
+	static constexpr int32 kMaxLobbyCards = 4;
 	bool CanStart() const { return bHost && StartBlockedReason.IsEmpty(); }
 	const FString& GetStartBlockedReason() const { return StartBlockedReason; }
 	void CycleLook(tta::LookPart Part, int32 Step);
@@ -99,6 +114,12 @@ private:
 	UPROPERTY() TObjectPtr<UEditableTextBox> IpBox;
 	UPROPERTY() TObjectPtr<UTextBlock> RoomCodeText;
 	UPROPERTY() TObjectPtr<UTextBlock> WaitingText;
+	// Card row, kMaxLobbyCards slots built once; SetPlayerCards fills and shows them.
+	UPROPERTY() TArray<TObjectPtr<UBorder>> PlayerCards;
+	UPROPERTY() TArray<TObjectPtr<UBorder>> CardAvatars;
+	UPROPERTY() TArray<TObjectPtr<UTextBlock>> CardNames;
+	UPROPERTY() TArray<TObjectPtr<UImage>> CardReady;
+	UPROPERTY() TObjectPtr<UVerticalBox> CustomizePanel;
 	UPROPERTY() TObjectPtr<UTextBlock> LookText;
 	UPROPERTY() TObjectPtr<UBorder> LookSwatch;
 	UPROPERTY() TObjectPtr<UButton> StartButton;
@@ -134,6 +155,7 @@ private:
 	UFUNCTION() void OnCodeCommitted(const FText& Text, ETextCommit::Type Method);
 	UFUNCTION() void OnStartClicked();
 	UFUNCTION() void OnDirectClicked() { OnJoinDirect.ExecuteIfBound(IpBox->GetText().ToString()); }
+	UFUNCTION() void OnCustomizeClicked();
 	UFUNCTION() void OnColourNext() { CycleLook(tta::LookPart::Colour, 1); }
 	UFUNCTION() void OnHatNext() { CycleLook(tta::LookPart::Hat, 1); }
 	UFUNCTION() void OnFaceNext() { CycleLook(tta::LookPart::Face, 1); }

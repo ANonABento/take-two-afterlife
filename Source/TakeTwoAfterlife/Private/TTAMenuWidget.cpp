@@ -228,36 +228,62 @@ void UTTAMenuWidget::NativeOnInitialized()
 	}
 	// Lobby
 	{
-		// Two columns (players | cosmetics), action buttons in a bottom row.
+		// mock-lobby.png: code pill top centre, up to 4 player cards, Customize bottom-left, Start bottom-right.
 		UVerticalBox* Box = ScreenPanel(kWideW);
-		UHorizontalBox* Columns = WidgetTree->ConstructWidget<UHorizontalBox>();
-		Box->AddChild(Columns);
-		GapAfter(Columns->Slot);
-		auto Column = [&]()
+		UBorder* Pill = UTTAUIStyle::MakePanel(WidgetTree, ETTAPanelKind::CodePill);
+		RoomCodeText = UTTAUIStyle::MakeLabel(WidgetTree, FText::FromString(TEXT("------")), ETTAFont::H1);
+		Pill->SetContent(RoomCodeText);
+		UVerticalBoxSlot* PillSlot = Box->AddChildToVerticalBox(Pill);
+		PillSlot->SetHorizontalAlignment(HAlign_Center);
+		GapAfter(PillSlot);
+		UHorizontalBox* CardRow = WidgetTree->ConstructWidget<UHorizontalBox>();
+		const float CardW = (kWideW - (kMaxLobbyCards - 1) * kGap) / kMaxLobbyCards;
+		for (int32 i = 0; i < kMaxLobbyCards; ++i)
 		{
-			USizeBox* Size = WidgetTree->ConstructWidget<USizeBox>();
-			Size->SetWidthOverride(kScreenW);
+			UBorder* PlayerCard = UTTAUIStyle::MakePanel(WidgetTree, ETTAPanelKind::Panel);
 			UVerticalBox* Inner = WidgetTree->ConstructWidget<UVerticalBox>();
-			Size->SetContent(Inner);
-			Columns->AddChild(Size);
-			return Inner;
-		};
-		UVerticalBox* Players = Column();
-		Cast<UHorizontalBoxSlot>(Players->GetParent()->Slot)->SetPadding(UTTAUIStyle::PadAfter(Orient_Horizontal, kWideW - 2 * kScreenW));
-		RoomCodeText = Label(Card(Players, tta::kBone), TEXT("------"), kCode, true);
-		WaitingText = Label(Players, TEXT(""), UTTAUIStyle::kBody);
-		UVerticalBox* Cosmetics = Column();
-		LookSwatch = Card(Cosmetics, tta::kRed);
+			PlayerCard->SetContent(Inner);
+			UBorder* Avatar = WidgetTree->ConstructWidget<UBorder>();
+			Avatar->SetBrush(FSlateRoundedBoxBrush(UTTAUIStyle::Color(ETTAColor::Bone), kCorner));
+			USizeBox* AvatarSize = WidgetTree->ConstructWidget<USizeBox>();
+			AvatarSize->SetHeightOverride(CardW * 0.6f);
+			AvatarSize->SetContent(Avatar);
+			GapAfter(Inner->AddChild(AvatarSize));
+			UTextBlock* Name = UTTAUIStyle::MakeLabel(WidgetTree, FText::GetEmpty(), ETTAFont::Body);
+			GapAfter(Inner->AddChild(Name));
+			UImage* Tick = WidgetTree->ConstructWidget<UImage>();
+			Tick->SetBrush(UTTAUIStyle::Brush(ETTAAsset::IconReady));
+			Tick->SetDesiredSizeOverride(FVector2D(UTTAUIStyle::kH2));
+			Inner->AddChildToVerticalBox(Tick)->SetHorizontalAlignment(HAlign_Center);
+			USizeBox* CardSize = WidgetTree->ConstructWidget<USizeBox>();
+			CardSize->SetWidthOverride(CardW);
+			CardSize->SetContent(PlayerCard);
+			UHorizontalBoxSlot* CardSlot = CardRow->AddChildToHorizontalBox(CardSize);
+			if (i + 1 < kMaxLobbyCards) GapAfter(CardSlot);
+			PlayerCards.Add(PlayerCard);
+			CardAvatars.Add(Avatar);
+			CardNames.Add(Name);
+			CardReady.Add(Tick);
+		}
+		GapAfter(Box->AddChild(CardRow));
+		WaitingText = Label(Box, TEXT(""), UTTAUIStyle::kBody);
+		// Customize opens the colour / hat / face pickers under the cards.
+		CustomizePanel = WidgetTree->ConstructWidget<UVerticalBox>();
+		CustomizePanel->SetVisibility(ESlateVisibility::Collapsed);
+		LookSwatch = Card(CustomizePanel, tta::kRed);
 		LookText = Label(LookSwatch, TEXT(""), UTTAUIStyle::kBody, true);
-		MenuButton(Cosmetics, TEXT("COLOUR >"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnColourNext);
-		MenuButton(Cosmetics, TEXT("HAT >"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnHatNext);
-		MenuButton(Cosmetics, TEXT("FACE >"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnFaceNext);
+		MenuButton(CustomizePanel, TEXT("COLOUR >"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnColourNext);
+		MenuButton(CustomizePanel, TEXT("HAT >"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnHatNext);
+		MenuButton(CustomizePanel, TEXT("FACE >"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnFaceNext);
+		GapAfter(Box->AddChild(CustomizePanel));
 		UHorizontalBox* Bottom = WidgetTree->ConstructWidget<UHorizontalBox>();
-		const float ActionW = (kWideW - 2 * kGap) / 3.f;
-		StartButton = MenuButton(Bottom, TEXT("START"), tta::kGrass, ActionW);
+		MenuButton(Bottom, TEXT("CUSTOMIZE"), ETTAButtonKind::Secondary)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnCustomizeClicked);
+		MenuButton(Bottom, TEXT("LEAVE"), ETTAButtonKind::Secondary)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnBackClicked);
+		StartButton = MenuButton(Bottom, TEXT("START"), ETTAButtonKind::Primary);
 		StartButton->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnStartClicked);
-		MenuButton(Bottom, TEXT("SETTINGS"), tta::kPurple, ActionW)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnSettingsClicked);
-		MenuButton(Bottom, TEXT("LEAVE"), tta::kInk, ActionW)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnBackClicked);
+		UHorizontalBoxSlot* StartSlot = Cast<UHorizontalBoxSlot>(StartButton->GetParent()->Slot);
+		StartSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+		StartSlot->SetHorizontalAlignment(HAlign_Right);
 		Box->AddChild(Bottom);
 	}
 	// Settings
@@ -312,7 +338,7 @@ void UTTAMenuWidget::NativeOnInitialized()
 		MenuButton(Box, TEXT("BACK"), tta::kInk)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnBackClicked);
 	}
 
-	SetPlayers(1, 0);
+	SetPlayerCards({});
 	RefreshLook();
 	RefreshSettings();
 	Switcher->SetActiveWidgetIndex(SlotOf(Flow.current()));
@@ -395,6 +421,44 @@ void UTTAMenuWidget::SetPlayers(int32 Players, int32 Ready)
 	WaitingText->SetText(FText::FromString(StartBlockedReason.IsEmpty() ? TEXT("Everyone's ready!") : StartBlockedReason));
 	StartButton->SetIsEnabled(CanStart());
 	StartButton->SetToolTipText(FText::FromString(StartBlockedReason));
+}
+
+void UTTAMenuWidget::SetPlayerCards(const TArray<FTTALobbyPlayer>& InPlayers)
+{
+	int32 Ready = 0;
+	for (int32 i = 0; i < kMaxLobbyCards; ++i)
+	{
+		const bool bShown = InPlayers.IsValidIndex(i);
+		PlayerCards[i]->SetVisibility(bShown ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+		if (!bShown) continue;
+		CardAvatars[i]->SetBrushColor(InPlayers[i].Colour);
+		CardNames[i]->SetText(FText::FromString(InPlayers[i].Name));
+		CardReady[i]->SetVisibility(InPlayers[i].bReady ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Hidden);
+	}
+	for (const FTTALobbyPlayer& Player : InPlayers) Ready += Player.bReady ? 1 : 0;
+	SetPlayers(InPlayers.Num(), Ready);
+}
+
+int32 UTTAMenuWidget::NumVisibleCards() const
+{
+	int32 Count = 0;
+	for (const UBorder* PlayerCard : PlayerCards) Count += PlayerCard->GetVisibility() == ESlateVisibility::Visible ? 1 : 0;
+	return Count;
+}
+
+bool UTTAMenuWidget::IsStartEnabled() const
+{
+	return StartButton->GetIsEnabled();
+}
+
+bool UTTAMenuWidget::IsCustomizeOpen() const
+{
+	return CustomizePanel->GetVisibility() != ESlateVisibility::Collapsed;
+}
+
+void UTTAMenuWidget::OnCustomizeClicked()
+{
+	CustomizePanel->SetVisibility(IsCustomizeOpen() ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 }
 
 void UTTAMenuWidget::OnStartClicked()

@@ -372,3 +372,6 @@ Type sizes now have one source: `Docs/design/ui-style.md` Fonts table = `UTTAUIS
 
 ## UI redo task 4 — title, join, how to play
 Title now sits top-left inside the safe area: logo, then a five-button stack all `kButtonW` wide, drawn with the style-guide button art (`UTTAUIStyle::MakeButton`), Host as the one gold Primary. Join and How to Play are each one centred panel with a heading and Back inside. `test_menu_structure` checks order, equal widths, Primary and safe-area margins. Editor compile + in-game look pending.
+
+## UI redo task 5: lobby player cards
+Lobby text lines replaced by code pill, 4-slot player card row (avatar, name, ready tick) and Customize/Start bottom row; `SetPlayerCards` + structure test. Untested in editor.

@@ -83,6 +83,16 @@ bool FTTAUIMenuFlowTest::RunTest(const FString& Parameters)
 	TestFalse(TEXT("can't start alone"), Menu->CanStart());
 	Menu->SetPlayers(2, 2);
 	TestTrue(TEXT("can start with 2 ready"), Menu->CanStart());
+	TArray<FTTALobbyPlayer> Party;
+	for (int32 i = 0; i < 5; ++i) Party.Add({FString::Printf(TEXT("P%d"), i), UTTAUIStyle::Color(ETTAColor::Red), i != 1});
+	Menu->SetPlayerCards(Party);
+	TestEqual(TEXT("card row caps at 4"), Menu->NumVisibleCards(), UTTAMenuWidget::kMaxLobbyCards);
+	TestFalse(TEXT("start disabled while someone is not ready"), Menu->IsStartEnabled());
+	Party[1].bReady = true;
+	Party.SetNum(2);
+	Menu->SetPlayerCards(Party);
+	TestEqual(TEXT("two cards"), Menu->NumVisibleCards(), 2);
+	TestTrue(TEXT("start enabled when all ready"), Menu->IsStartEnabled());
 	const FLinearColor Before = Menu->GetLookColour();
 	Menu->CycleLook(tta::LookPart::Colour, 1);
 	TestNotEqual(TEXT("colour changed"), Menu->GetLookColour(), Before);
