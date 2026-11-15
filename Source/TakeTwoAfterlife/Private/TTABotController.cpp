@@ -6,6 +6,8 @@
 #include "TTACinema.h"
 #include "TTAFinishGate.h"
 #include "TTARunnerPawn.h"
+#include "CollisionQueryParams.h"
+#include "Engine/HitResult.h"
 
 const FName ATTABotController::RouteTag(TEXT("TTARoute"));
 

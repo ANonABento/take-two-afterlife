@@ -1,0 +1,222 @@
+{
+ "units": "cm, ATTACinema space: couch at the origin, screen at +X (see dress_heaven.py)",
+ "protected": [
+  {
+   "label": "PlayerStarts",
+   "x": -300.0,
+   "y": 0.0,
+   "half": [
+    50.0,
+    185.0
+   ]
+  },
+  {
+   "label": "Couch",
+   "x": 0.0,
+   "y": 0.0,
+   "half": [
+    100.0,
+    150.0
+   ]
+  },
+  {
+   "label": "Screen",
+   "x": 1200.0,
+   "y": 0.0,
+   "half": [
+    30.0,
+    350.0
+   ]
+  },
+  {
+   "label": "Podium",
+   "x": 780.0,
+   "y": 0.0,
+   "half": [
+    150.0,
+    150.0
+   ]
+  },
+  {
+   "label": "RedCarpet",
+   "x": 390.0,
+   "y": 0.0,
+   "half": [
+    240.0,
+    75.0
+   ]
+  }
+ ],
+ "podium_dressing": [
+  {
+   "label": "Stanchion_L1",
+   "mesh": "SM_Heaven_VelvetRopeStanchions",
+   "x": 400.0,
+   "y": -130.0,
+   "yaw": 0,
+   "colour": "Yellow",
+   "half": [
+    40.0,
+    20.0
+   ]
+  },
+  {
+   "label": "Stanchion_R1",
+   "mesh": "SM_Heaven_VelvetRopeStanchions",
+   "x": 400.0,
+   "y": 130.0,
+   "yaw": 0,
+   "colour": "Yellow",
+   "half": [
+    40.0,
+    20.0
+   ]
+  },
+  {
+   "label": "Stanchion_L2",
+   "mesh": "SM_Heaven_VelvetRopeStanchions",
+   "x": 560.0,
+   "y": -130.0,
+   "yaw": 0,
+   "colour": "Yellow",
+   "half": [
+    40.0,
+    20.0
+   ]
+  },
+  {
+   "label": "Stanchion_R2",
+   "mesh": "SM_Heaven_VelvetRopeStanchions",
+   "x": 560.0,
+   "y": 130.0,
+   "yaw": 0,
+   "colour": "Yellow",
+   "half": [
+    40.0,
+    20.0
+   ]
+  },
+  {
+   "label": "PodiumCloud_L",
+   "mesh": "SM_Heaven_Cloud_A",
+   "x": 780.0,
+   "y": -260.0,
+   "yaw": 0,
+   "colour": "Bone",
+   "half": [
+    80.0,
+    80.0
+   ]
+  },
+  {
+   "label": "PodiumCloud_R",
+   "mesh": "SM_Heaven_Cloud_C",
+   "x": 780.0,
+   "y": 260.0,
+   "yaw": 0,
+   "colour": "Bone",
+   "half": [
+    80.0,
+    80.0
+   ]
+  }
+ ],
+ "spectator_ring": [
+  {
+   "label": "Spectator_1",
+   "mesh": "SM_Heaven_Cloud_A",
+   "x": 933.9,
+   "y": 422.9,
+   "yaw": 250,
+   "colour": "Bone",
+   "half": [
+    60.0,
+    60.0
+   ]
+  },
+  {
+   "label": "Spectator_2",
+   "mesh": "SM_Heaven_Cloud_B",
+   "x": 780.0,
+   "y": 450.0,
+   "yaw": 270,
+   "colour": "Sky",
+   "half": [
+    60.0,
+    60.0
+   ]
+  },
+  {
+   "label": "Spectator_3",
+   "mesh": "SM_Heaven_Cloud_C",
+   "x": 626.1,
+   "y": 422.9,
+   "yaw": 290,
+   "colour": "Bone",
+   "half": [
+    60.0,
+    60.0
+   ]
+  },
+  {
+   "label": "Spectator_4",
+   "mesh": "SM_Heaven_Cloud_A",
+   "x": 490.7,
+   "y": 344.7,
+   "yaw": 310,
+   "colour": "Bone",
+   "half": [
+    60.0,
+    60.0
+   ]
+  },
+  {
+   "label": "Spectator_5",
+   "mesh": "SM_Heaven_Cloud_B",
+   "x": 933.9,
+   "y": -422.9,
+   "yaw": 110,
+   "colour": "Sky",
+   "half": [
+    60.0,
+    60.0
+   ]
+  },
+  {
+   "label": "Spectator_6",
+   "mesh": "SM_Heaven_Cloud_C",
+   "x": 780.0,
+   "y": -450.0,
+   "yaw": 90,
+   "colour": "Bone",
+   "half": [
+    60.0,
+    60.0
+   ]
+  },
+  {
+   "label": "Spectator_7",
+   "mesh": "SM_Heaven_Cloud_A",
+   "x": 626.1,
+   "y": -422.9,
+   "yaw": 70,
+   "colour": "Bone",
+   "half": [
+    60.0,
+    60.0
+   ]
+  },
+  {
+   "label": "Spectator_8",
+   "mesh": "SM_Heaven_Cloud_B",
+   "x": 490.7,
+   "y": -344.7,
+   "yaw": 50,
+   "colour": "Sky",
+   "half": [
+    60.0,
+    60.0
+   ]
+  }
+ ]
+}

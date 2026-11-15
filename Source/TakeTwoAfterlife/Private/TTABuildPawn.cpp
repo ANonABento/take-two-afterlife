@@ -7,6 +7,8 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "TTAGameMode.h"
+#include "CollisionQueryParams.h"
+#include "Engine/HitResult.h"
 
 ATTABuildPawn::ATTABuildPawn(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer.DoNotCreateDefaultSubobject(ADefaultPawn::MeshComponentName))
