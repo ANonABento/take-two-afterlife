@@ -6,7 +6,7 @@
 #include "TTABuildHUD.generated.h"
 
 class UBorder;
-class UFont;
+class USizeBox;
 class UHorizontalBox;
 class UTextBlock;
 class UVerticalBox;
@@ -17,6 +17,7 @@ class UTTAResultsWidget;
 // Build + Run overlay, built only from UTTAUIStyle builders (mockups ui/v2/build.png, run.png):
 // phase/round panel (left), timer banner (centre), budget panel (right); ready count in the
 // lobby, film hint in Run, build panel with camera-type icons while flying an ATTABuildPawn.
+// Premiere (ui/v2/premiere.png): now-showing card with "CUT x OF y", then score bars on Reveal.
 // ATTABuildHUD fills it every frame.
 UCLASS()
 class TAKETWOAFTERLIFE_API UTTABuildHUDWidget : public UUserWidget
@@ -47,10 +48,25 @@ private:
 	UPROPERTY() TObjectPtr<UVerticalBox> SelectedBox;
 	// Selected trap name, then its two settings.
 	UPROPERTY() TArray<TObjectPtr<UTextBlock>> SelectedLines;
+
+	// Adds score rows until there are Count.
+	void EnsureScoreRows(int32 Count);
+
+	UPROPERTY() TObjectPtr<UVerticalBox> PremiereBox;
+	UPROPERTY() TObjectPtr<UBorder> NowShowing;
+	UPROPERTY() TObjectPtr<UTextBlock> IntroText;
+	UPROPERTY() TObjectPtr<UTextBlock> CutText;
+	UPROPERTY() TObjectPtr<UBorder> ScorePanel;
+	UPROPERTY() TObjectPtr<UVerticalBox> ScoreList;
+	// One entry per score row, by board slot.
+	UPROPERTY() TArray<TObjectPtr<UTextBlock>> ScoreNames;
+	UPROPERTY() TArray<TObjectPtr<USizeBox>> ScoreBars;
+	UPROPERTY() TArray<TObjectPtr<UBorder>> ScoreFills;
+	UPROPERTY() TArray<TObjectPtr<UTextBlock>> ScoreValues;
 };
 
-// Match HUD: shows UTTABuildHUDWidget in every phase but Podium, and draws the premiere
-// score board on the canvas. In Podium it adds the results + podium widgets.
+// Match HUD: shows UTTABuildHUDWidget in every phase but Podium (with its premiere card and
+// score board in Premiere). In Podium it adds the results + podium widgets.
 UCLASS()
 class TAKETWOAFTERLIFE_API ATTABuildHUD : public AHUD
 {
@@ -60,20 +76,12 @@ public:
 	virtual void DrawHUD() override;
 
 private:
-	// Canvas pixels per 1080p design unit.
-	float UiScale() const;
-	void DrawCard(float X, float Y, float W, float H, int32 Fill);
-	// Draws at 1080p design coords; returns the text width in design units.
-	float DrawStyledText(const FString& Text, int32 Colour, float X, float Y, int32 Size, bool bDisplay);
-	float MeasureText(const FString& Text, int32 Size, bool bDisplay);
 	void ShowResults();
 	// Creates Overlay on first use and fills it from the game state and pawn.
 	void UpdateOverlay(const ATTAGameState& State);
-	// Kahoot-style bars during each cut's Reveal (ATTACinema::GetScoreBoard).
-	void DrawScoreBoard();
+	// Now-showing card, and Kahoot-style bars during each cut's Reveal (ATTACinema::GetScoreBoard).
+	void UpdatePremiere(bool bPremiere);
 
-	UPROPERTY() TObjectPtr<UFont> DisplayFont;
-	UPROPERTY() TObjectPtr<UFont> BodyFont;
 	UPROPERTY() TObjectPtr<UTTABuildHUDWidget> Overlay;
 	UPROPERTY() TObjectPtr<UTTAResultsWidget> Results;
 	UPROPERTY() TObjectPtr<UTTAPodiumWidget> PodiumWidget;

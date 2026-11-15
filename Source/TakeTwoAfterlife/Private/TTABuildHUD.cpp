@@ -6,12 +6,10 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Components/HorizontalBox.h"
 #include "Components/HorizontalBoxSlot.h"
+#include "Components/SizeBox.h"
 #include "Components/TextBlock.h"
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
-#include "Engine/Canvas.h"
-#include "Engine/Font.h"
-#include "Engine/Texture2D.h"
 #include "EngineUtils.h"
 #include "TTABuildPawn.h"
 #include "TTACinema.h"
@@ -31,42 +29,9 @@
 
 namespace
 {
-constexpr float kDesignW = 1920.f, kPad = 20.f, kPanelOpacity = 0.85f;
+// Premiere board, 1080p design units: card top under the top bar, name column, longest bar, bar height.
+constexpr float kPremiereTop = 160.f, kScoreNameW = 120.f, kScoreBarMaxW = 560.f, kScoreBarH = 70.f;
 constexpr int32 kTimerWarnSeconds = 10;
-}
-
-float ATTABuildHUD::UiScale() const
-{
-	return Canvas->ClipY / UTTAUIStyle::kDesignHeight;
-}
-
-void ATTABuildHUD::DrawCard(float X, float Y, float W, float H, int32 Fill)
-{
-	const float S = UiScale();
-	const float O = UTTAUIStyle::kOutline;
-	DrawRect(UTTAUIStyle::Colour(tta::kInk), X * S, Y * S, W * S, H * S);
-	if (UTexture2D* Image = UTTAUIStyle::Get().LoadBackground(ETTAUIScreen::HUD))
-	{
-		DrawTexture(Image, (X + O) * S, (Y + O) * S, (W - 2 * O) * S, (H - 2 * O) * S, 0.f, 0.f, 1.f, 1.f);
-		return;
-	}
-	DrawRect(UTTAUIStyle::Colour(Fill).CopyWithNewOpacity(kPanelOpacity), (X + O) * S, (Y + O) * S, (W - 2 * O) * S, (H - 2 * O) * S);
-}
-
-float ATTABuildHUD::MeasureText(const FString& Text, int32 Size, bool bDisplay)
-{
-	UFont* Font = bDisplay ? DisplayFont : BodyFont;
-	float W = 0.f, H = 0.f;
-	GetTextSize(Text, W, H, Font, static_cast<float>(Size) / Font->GetMaxCharHeight());
-	return W;
-}
-
-float ATTABuildHUD::DrawStyledText(const FString& Text, int32 Colour, float X, float Y, int32 Size, bool bDisplay)
-{
-	UFont* Font = bDisplay ? DisplayFont : BodyFont;
-	const float S = UiScale();
-	DrawText(Text, UTTAUIStyle::Colour(Colour), X * S, Y * S, Font, S * Size / Font->GetMaxCharHeight());
-	return MeasureText(Text, Size, bDisplay);
 }
 
 void ATTABuildHUD::ShowResults()
@@ -199,14 +164,53 @@ void UTTABuildHUDWidget::NativeOnInitialized()
 		SelectedLines.Add(UTTAUIStyle::MakeLabel(WidgetTree, FText::GetEmpty(), ETTAFont::Small, ETTAColor::Yellow));
 		SelectedBox->AddChildToVerticalBox(SelectedLines.Last());
 	}
+
+	PremiereBox = WidgetTree->ConstructWidget<UVerticalBox>();
+	UCanvasPanelSlot* PremiereSlot = Root->AddChildToCanvas(PremiereBox);
+	PremiereSlot->SetAnchors(FAnchors(0.5f, 0.f));
+	PremiereSlot->SetAlignment(FVector2D(0.5f, 0.f));
+	PremiereSlot->SetAutoSize(true);
+	PremiereSlot->SetPosition(FVector2D(0.f, UTTAUIStyle::Get().SafeArea.Top + kPremiereTop));
+	NowShowing = UTTAUIStyle::MakePanel(WidgetTree, ETTAPanelKind::Panel);
+	UVerticalBox* Card = WidgetTree->ConstructWidget<UVerticalBox>();
+	NowShowing->SetContent(Card);
+	Card->AddChildToVerticalBox(UTTAUIStyle::MakeLabel(WidgetTree, FText::FromString(TEXT("NOW SHOWING")), ETTAFont::Small, ETTAColor::Pink))->SetHorizontalAlignment(HAlign_Center);
+	IntroText = UTTAUIStyle::MakeLabel(WidgetTree, FText::GetEmpty(), ETTAFont::H2);
+	Card->AddChildToVerticalBox(IntroText)->SetHorizontalAlignment(HAlign_Center);
+	CutText = UTTAUIStyle::MakeLabel(WidgetTree, FText::GetEmpty(), ETTAFont::Body);
+	Card->AddChildToVerticalBox(CutText)->SetHorizontalAlignment(HAlign_Center);
+	UVerticalBoxSlot* CardSlot = PremiereBox->AddChildToVerticalBox(NowShowing);
+	CardSlot->SetHorizontalAlignment(HAlign_Center);
+	CardSlot->SetPadding(UTTAUIStyle::PadAfter(Orient_Vertical, Gap));
+	ScorePanel = UTTAUIStyle::MakePanel(WidgetTree, ETTAPanelKind::Panel);
+	ScoreList = WidgetTree->ConstructWidget<UVerticalBox>();
+	ScorePanel->SetContent(ScoreList);
+	PremiereBox->AddChildToVerticalBox(ScorePanel)->SetHorizontalAlignment(HAlign_Center);
+}
+
+void UTTABuildHUDWidget::EnsureScoreRows(int32 Count)
+{
+	while (ScoreBars.Num() < Count)
+	{
+		UHorizontalBox* Row = WidgetTree->ConstructWidget<UHorizontalBox>();
+		ScoreList->AddChildToVerticalBox(Row)->SetPadding(UTTAUIStyle::PadAfter(Orient_Vertical, UTTAUIStyle::Space(2)));
+		USizeBox* Name = WidgetTree->ConstructWidget<USizeBox>();
+		Name->SetWidthOverride(kScoreNameW);
+		ScoreNames.Add(UTTAUIStyle::MakeLabel(WidgetTree, FText::GetEmpty(), ETTAFont::H2));
+		Name->AddChild(ScoreNames.Last());
+		Row->AddChildToHorizontalBox(Name)->SetVerticalAlignment(VAlign_Center);
+		ScoreBars.Add(WidgetTree->ConstructWidget<USizeBox>());
+		ScoreBars.Last()->SetHeightOverride(kScoreBarH);
+		ScoreFills.Add(UTTAUIStyle::AddCard(WidgetTree, ScoreBars.Last(), tta::kBone));
+		Row->AddChildToHorizontalBox(ScoreBars.Last())->SetPadding(UTTAUIStyle::PadAfter(Orient_Horizontal, UTTAUIStyle::Space(3)));
+		ScoreValues.Add(UTTAUIStyle::MakeLabel(WidgetTree, FText::GetEmpty(), ETTAFont::H2));
+		Row->AddChildToHorizontalBox(ScoreValues.Last())->SetVerticalAlignment(VAlign_Center);
+	}
 }
 
 void ATTABuildHUD::DrawHUD()
 {
 	Super::DrawHUD();
-	if (!DisplayFont) DisplayFont = UTTAUIStyle::Get().LoadCanvasFont(true);
-	if (!BodyFont) BodyFont = UTTAUIStyle::Get().LoadCanvasFont(false);
-
 	const ATTAGameState* State = GetWorld()->GetGameState<ATTAGameState>();
 	if (!State) return;
 	const ETTAPhase Phase = State->GetPhase();
@@ -216,8 +220,8 @@ void ATTABuildHUD::DrawHUD()
 		ShowResults();
 		return;
 	}
-	if (Phase == ETTAPhase::Premiere) DrawScoreBoard();
 	UpdateOverlay(*State);
+	if (Overlay) UpdatePremiere(Phase == ETTAPhase::Premiere);
 }
 
 void ATTABuildHUD::UpdateOverlay(const ATTAGameState& State)
@@ -292,36 +296,46 @@ void ATTABuildHUD::UpdateOverlay(const ATTAGameState& State)
 	SetShown(Overlay->SelectedBox, bTrapSelected);
 }
 
-void ATTABuildHUD::DrawScoreBoard()
+void ATTABuildHUD::UpdatePremiere(bool bPremiere)
 {
 	const ATTACinema* Cinema = nullptr;
-	for (TActorIterator<ATTACinema> It(GetWorld()); It; ++It)
+	if (bPremiere)
 	{
-		Cinema = *It;
-		break;
+		for (TActorIterator<ATTACinema> It(GetWorld()); It; ++It)
+		{
+			Cinema = *It;
+			break;
+		}
 	}
-	if (!Cinema || Cinema->GetScoreBoard().empty()) return;
+	const tta::Premiere* Premiere = Cinema ? Cinema->GetPremiere() : nullptr;
+	const bool bCut = Premiere && Premiere->index() < Premiere->order().size();
+	SetShown(Overlay->PremiereBox, bCut);
+	if (!bCut) return;
+	Overlay->IntroText->SetText(Cinema->GetIntroLine());
+	Overlay->CutText->SetText(FText::Format(NSLOCTEXT("TTA", "PremiereCutOf", "CUT {0} OF {1}"),
+		static_cast<int32>(Premiere->index()) + 1, static_cast<int32>(Premiere->order().size())));
+
 	const std::vector<tta::ScoreRow>& Rows = Cinema->GetScoreBoard();
+	SetShown(Overlay->ScorePanel, !Rows.empty());
+	if (Rows.empty()) return;
 	const ATTAGameState* State = GetWorld()->GetGameState<ATTAGameState>();
-	constexpr float BoardW = 900.f, RowH = 90.f, LabelW = 220.f;
-	const float BoardX = (kDesignW - BoardW) * 0.5f;
-	const float BoardY = 260.f;
+	Overlay->EnsureScoreRows(static_cast<int32>(Rows.size()));
+	for (int32 i = 0; i < Overlay->ScoreBars.Num(); ++i) SetShown(Overlay->ScoreBars[i]->GetParent(), i < static_cast<int32>(Rows.size()));
 	double MaxTotal = 1.0;
 	for (const tta::ScoreRow& Row : Rows) MaxTotal = FMath::Max(MaxTotal, FMath::Max(Row.from, Row.to));
-	DrawCard(BoardX - kPad, BoardY - kPad, BoardW + 2 * kPad, Rows.size() * RowH + kPad, tta::kInk);
 	for (const tta::ScoreRow& Row : Rows)
 	{
 		const tta::ScoreBar Bar = tta::scoreBarAt(Row, Cinema->GetScoreBoardAlpha());
-		const float Y = BoardY + static_cast<float>(Bar.slot) * RowH;
+		const int32 Slot = static_cast<int32>(Bar.slot);
 		int32 Fill = tta::kBone;
 		for (const APlayerState* PS : State ? State->PlayerArray : TArray<TObjectPtr<APlayerState>>())
 		{
 			const ATTAPlayerState* TTA = Cast<ATTAPlayerState>(PS);
 			if (TTA && TTA->GetPlayerId() == Row.player) Fill = tta::kPlayerColours[TTA->GetLook().colour];
 		}
-		DrawStyledText(FString::Printf(TEXT("P%d"), Row.player), tta::kBone, BoardX, Y + kPad * 0.5f, UTTAUIStyle::kH2, true);
-		const float BarW = FMath::Max(8.f, static_cast<float>(Bar.value / MaxTotal) * (BoardW - LabelW - 120.f));
-		DrawCard(BoardX + LabelW, Y + 10.f, BarW, RowH - 20.f, Fill);
-		DrawStyledText(FString::Printf(TEXT("%.1f"), Bar.value), tta::kBone, BoardX + LabelW + BarW + kPad, Y + kPad * 0.5f, UTTAUIStyle::kH2, true);
+		Overlay->ScoreNames[Slot]->SetText(FText::FromString(FString::Printf(TEXT("P%d"), Row.player)));
+		Overlay->ScoreBars[Slot]->SetWidthOverride(FMath::Max(UTTAUIStyle::Space(2), static_cast<float>(Bar.value / MaxTotal) * kScoreBarMaxW));
+		Overlay->ScoreFills[Slot]->SetBrushColor(UTTAUIStyle::Colour(Fill));
+		Overlay->ScoreValues[Slot]->SetText(FText::FromString(FString::Printf(TEXT("%.1f"), Bar.value)));
 	}
 }
