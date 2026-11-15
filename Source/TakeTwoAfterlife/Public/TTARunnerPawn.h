@@ -42,6 +42,9 @@ public:
 	UFUNCTION(BlueprintCallable) void SetForm(ETTAForm NewForm);
 	// Hat mesh/transform/tint from DT_Cosmetics row HatIndex, face texture from row FaceIndex.
 	UFUNCTION(BlueprintCallable) void ApplyLook(int32 HatIndex, int32 FaceIndex);
+	// Podium statue: angel form with this hat, face and body colour, no controller,
+	// no movement, animation paused on its current pose.
+	void FreezeAsStatue(int32 HatIndex, int32 FaceIndex, int32 Colour);
 	UFUNCTION(BlueprintCallable) void SetStartLocation(const FVector& Location) { StartLocation = Location; }
 
 	// Advances the hit timers in world seconds (not slowed by the freeze). Called from Tick.
@@ -57,6 +60,7 @@ public:
 
 	UPROPERTY(Config, EditAnywhere, Category = "TTA") TSoftObjectPtr<USkeletalMesh> RunnerMesh;
 	UPROPERTY(Config, EditAnywhere, Category = "TTA") TSoftObjectPtr<UDataTable> CosmeticsTable;
+	static inline const FName StatueTag = TEXT("TTA_Statue");
 	UPROPERTY(EditAnywhere, Category = "TTA") FName HatSocket = TEXT("head");
 	UPROPERTY(EditAnywhere, Category = "TTA") TObjectPtr<USoundBase> ImpactSound;
 	UPROPERTY(EditAnywhere, Category = "TTA") TSubclassOf<UCameraShakeBase> ImpactShake;

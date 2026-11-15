@@ -27,6 +27,8 @@ private:
 	float DrawStyledText(const FString& Text, int32 Colour, float X, float Y, int32 Size, bool bDisplay);
 	float MeasureText(const FString& Text, int32 Size, bool bDisplay);
 	void ShowResults();
+	// Kahoot-style bars during each cut's Reveal (ATTACinema::GetScoreBoard).
+	void DrawScoreBoard();
 
 	UPROPERTY() TObjectPtr<UFont> DisplayFont;
 	UPROPERTY() TObjectPtr<UFont> BodyFont;

@@ -1,4 +1,4 @@
-﻿#include "TTARunnerPawn.h"
+#include "TTARunnerPawn.h"
 #include "Engine/SkeletalMesh.h"
 
 #include "Camera/CameraComponent.h"
@@ -275,4 +275,19 @@ void ATTARunnerPawn::OnPlayerStateChanged(APlayerState* NewPlayerState, APlayerS
 	Talker = UVOIPTalker::CreateTalkerForPlayer(NewPlayerState);
 	Talker->Settings.ComponentToAttachTo = GetMesh();
 	Talker->Settings.AttenuationSettings = VoiceAttenuation;
+}
+
+void ATTARunnerPawn::FreezeAsStatue(int32 HatIndex, int32 FaceIndex, int32 Colour)
+{
+	SetForm(ETTAForm::Angel);
+	ApplyLook(HatIndex, FaceIndex);
+	const FLinearColor Body(FColor::FromHex(UTF8_TO_TCHAR(tta::kPaletteHex[Colour])));
+	for (UMaterialInstanceDynamic* Material : FlashMaterials)
+	{
+		if (Material) Material->SetVectorParameterValue(TintParam, Body);
+	}
+	GetCharacterMovement()->DisableMovement();
+	GetMesh()->bPauseAnims = true;
+	SetActorTickEnabled(false);
+	Tags.AddUnique(StatueTag);
 }
