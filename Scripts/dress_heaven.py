@@ -61,10 +61,19 @@ def by_label(actors, label):
     return next((actor for actor in actors if actor.get_actor_label() == label), None)
 
 
-def spawn_mesh(subsystem, piece, toon):
-    """piece: one S.heaven_pieces() entry. Fitted once from the mesh bounds, tagged TTA_Layout."""
+def cinema_point(origin, at):
+    """Layout spot (cinema space, z above the cloud top) -> world cm. The cloud floor is the cinema's root, so
+    the floor top is wherever the cinema actor stands, not world Z 0."""
+    p = origin.transform_location(unreal.Vector(at[0], at[1], at[2] + S.FLOOR_TOP))
+    return (p.x, p.y, p.z)
+
+
+def spawn_mesh(subsystem, piece, toon, origin):
+    """piece: one S.heaven_pieces() entry. Fitted once from the mesh bounds, bounds bottom-centre on its spot."""
     mesh = load_mesh(piece["mesh"])
-    actor, size = S.spawn_or_skip(unreal, subsystem, piece["label"], mesh, piece["fit"], piece["at"], piece["yaw"])
+    yaw = piece["yaw"] + origin.rotation.yaw
+    actor, size = S.spawn_or_skip(unreal, subsystem, piece["label"], mesh, piece["fit"], cinema_point(origin, piece["at"]),
+                                  yaw, collide=piece["collide"])
     if actor is None:   # logged by spawn_or_skip
         return None, 0.0, 0.0
     paint(actor.static_mesh_component, piece["colour"], toon)
@@ -158,16 +167,17 @@ def main():
         paint(comp, colour, toon)
 
     for piece in pieces:
-        spawn_mesh(subsystem, piece, toon)
+        spawn_mesh(subsystem, piece, toon, origin)
 
     # Lobby gate: the pearly arch at the end of the red carpet. In Lobby, going through it marks a player
     # ready. The trigger is thin along the gate actor's X, so the actor is turned to face down the carpet.
     spot = S.heaven_protected(layout)["Gate"]
+    gate_at = unreal.Vector(*cinema_point(origin, (spot["x"], spot["y"], 0.0)))
     gate = next((a for a in actors if isinstance(a, unreal.TTAFinishGate)), None)
     if gate is None:
-        gate = subsystem.spawn_actor_from_class(unreal.TTAFinishGate, unreal.Vector(spot["x"], spot["y"], 0.0))
+        gate = subsystem.spawn_actor_from_class(unreal.TTAFinishGate, gate_at)
     gate.set_actor_label("HeavenGate")
-    gate.set_actor_location(unreal.Vector(spot["x"], spot["y"], 0.0), False, False)
+    gate.set_actor_location(gate_at, False, False)
     gate.set_actor_rotation(rot(yaw=spot["yaw"] + 90.0), False)
     arch_mesh = load_mesh("SM_Heaven_PearlyGate")
     arch = gate.get_editor_property("arch")
@@ -184,7 +194,8 @@ def main():
 
     # No ATTACinema lookup for podium marks. Tags 1st/2nd/3rd are the spots (statue centre, facing the lobby).
     for tag, (x, y, z, yaw) in S.podium_spots(layout).items():
-        point = subsystem.spawn_actor_from_class(unreal.TargetPoint, unreal.Vector(x, y, z), rot(yaw=yaw))
+        point = subsystem.spawn_actor_from_class(unreal.TargetPoint, unreal.Vector(*cinema_point(origin, (x, y, z))),
+                                                 rot(yaw=yaw))
         point.set_actor_label(f"Podium_{tag}")
         S.tag(unreal, point, tag)
 
