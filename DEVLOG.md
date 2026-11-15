@@ -211,3 +211,15 @@ Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prom
 - **Prompt:** fold `plan/take-two-afterlife-mwff6y6w` into main (submission text, phase timings, fullscreen and resolution, heaven travel, menu restyle).
 - **Agent did:** merged that branch. Kept the overnight devlog entries above. The other plan branch's task 28–31 notes described work that was already on main, so those notes were not copied over.
 - **Failed / fixed by hand:** Heaven.umap still has to be built before premiere travel works. Font assets `LilitaOne` and `Nunito` are still not imported.
+
+## MVP task 2 — No avatar or controls after Host
+- **Prompt:** after Title → Host → Backyard?listen nothing is possessed; spawn and possess a runner in Lobby.
+- **Agent did:** `ATTAGameMode` now uses `ATTARunnerPawn` as the default pawn (PostLogin/RestartPlayer spawn it at a PlayerStart, human form); Lobby without travel restarts runners; `ATTAPlayerController::BeginPlay` sets GameOnly input and hides the cursor. `Scripts/tests/test_runner_spawn.py` checks RunnerMesh, cooked maps, MoveForward/Jump mappings and this check list.
+- **Failed / fixed by hand:** UE side untested in the sandbox; run the check below.
+
+## Runner spawn check (user PC)
+1. Package Win64 Development (`Scripts/package.bat` or Platforms → Package Project) with no errors.
+2. Launch the packaged exe; the Title menu shows with a cursor.
+3. Click Host; the Backyard loads and the menu and cursor are gone.
+4. The white angel (SK_Angel) stands at the PlayerStart, not a grey sphere.
+5. WASD moves, the mouse turns the camera, Space jumps.

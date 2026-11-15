@@ -23,6 +23,11 @@ UCLASS()
 class TAKETWOAFTERLIFE_API ATTAPlayerController : public APlayerController
 {
 	GENERATED_BODY()
+
+protected:
+	// The Title menu leaves the viewport in UIOnly with a cursor, and that survives the travel
+	// to the match map; the match controller puts the game back in charge.
+	virtual void BeginPlay() override;
 };
 
 // Server-side owner of the match state machine; mirrors each accepted phase
@@ -62,6 +67,9 @@ public:
 	virtual void InitGameState() override;
 	// After seamless travel: a Build that arrived in the Backyard brings back markers and build pawns.
 	virtual void PostSeamlessTravel() override;
+	// Lobby (and anyone restarted outside Build): a runner at a PlayerStart, human form.
+	virtual UClass* GetDefaultPawnClassForController_Implementation(AController* InController) override;
+	virtual void RestartPlayer(AController* NewPlayer) override;
 	// Joining is only allowed between rounds (Lobby, Premiere, Podium).
 	virtual void PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
 
@@ -92,6 +100,8 @@ private:
 	// Saves the match to UTTAMatchCarry and server-travels. False (logged) when Map isn't a package.
 	bool TravelTo(const FString& Map);
 	bool ReturnToLobby();
+	// Gives every player without a runner a fresh one at a PlayerStart (Lobby without travel).
+	void RestartLobbyRunners();
 	void EnterBuild();
 	void EnterRun();
 	void SpawnTraps();
