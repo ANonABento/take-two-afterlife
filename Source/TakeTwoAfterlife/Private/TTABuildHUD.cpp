@@ -1,5 +1,14 @@
 #include "TTABuildHUD.h"
 
+#include "Blueprint/WidgetTree.h"
+#include "Components/Border.h"
+#include "Components/CanvasPanel.h"
+#include "Components/CanvasPanelSlot.h"
+#include "Components/HorizontalBox.h"
+#include "Components/HorizontalBoxSlot.h"
+#include "Components/TextBlock.h"
+#include "Components/VerticalBox.h"
+#include "Components/VerticalBoxSlot.h"
 #include "Engine/Canvas.h"
 #include "Engine/Font.h"
 #include "Engine/Texture2D.h"
@@ -22,7 +31,7 @@
 
 namespace
 {
-constexpr float kDesignW = 1920.f, kBarH = 120.f, kLineH = 40.f, kPad = 20.f, kPanelOpacity = 0.85f;
+constexpr float kDesignW = 1920.f, kPad = 20.f, kPanelOpacity = 0.85f;
 constexpr int32 kTimerWarnSeconds = 10;
 }
 
@@ -91,104 +100,196 @@ void ATTABuildHUD::ShowResults()
 	}
 }
 
+namespace
+{
+UTextBlock* IconLabel(UHorizontalBox* Row)
+{
+	return CastChecked<UTextBlock>(Row->GetChildAt(1));
+}
+
+void SetShown(UWidget* Widget, bool bShown)
+{
+	Widget->SetVisibility(bShown ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
+}
+
+void SetLine(UTextBlock* Line, const FString& Text, ETTAColor Colour)
+{
+	Line->SetText(FText::FromString(Text));
+	Line->SetColorAndOpacity(FSlateColor(UTTAUIStyle::Color(Colour)));
+}
+}
+
+void UTTABuildHUDWidget::NativeOnInitialized()
+{
+	Super::NativeOnInitialized();
+	const float Gap = UTTAUIStyle::Space(3);
+
+	UCanvasPanel* Root = WidgetTree->ConstructWidget<UCanvasPanel>();
+	WidgetTree->RootWidget = Root;
+	UVerticalBox* Screen = WidgetTree->ConstructWidget<UVerticalBox>();
+	UCanvasPanelSlot* ScreenSlot = Root->AddChildToCanvas(Screen);
+	ScreenSlot->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f));
+	ScreenSlot->SetOffsets(UTTAUIStyle::Get().SafeArea);
+
+	// Top bar: phase + round, timer banner, budget.
+	UHorizontalBox* TopBar = WidgetTree->ConstructWidget<UHorizontalBox>();
+	Screen->AddChildToVerticalBox(TopBar)->SetPadding(UTTAUIStyle::PadAfter(Orient_Vertical, Gap));
+
+	UBorder* PhasePanel = UTTAUIStyle::MakePanel(WidgetTree, ETTAPanelKind::Panel);
+	UVerticalBox* PhaseBox = WidgetTree->ConstructWidget<UVerticalBox>();
+	PhasePanel->SetContent(PhaseBox);
+	PhaseText = UTTAUIStyle::MakeLabel(WidgetTree, FText::GetEmpty(), ETTAFont::H2);
+	RoundText = UTTAUIStyle::MakeLabel(WidgetTree, FText::GetEmpty(), ETTAFont::Small);
+	PhaseBox->AddChildToVerticalBox(PhaseText);
+	PhaseBox->AddChildToVerticalBox(RoundText);
+	UHorizontalBoxSlot* PhaseSlot = TopBar->AddChildToHorizontalBox(PhasePanel);
+	PhaseSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+	PhaseSlot->SetHorizontalAlignment(HAlign_Left);
+	PhaseSlot->SetVerticalAlignment(VAlign_Top);
+
+	UBorder* Banner = UTTAUIStyle::MakeBanner(WidgetTree, FText::GetEmpty());
+	TimerText = CastChecked<UTextBlock>(Banner->GetContent());
+	TimerText->SetFont(UTTAUIStyle::MakeFont(UTTAUIStyle::Get().LoadFont(true), true, UTTAUIStyle::kTimer));
+	TopBar->AddChildToHorizontalBox(Banner)->SetVerticalAlignment(VAlign_Top);
+
+	BudgetPanel = UTTAUIStyle::MakePanel(WidgetTree, ETTAPanelKind::Panel);
+	UVerticalBox* BudgetBox = WidgetTree->ConstructWidget<UVerticalBox>();
+	BudgetPanel->SetContent(BudgetBox);
+	BudgetText = UTTAUIStyle::MakeLabel(WidgetTree, FText::GetEmpty(), ETTAFont::H2);
+	BudgetBox->AddChildToVerticalBox(BudgetText);
+	BudgetBox->AddChildToVerticalBox(UTTAUIStyle::MakeLabel(WidgetTree, FText::FromString(TEXT("BUDGET")), ETTAFont::Small));
+	UHorizontalBoxSlot* BudgetSlot = TopBar->AddChildToHorizontalBox(BudgetPanel);
+	BudgetSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+	BudgetSlot->SetHorizontalAlignment(HAlign_Right);
+	BudgetSlot->SetVerticalAlignment(VAlign_Top);
+
+	// Under the top bar, left column.
+	ReadyRow = UTTAUIStyle::MakeIconCount(WidgetTree, ETTAAsset::IconReady, FText::GetEmpty());
+	ReadyText = IconLabel(ReadyRow);
+	Screen->AddChildToVerticalBox(ReadyRow)->SetPadding(UTTAUIStyle::PadAfter(Orient_Vertical, Gap));
+	FilmHint = UTTAUIStyle::MakeIconCount(WidgetTree, ETTAAsset::IconMicOn, FText::FromString(TEXT("[RMB] hold to film")));
+	IconLabel(FilmHint)->SetFont(UTTAUIStyle::Font(ETTAFont::Small));
+	Screen->AddChildToVerticalBox(FilmHint)->SetPadding(UTTAUIStyle::PadAfter(Orient_Vertical, Gap));
+
+	BuildPanel = UTTAUIStyle::MakePanel(WidgetTree, ETTAPanelKind::Panel);
+	Screen->AddChildToVerticalBox(BuildPanel)->SetHorizontalAlignment(HAlign_Left);
+	UVerticalBox* Build = WidgetTree->ConstructWidget<UVerticalBox>();
+	BuildPanel->SetContent(Build);
+	UHorizontalBox* Cameras = WidgetTree->ConstructWidget<UHorizontalBox>();
+	Build->AddChildToVerticalBox(Cameras)->SetPadding(UTTAUIStyle::PadAfter(Orient_Vertical, UTTAUIStyle::Space(2)));
+	CameraTotal = UTTAUIStyle::MakeLabel(WidgetTree, FText::GetEmpty(), ETTAFont::Body);
+	Cameras->AddChildToHorizontalBox(CameraTotal)->SetVerticalAlignment(VAlign_Center);
+	for (const ETTAAsset Icon : {ETTAAsset::IconCamFixed, ETTAAsset::IconCamPan, ETTAAsset::IconCamFollow, ETTAAsset::IconCamTrap})
+	{
+		UHorizontalBox* Count = UTTAUIStyle::MakeIconCount(WidgetTree, Icon, FText::GetEmpty());
+		CameraCounts.Add(IconLabel(Count));
+		UHorizontalBoxSlot* CountSlot = Cameras->AddChildToHorizontalBox(Count);
+		CountSlot->SetPadding(FMargin(Gap, 0.f, 0.f, 0.f));
+		CountSlot->SetVerticalAlignment(VAlign_Center);
+	}
+	for (TObjectPtr<UTextBlock>* Line : {&ItemText, &GhostText, &RejectedText})
+	{
+		*Line = UTTAUIStyle::MakeLabel(WidgetTree, FText::GetEmpty(), ETTAFont::Small);
+		Build->AddChildToVerticalBox(*Line);
+	}
+	SelectedBox = WidgetTree->ConstructWidget<UVerticalBox>();
+	Build->AddChildToVerticalBox(SelectedBox);
+	for (int32 i = 0; i < 3; ++i)
+	{
+		SelectedLines.Add(UTTAUIStyle::MakeLabel(WidgetTree, FText::GetEmpty(), ETTAFont::Small, ETTAColor::Yellow));
+		SelectedBox->AddChildToVerticalBox(SelectedLines.Last());
+	}
+}
+
 void ATTABuildHUD::DrawHUD()
 {
 	Super::DrawHUD();
 	if (!DisplayFont) DisplayFont = UTTAUIStyle::Get().LoadCanvasFont(true);
 	if (!BodyFont) BodyFont = UTTAUIStyle::Get().LoadCanvasFont(false);
-	const FMargin& Safe = UTTAUIStyle::Get().SafeArea;
-	const float Left = Safe.Left, Right = kDesignW - Safe.Right, Top = Safe.Top;
 
 	const ATTAGameState* State = GetWorld()->GetGameState<ATTAGameState>();
 	if (!State) return;
 	const ETTAPhase Phase = State->GetPhase();
 	if (Phase == ETTAPhase::Podium)
 	{
+		if (Overlay) SetShown(Overlay, false);
 		ShowResults();
 		return;
 	}
 	if (Phase == ETTAPhase::Premiere) DrawScoreBoard();
+	UpdateOverlay(*State);
+}
 
-	// Phase + round, top left.
-	const FString PhaseName = UEnum::GetDisplayValueAsText(Phase).ToString().ToUpper();
-	const FString RoundText = FString::Printf(TEXT("ROUND %d"), State->GetRound());
-	const float PhaseW = FMath::Max(MeasureText(PhaseName, UTTAUIStyle::kH2, true), MeasureText(RoundText, UTTAUIStyle::kSmall, false));
-	DrawCard(Left, Top, PhaseW + 2 * kPad, kBarH, tta::kPurple);
-	DrawStyledText(PhaseName, tta::kBone, Left + kPad, Top + kPad * 0.5f, UTTAUIStyle::kH2, true);
-	DrawStyledText(RoundText, tta::kBone, Left + kPad, Top + kBarH - kPad - UTTAUIStyle::kSmall, UTTAUIStyle::kSmall, false);
-
-	// Timer, top centre.
-	const int32 SecondsLeft = State->GetSecondsLeft();
-	const FString Timer = FString::Printf(TEXT("%d:%02d"), SecondsLeft / 60, SecondsLeft % 60);
-	const float TimerW = MeasureText(Timer, UTTAUIStyle::kTimer, true) + 2 * kPad;
-	const float TimerX = (kDesignW - TimerW) * 0.5f;
-	DrawCard(TimerX, Top, TimerW, kBarH, SecondsLeft <= kTimerWarnSeconds ? tta::kRed : tta::kInk);
-	DrawStyledText(Timer, tta::kBone, TimerX + kPad, Top, UTTAUIStyle::kTimer, true);
-
-	float Y = Top + kBarH + kPad;
-	if (Phase == ETTAPhase::Lobby && State->IsGateOpen())
+void ATTABuildHUD::UpdateOverlay(const ATTAGameState& State)
+{
+	if (!Overlay)
 	{
-		const FString Ready = FString::Printf(TEXT("%d/%d READY"), State->GetReadyCount(), State->GetReadyMax());
-		const float ReadyY = Top + kBarH + kPad;
-		DrawCard(Left, ReadyY, MeasureText(Ready, UTTAUIStyle::kH2, true) + 2 * kPad, kBarH, tta::kGrass);
-		DrawStyledText(Ready, tta::kInk, Left + kPad, ReadyY + kPad * 0.5f, UTTAUIStyle::kH2, true);
+		APlayerController* PC = GetOwningPlayerController();
+		if (!PC) return;
+		Overlay = CreateWidget<UTTABuildHUDWidget>(PC, UTTABuildHUDWidget::StaticClass());
+		Overlay->AddToViewport();
 	}
-	if (Phase == ETTAPhase::Run)
-	{
-		DrawStyledText(TEXT("[RMB] hold to film"), tta::kBone, Left, Y, UTTAUIStyle::kSmall, false);
-	}
+	SetShown(Overlay, true);
+	const ETTAPhase Phase = State.GetPhase();
+
+	Overlay->PhaseText->SetText(FText::FromString(UEnum::GetDisplayValueAsText(Phase).ToString().ToUpper()));
+	Overlay->RoundText->SetText(FText::FromString(FString::Printf(TEXT("ROUND %d"), State.GetRound())));
+	const int32 SecondsLeft = State.GetSecondsLeft();
+	SetLine(Overlay->TimerText, FString::Printf(TEXT("%d:%02d"), SecondsLeft / 60, SecondsLeft % 60),
+		SecondsLeft <= kTimerWarnSeconds ? ETTAColor::Red : ETTAColor::Ink);
+
+	const bool bReady = Phase == ETTAPhase::Lobby && State.IsGateOpen();
+	SetShown(Overlay->ReadyRow, bReady);
+	if (bReady) Overlay->ReadyText->SetText(FText::FromString(FString::Printf(TEXT("%d/%d READY"), State.GetReadyCount(), State.GetReadyMax())));
+	SetShown(Overlay->FilmHint, Phase == ETTAPhase::Run);
 
 	const ATTABuildPawn* Pawn = Cast<ATTABuildPawn>(GetOwningPawn());
+	SetShown(Overlay->BudgetPanel, Pawn != nullptr);
+	SetShown(Overlay->BuildPanel, Pawn != nullptr);
 	if (!Pawn) return;
 	const int32 Me = ATTAPlacementMarker::PlayerIdOf(Pawn);
 	const tta::Layout Own = Pawn->OwnLayout();
 
-	// Budget, top right.
-	const FString Budget = FString::Printf(TEXT("$%d / %d"), Own.remaining(Me), tta::kBudget);
-	const float BudgetW = MeasureText(Budget, UTTAUIStyle::kH2, true) + 2 * kPad;
-	DrawCard(Right - BudgetW, Top, BudgetW, kBarH, Own.remaining(Me) > 0 ? tta::kGrass : tta::kRed);
-	DrawStyledText(TEXT("BUDGET"), tta::kBone, Right - BudgetW + kPad, Top + kBarH - kPad - UTTAUIStyle::kSmall, UTTAUIStyle::kSmall, false);
-	DrawStyledText(Budget, tta::kBone, Right - BudgetW + kPad, Top + kPad * 0.5f, UTTAUIStyle::kH2, true);
+	SetLine(Overlay->BudgetText, FString::Printf(TEXT("$%d / %d"), Own.remaining(Me), tta::kBudget),
+		Own.remaining(Me) > 0 ? ETTAColor::Grass : ETTAColor::Red);
 
-	TArray<TPair<FString, int32>> Lines;
-	Lines.Emplace(FString::Printf(TEXT("CAMERAS %d / %d   fixed %d  pan %d  follow %d  trap-cam %d"), Own.cameraCount(Me), tta::kCameraCap,
-		Own.cameraCount(Me, tta::CameraType::Fixed), Own.cameraCount(Me, tta::CameraType::Pan),
-		Own.cameraCount(Me, tta::CameraType::Follow), Own.cameraCount(Me, tta::CameraType::TrapCam)), tta::kBone);
-	const bool bGhostOk = Pawn->GetGhostOutcome() == ETTAPlaceOutcome::Ok;
-	Lines.Emplace(FString::Printf(TEXT("%s   [wheel] item  [R] rotate  [LMB] place  [RMB] remove  [F] select"),
-		*TTABuildItem::Label(Pawn->GetSelectedItem())), tta::kBone);
-	Lines.Emplace(bGhostOk ? FString(TEXT("Can place here")) : UEnum::GetDisplayValueAsText(Pawn->GetGhostOutcome()).ToString(),
-		bGhostOk ? tta::kGrass : tta::kRed);
-	if (Pawn->GetLastServerOutcome() != ETTAPlaceOutcome::Ok)
+	Overlay->CameraTotal->SetText(FText::FromString(FString::Printf(TEXT("CAMERAS %d / %d"), Own.cameraCount(Me), tta::kCameraCap)));
+	const tta::CameraType Types[] = {tta::CameraType::Fixed, tta::CameraType::Pan, tta::CameraType::Follow, tta::CameraType::TrapCam};
+	for (int32 i = 0; i < UE_ARRAY_COUNT(Types); ++i)
 	{
-		Lines.Emplace(FString::Printf(TEXT("Rejected: %s"), *UEnum::GetDisplayValueAsText(Pawn->GetLastServerOutcome()).ToString()), tta::kRed);
+		Overlay->CameraCounts[i]->SetText(FText::AsNumber(Own.cameraCount(Me, Types[i])));
 	}
+	Overlay->ItemText->SetText(FText::FromString(FString::Printf(TEXT("%s   [wheel] item  [R] rotate  [LMB] place  [RMB] remove  [F] select"),
+		*TTABuildItem::Label(Pawn->GetSelectedItem()))));
+	const bool bGhostOk = Pawn->GetGhostOutcome() == ETTAPlaceOutcome::Ok;
+	SetLine(Overlay->GhostText, bGhostOk ? FString(TEXT("Can place here")) : UEnum::GetDisplayValueAsText(Pawn->GetGhostOutcome()).ToString(),
+		bGhostOk ? ETTAColor::Grass : ETTAColor::Red);
+	const bool bRejected = Pawn->GetLastServerOutcome() != ETTAPlaceOutcome::Ok;
+	SetShown(Overlay->RejectedText, bRejected);
+	if (bRejected)
+	{
+		SetLine(Overlay->RejectedText, FString::Printf(TEXT("Rejected: %s"), *UEnum::GetDisplayValueAsText(Pawn->GetLastServerOutcome()).ToString()), ETTAColor::Red);
+	}
+
+	bool bTrapSelected = false;
 	if (const ATTAPlacementMarker* Selected = Pawn->FindMarker(Pawn->GetSelectedPlacement()))
 	{
 		const tta::Placement P = Selected->GetData().ToCore();
 		if (!P.isCamera)
 		{
+			bTrapSelected = true;
 			const tta::TrapSpec& Spec = tta::trapSpec(P.trap);
 			const TCHAR* Keys[] = {TEXT("[1]-  [2]+"), TEXT("[3]-  [4]+")};
-			Lines.Emplace(FString::Printf(TEXT("SELECTED %s #%d"), UTF8_TO_TCHAR(Spec.name), P.id), tta::kYellow);
+			Overlay->SelectedLines[0]->SetText(FText::FromString(FString::Printf(TEXT("SELECTED %s #%d"), UTF8_TO_TCHAR(Spec.name), P.id)));
 			for (int32 i = 0; i < 2; ++i)
 			{
 				const tta::SettingSpec& Setting = Spec.settings[static_cast<size_t>(i)];
-				Lines.Emplace(FString::Printf(TEXT("%s  %s: %d  (%d-%d)"), Keys[i], UTF8_TO_TCHAR(Setting.name),
-					P.settings[static_cast<size_t>(i)], Setting.min, Setting.max), tta::kYellow);
+				Overlay->SelectedLines[i + 1]->SetText(FText::FromString(FString::Printf(TEXT("%s  %s: %d  (%d-%d)"), Keys[i], UTF8_TO_TCHAR(Setting.name),
+					P.settings[static_cast<size_t>(i)], Setting.min, Setting.max)));
 			}
 		}
 	}
-
-	float PanelW = 0.f;
-	for (const TPair<FString, int32>& Line : Lines) PanelW = FMath::Max(PanelW, MeasureText(Line.Key, UTTAUIStyle::kSmall, false));
-	DrawCard(Left, Y, PanelW + 2 * kPad, Lines.Num() * kLineH + 2 * kPad - (kLineH - UTTAUIStyle::kSmall), tta::kInk);
-	Y += kPad;
-	for (const TPair<FString, int32>& Line : Lines)
-	{
-		DrawStyledText(Line.Key, Line.Value, Left + kPad, Y, UTTAUIStyle::kSmall, false);
-		Y += kLineH;
-	}
+	SetShown(Overlay->SelectedBox, bTrapSelected);
 }
 
 void ATTABuildHUD::DrawScoreBoard()
