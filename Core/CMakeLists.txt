@@ -24,6 +24,7 @@ add_library(tta_core
   src/MatchFlow.cpp
   src/BotBrain.cpp
   src/BotRoute.cpp
+  src/HeavenGate.cpp
 )
 target_include_directories(tta_core PUBLIC include)
 if(MSVC)
@@ -53,6 +54,7 @@ add_executable(tta_core_tests
   tests/MatchFlowTests.cpp
   tests/BotBrainTests.cpp
   tests/BotRouteTests.cpp
+  tests/HeavenGateTests.cpp
 )
 target_include_directories(tta_core_tests PRIVATE third_party)
 target_link_libraries(tta_core_tests PRIVATE tta_core)

@@ -17,6 +17,8 @@
 #include "TTASessionSubsystem.h"
 #include "TTAMatchSettings.h"
 #include "GameFramework/PlayerController.h"
+#include "Components/InputComponent.h"
+#include "InputCoreTypes.h"
 #include "TTABuildHUD.h"
 #include "TTABuildPawn.h"
 #include "TTARunDirector.h"
@@ -48,8 +50,8 @@ bool ATTAGameMode::RequestPhase(ETTAPhase To)
 		return false;
 	}
 	GetGameState<ATTAGameState>()->SetPhase(ToUE(Match.phase()), Match.round(), Match.phaseSeconds());
-	// Round 1 is already in the Backyard; on a failed travel the round still goes on here.
-	if (To == ETTAPhase::Build && (Match.round() == 1 || !TravelTo(BackyardMap))) EnterBuild();
+	// Heaven is the lobby, so every Build travels to the Backyard; on a failed travel the round still goes on here.
+	if (To == ETTAPhase::Build && (IsOnMap(BackyardMap) || !TravelTo(BackyardMap))) EnterBuild();
 	if (To == ETTAPhase::Run) EnterRun();
 	// On a failed travel the premiere still runs (and ends) here.
 	if (To == ETTAPhase::Premiere && !TravelTo(HeavenMap)) BeginPremiere();
@@ -77,6 +79,49 @@ bool ATTAGameMode::ReturnToLobby()
 		RestartLobbyRunners();
 	}
 	return true;
+}
+
+bool ATTAGameMode::IsOnMap(const FString& Map) const
+{
+	return UWorld::RemovePIEPrefix(GetWorld()->GetOutermost()->GetName()) == Map;
+}
+
+bool ATTAGameMode::OpenGate()
+{
+	if (Match.phase() != tta::Phase::Lobby) return false;
+	Gate.open();
+	for (TActorIterator<ATTABotController> It(GetWorld()); It; ++It) MarkReady(*It);
+	SyncGate();
+	return true;
+}
+
+bool ATTAGameMode::MarkReady(const AController* Player)
+{
+	if (Match.phase() != tta::Phase::Lobby || !Player || !Player->PlayerState) return false;
+	if (!Gate.markReady(Player->PlayerState->GetPlayerId())) return false;
+	SyncGate();
+	return true;
+}
+
+void ATTAGameMode::SyncGate()
+{
+	ATTAGameState* State = GetGameState<ATTAGameState>();
+	Gate.setPlayers(State->PlayerArray.Num());
+	State->SetGate(Gate.isOpen(), Gate.readyCount(), Gate.players());
+}
+
+void ATTAPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+	InputComponent->BindKey(EKeys::Enter, IE_Pressed, this, &ATTAPlayerController::PressStart);
+	InputComponent->BindKey(EKeys::Gamepad_Special_Right, IE_Pressed, this, &ATTAPlayerController::PressStart);
+}
+
+void ATTAPlayerController::PressStart()
+{
+	ATTAGameMode* Mode = GetWorld()->GetAuthGameMode<ATTAGameMode>();
+	if (!Mode || !IsLocalController()) return; // clients have no game mode: only the host starts
+	if (!Mode->OpenGate()) UE_LOG(LogTemp, Verbose, TEXT("ATTAGameMode: START ignored outside the Heaven lobby"));
 }
 
 void ATTAPlayerController::BeginPlay()
@@ -321,6 +366,7 @@ void ATTAGameMode::StartPlay()
 {
 	Super::StartPlay();
 	AddBots(BotCount);
+	if (BotCount > 0) OpenGate(); // Play Solo: no host START, the gate is open from the start
 }
 
 void ATTAGameMode::AddBots(int32 Count)
@@ -417,6 +463,17 @@ void ATTAGameMode::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	const ATTAGameState* State = GetGameState<ATTAGameState>();
 	if (!State) return;
+	if (State->GetPhase() == ETTAPhase::Lobby && !bGateTravelled)
+	{
+		SyncGate();
+		Gate.tick(DeltaSeconds);
+		if (Gate.shouldTravel())
+		{
+			bGateTravelled = true;
+			verify(RequestPhase(ETTAPhase::Build));
+		}
+		return;
+	}
 	const bool bTimerDone = Match.phaseSeconds() > 0 && State->GetSecondsLeft() == 0;
 	if (State->GetPhase() == ETTAPhase::Build && bTimerDone) verify(RequestPhase(ETTAPhase::Run));
 	if (State->GetPhase() == ETTAPhase::Edit && bTimerDone) verify(RequestPhase(ETTAPhase::Premiere));
