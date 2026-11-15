@@ -360,3 +360,8 @@ Added `tta::Punch` (wind-up/active/recovery + 1.5 s cooldown) and a PawnLife stu
 - **Prompt:** wind-up pose or scale-up placeholder, whoosh + hit cues via AudioCues, short camera shake on the victim.
 - **Agent did:** `AudioEvent::PunchWindUp`/`PunchHit` with `SFX_PunchWhoosh`/`SFX_PunchHit` (doctest). Server `ServerPunch` now fires `MulticastWindUp` (Unreliable) when the punch starts: every client swells the runner mesh to `WindUpScale` 1.15 over the 0.45 s wind-up and plays the whoosh. `MulticastPunched` plays the hit and starts `ImpactShake` on the victim's own camera.
 - **Failed / fixed by hand:** no SFX files yet; run `create_placeholder_audio.py` (silent placeholders) or drop real ones in `/Game/Audio/SFX/`. Editor compile + PIE feel check pending.
+
+## Trap swap task 2 — trap size and pivot check
+- **Prompt:** record each `SM_Trap_*` bounding box plus a 1.0 x 0.6 x 0.5 m lawnmower box; verify exports are within +-10% with the pivot at the origin.
+- **Agent did:** `models/trap_bounds.json` + `models/trap_fit.py`; `verify_traps_cams.py` now fails a trap that is off-size or off-pivot. Unittest `test_trap_bounds.py` (placeholders pass, 2x scale fails).
+- **Failed / fixed by hand:** boxes read from `traps_cams.glb`; the Blender run on the FBX files is still pending.
