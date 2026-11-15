@@ -334,3 +334,9 @@ Code only; Heaven.umap untouched. Needs an editor compile first. To keep `dress_
 3. The camera is behind the angel and turns with the mouse.
 4. Back the angel into a cloud or the gate: the camera slides in toward the angel instead of going inside the mesh.
 5. Hold RaiseCamera: the view switches to the handheld; release: back behind the angel.
+
+## UI art + shared style system (UI refactor task 1)
+Generated UI art (18 alpha PNGs: buttons, panel, code pill, timer banner, slider, text field, mic/camera/ready icons, title backdrop) is in `Art/UI/`, with `Scripts/import_ui_assets.py` to bring it into `/Game/UI/Generated/`. `UTTAUIStyle` now has named tokens (`Color`, `Font`, `Space`) and builders (`MakeButton`, `MakePanel`, `MakeLabel`, `MakeIconCount`, `MakeBanner`, `MakeSlider`, `MakeTextField`), listed in `docs/design/ui-style.md`. The edit screen is built from them. Check on the user PC:
+1. `UnrealEditor-Cmd.exe TakeTwoAfterlife.uproject -run=pythonscript -script=Scripts/import_ui_assets.py -unattended -nosplash`; `/Game/UI/Generated` has 18 `T_UI_*` textures, Mip Gen = NoMipmaps, group UI.
+2. Editor build passes.
+3. Edit phase: gold AUTO-EDIT, white buttons, timer banner, framed caption field, white panel behind the tool row; no stretched corners (else tune the slice in TTAUIStyle.cpp and ui-style.md together).

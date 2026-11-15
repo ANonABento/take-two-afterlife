@@ -38,4 +38,5 @@ TODO: fill in track titles/artists, Freesound ids/authors and the ElevenLabs voi
 | OBS Studio | gameplay video capture |
 | Choomfie / Waymond (Claude) coding agents | code, scripts and research per DEVLOG.md |
 | Tripo | AI-generated 3D models (TODO: list which assets) |
+| Image generator (via Ambition/Waymond) | AI-generated UI art in `Art/UI/` (`T_UI_*.png`): generated on magenta, chroma-keyed and cropped in Python |
 | Git / GitHub | version control |

@@ -45,8 +45,8 @@ constexpr float kHoverDarken = 0.25f, kPressedDarken = 0.45f;  // lerp toward In
 // Puts a gap after the child along its box's direction.
 void GapAfter(UPanelSlot* Slot)
 {
-	if (UVerticalBoxSlot* V = Cast<UVerticalBoxSlot>(Slot)) V->SetPadding(FMargin(0.f, 0.f, 0.f, kGap));
-	if (UHorizontalBoxSlot* H = Cast<UHorizontalBoxSlot>(Slot)) H->SetPadding(FMargin(0.f, 0.f, kGap, 0.f));
+	if (UVerticalBoxSlot* V = Cast<UVerticalBoxSlot>(Slot)) V->SetPadding(UTTAUIStyle::PadAfter(Orient_Vertical, kGap));
+	if (UHorizontalBoxSlot* H = Cast<UHorizontalBoxSlot>(Slot)) H->SetPadding(UTTAUIStyle::PadAfter(Orient_Horizontal, kGap));
 }
 
 // Switcher slot per screen, in tta::MenuScreen order.
@@ -235,7 +235,7 @@ void UTTAMenuWidget::NativeOnInitialized()
 			return Inner;
 		};
 		UVerticalBox* Players = Column();
-		Cast<UHorizontalBoxSlot>(Players->GetParent()->Slot)->SetPadding(FMargin(0.f, 0.f, kWideW - 2 * kScreenW, 0.f));
+		Cast<UHorizontalBoxSlot>(Players->GetParent()->Slot)->SetPadding(UTTAUIStyle::PadAfter(Orient_Horizontal, kWideW - 2 * kScreenW));
 		RoomCodeText = Label(Card(Players, tta::kBone), TEXT("------"), kCode, true);
 		WaitingText = Label(Players, TEXT(""), kBody);
 		UVerticalBox* Cosmetics = Column();

@@ -4,6 +4,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Components/Button.h"
 #include "tta/EditList.h"
+#include "TTAUIStyle.h"
 #include "TTAEditorWidget.generated.h"
 
 class ATTAEditStage;
@@ -76,7 +77,7 @@ private:
 	// Replay ms under the playhead in the selected clip; unset without a selection.
 	TOptional<uint32> PlayheadReplayMs() const;
 	uint32 ClipStartCutMs(int32 Clip) const;
-	UButton* AddButton(UHorizontalBox* Row, const FString& Label);
+	UButton* AddButton(UHorizontalBox* Row, const FString& Label, ETTAButtonKind Kind = ETTAButtonKind::Secondary);
 
 	UFUNCTION() void OnAutoEdit() { AutoEdit(); }
 	UFUNCTION() void OnPlay();

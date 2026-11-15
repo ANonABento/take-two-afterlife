@@ -2,15 +2,202 @@
 
 #include "Blueprint/WidgetTree.h"
 #include "Components/Border.h"
+#include "Components/Button.h"
+#include "Components/EditableTextBox.h"
+#include "Components/HorizontalBox.h"
+#include "Components/HorizontalBoxSlot.h"
+#include "Components/Image.h"
 #include "Components/PanelWidget.h"
+#include "Components/Slider.h"
 #include "Components/TextBlock.h"
 #include "Engine/Engine.h"
 #include "Engine/Font.h"
 #include "Engine/Texture2D.h"
 #include "Styling/CoreStyle.h"
+#include "Styling/SlateTypes.h"
 #include "tta/MenuFlow.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogTTAUIStyle, Log, All);
+
+namespace
+{
+const TCHAR* const kGeneratedDir = TEXT("/Game/UI/Generated/");
+constexpr float kSpaceScale[] = {0.f, 4.f, 8.f, 16.f, 24.f, 32.f};
+
+// Fallback colour and 9-slice margins (UV fractions; 0 = drawn whole) per asset.
+struct FAssetSpec
+{
+	ETTAAsset Asset;
+	ETTAColor Fallback;
+	float SliceX;
+	float SliceY;
+};
+const FAssetSpec kAssets[] = {
+	{ETTAAsset::Button, ETTAColor::Bone, 0.12f, 0.35f},
+	{ETTAAsset::ButtonHover, ETTAColor::Sky, 0.12f, 0.35f},
+	{ETTAAsset::ButtonPressed, ETTAColor::Blue, 0.12f, 0.35f},
+	{ETTAAsset::ButtonPrimary, ETTAColor::Yellow, 0.12f, 0.35f},
+	{ETTAAsset::Panel, ETTAColor::Bone, 0.15f, 0.15f},
+	{ETTAAsset::CodePill, ETTAColor::Yellow, 0.3f, 0.45f},
+	{ETTAAsset::Banner, ETTAColor::Bone, 0.25f, 0.4f},
+	{ETTAAsset::SliderBar, ETTAColor::Sky, 0.1f, 0.45f},
+	{ETTAAsset::SliderKnob, ETTAColor::Yellow, 0f, 0f},
+	{ETTAAsset::TextField, ETTAColor::Bone, 0.1f, 0.35f},
+	{ETTAAsset::IconMicOn, ETTAColor::Sky, 0f, 0f},
+	{ETTAAsset::IconMicOff, ETTAColor::Ink, 0f, 0f},
+	{ETTAAsset::IconCamFixed, ETTAColor::Sky, 0f, 0f},
+	{ETTAAsset::IconCamPan, ETTAColor::Sky, 0f, 0f},
+	{ETTAAsset::IconCamFollow, ETTAColor::Sky, 0f, 0f},
+	{ETTAAsset::IconCamTrap, ETTAColor::Orange, 0f, 0f},
+	{ETTAAsset::IconReady, ETTAColor::Grass, 0f, 0f},
+	{ETTAAsset::TitleBackdrop, ETTAColor::Sky, 0f, 0f},
+};
+
+const FAssetSpec& Spec(ETTAAsset Asset)
+{
+	for (const FAssetSpec& S : kAssets)
+	{
+		if (S.Asset == Asset) return S;
+	}
+	checkNoEntry();
+	return kAssets[0];
+}
+}
+
+static_assert(static_cast<size_t>(ETTAColor::Wood) + 1 == tta::kPaletteHex.size(), "ETTAColor must list every palette entry");
+
+FLinearColor UTTAUIStyle::Color(ETTAColor Name)
+{
+	return Colour(static_cast<int32>(Name));
+}
+
+FSlateFontInfo UTTAUIStyle::Font(ETTAFont Name)
+{
+	switch (Name)
+	{
+	case ETTAFont::Title: return MakeFont(Get().LoadFont(true), true, kH1);
+	case ETTAFont::H1: return MakeFont(Get().LoadFont(true), true, kTimer);
+	case ETTAFont::H2: return MakeFont(Get().LoadFont(true), true, kH2);
+	case ETTAFont::Body: return MakeFont(Get().LoadFont(false), false, kBody);
+	case ETTAFont::Small: return MakeFont(Get().LoadFont(false), false, kSmall);
+	}
+	checkNoEntry();
+	return MakeFont(nullptr, false, kBody);
+}
+
+float UTTAUIStyle::Space(int32 Step)
+{
+	check(Step >= 0 && Step < static_cast<int32>(UE_ARRAY_COUNT(kSpaceScale)));
+	return kSpaceScale[Step];
+}
+
+FMargin UTTAUIStyle::PadAfter(EOrientation Box, float Gap)
+{
+	FMargin Pad;
+	(Box == Orient_Vertical ? Pad.Bottom : Pad.Right) = Gap;
+	return Pad;
+}
+
+FSlateBrush UTTAUIStyle::Brush(ETTAAsset Asset)
+{
+	const FAssetSpec& S = Spec(Asset);
+	const FString Name = FString(TEXT("T_UI_")) + StaticEnum<ETTAAsset>()->GetNameStringByValue(static_cast<int64>(Asset));
+	const FSoftObjectPath Path(FString(kGeneratedDir) + Name + TEXT(".") + Name);
+	FSlateBrush Result;
+	if (UTexture2D* Texture = Cast<UTexture2D>(Path.TryLoad()))
+	{
+		Result.SetResourceObject(Texture);
+		Result.ImageSize = FVector2D(Texture->GetSizeX(), Texture->GetSizeY());
+		const bool bSliced = S.SliceX > 0.f || S.SliceY > 0.f;
+		Result.DrawAs = bSliced ? ESlateBrushDrawType::Box : ESlateBrushDrawType::Image;
+		Result.Margin = FMargin(S.SliceX, S.SliceY);
+		return Result;
+	}
+	UE_LOG(LogTTAUIStyle, Warning, TEXT("UI texture %s not imported; using a flat palette colour"), *Path.ToString());
+	Result.DrawAs = ESlateBrushDrawType::Box;
+	Result.TintColor = FSlateColor(Color(S.Fallback));
+	return Result;
+}
+
+UTextBlock* UTTAUIStyle::MakeLabel(UWidgetTree* Tree, const FText& Text, ETTAFont Size, ETTAColor Colour)
+{
+	UTextBlock* Block = Tree->ConstructWidget<UTextBlock>();
+	Block->SetText(Text);
+	Block->SetFont(Font(Size));
+	Block->SetColorAndOpacity(FSlateColor(Color(Colour)));
+	return Block;
+}
+
+UButton* UTTAUIStyle::MakeButton(UWidgetTree* Tree, const FText& Text, ETTAButtonKind Kind)
+{
+	const bool bPrimary = Kind == ETTAButtonKind::Primary;
+	const FMargin Padding(Space(3), Space(2));
+	FButtonStyle Style;
+	Style.SetNormal(Brush(bPrimary ? ETTAAsset::ButtonPrimary : ETTAAsset::Button));
+	Style.SetHovered(Brush(bPrimary ? ETTAAsset::ButtonPrimary : ETTAAsset::ButtonHover));
+	Style.SetPressed(Brush(ETTAAsset::ButtonPressed));
+	Style.SetNormalPadding(Padding);
+	Style.SetPressedPadding(Padding);
+	UButton* Button = Tree->ConstructWidget<UButton>();
+	Button->SetStyle(Style);
+	Button->AddChild(MakeLabel(Tree, Text, ETTAFont::Body));
+	return Button;
+}
+
+UBorder* UTTAUIStyle::MakePanel(UWidgetTree* Tree, ETTAPanelKind Kind)
+{
+	const bool bPill = Kind == ETTAPanelKind::CodePill;
+	UBorder* Panel = Tree->ConstructWidget<UBorder>();
+	Panel->SetBrush(Brush(bPill ? ETTAAsset::CodePill : ETTAAsset::Panel));
+	Panel->SetPadding(bPill ? FMargin(Space(4), Space(2)) : FMargin(Space(4)));
+	return Panel;
+}
+
+UHorizontalBox* UTTAUIStyle::MakeIconCount(UWidgetTree* Tree, ETTAAsset Icon, const FText& Text)
+{
+	UHorizontalBox* Row = Tree->ConstructWidget<UHorizontalBox>();
+	UImage* Image = Tree->ConstructWidget<UImage>();
+	Image->SetBrush(Brush(Icon));
+	Image->SetDesiredSizeOverride(FVector2D(kBody + Space(2)));
+	Row->AddChildToHorizontalBox(Image)->SetPadding(PadAfter(Orient_Horizontal, Space(2)));
+	Row->AddChildToHorizontalBox(MakeLabel(Tree, Text, ETTAFont::Body))->SetVerticalAlignment(VAlign_Center);
+	return Row;
+}
+
+UBorder* UTTAUIStyle::MakeBanner(UWidgetTree* Tree, const FText& Text)
+{
+	UBorder* Banner = Tree->ConstructWidget<UBorder>();
+	Banner->SetBrush(Brush(ETTAAsset::Banner));
+	Banner->SetPadding(FMargin(Space(5), Space(2)));
+	Banner->SetHorizontalAlignment(HAlign_Center);
+	Banner->SetContent(MakeLabel(Tree, Text, ETTAFont::H2));
+	return Banner;
+}
+
+USlider* UTTAUIStyle::MakeSlider(UWidgetTree* Tree)
+{
+	FSliderStyle Style;
+	Style.SetNormalBarImage(Brush(ETTAAsset::SliderBar));
+	Style.SetHoveredBarImage(Brush(ETTAAsset::SliderBar));
+	Style.SetNormalThumbImage(Brush(ETTAAsset::SliderKnob));
+	Style.SetHoveredThumbImage(Brush(ETTAAsset::SliderKnob));
+	USlider* Slider = Tree->ConstructWidget<USlider>();
+	Slider->SetWidgetStyle(Style);
+	return Slider;
+}
+
+UEditableTextBox* UTTAUIStyle::MakeTextField(UWidgetTree* Tree)
+{
+	UEditableTextBox* Field = Tree->ConstructWidget<UEditableTextBox>();
+	// Set before the Slate widget is built (first paint), so no setter is needed.
+	Field->WidgetStyle.SetBackgroundImageNormal(Brush(ETTAAsset::TextField));
+	Field->WidgetStyle.SetBackgroundImageHovered(Brush(ETTAAsset::TextField));
+	Field->WidgetStyle.SetBackgroundImageFocused(Brush(ETTAAsset::TextField));
+	Field->WidgetStyle.SetPadding(FMargin(Space(3), Space(2)));
+	Field->WidgetStyle.TextStyle.SetFont(Font(ETTAFont::Body));
+	Field->WidgetStyle.SetForegroundColor(FSlateColor(Color(ETTAColor::Ink)));
+	return Field;
+}
 
 FLinearColor UTTAUIStyle::Colour(int32 PaletteIndex)
 {

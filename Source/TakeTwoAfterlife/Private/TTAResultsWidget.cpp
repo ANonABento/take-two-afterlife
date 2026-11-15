@@ -59,7 +59,7 @@ void UTTAResultsWidget::SetRows(TArray<FTTAResultRow> Rows)
 		{
 			UHorizontalBoxSlot* H = CastChecked<UHorizontalBoxSlot>(Cell);
 			H->SetVerticalAlignment(VAlign_Center);
-			H->SetPadding(FMargin(0.f, 0.f, UTTAUIStyle::kCardPadding, 0.f));
+			H->SetPadding(UTTAUIStyle::PadAfter(Orient_Horizontal, UTTAUIStyle::kCardPadding));
 		}
 		CastChecked<UHorizontalBoxSlot>(Line->GetSlots()[1])->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
 	}

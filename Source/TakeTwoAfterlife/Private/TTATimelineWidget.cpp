@@ -2,25 +2,21 @@
 
 #include "Rendering/DrawElements.h"
 #include "Styling/CoreStyle.h"
+#include "TTAUIStyle.h"
 #include "tta/Replay.h"
 
 namespace
 {
-const FLinearColor kStrip(0.12f, 0.12f, 0.16f);
-const FLinearColor kClip(0.30f, 0.62f, 0.95f);
-const FLinearColor kClipSelected(1.0f, 0.82f, 0.25f);
-const FLinearColor kOverlay(1.f, 1.f, 1.f);
-const FLinearColor kPlayhead(1.f, 0.25f, 0.35f);
 
 FLinearColor MarkerColor(uint8 Type)
 {
 	switch (static_cast<tta::ReplayEventType>(Type))
 	{
-	case tta::ReplayEventType::Hit: return FLinearColor(1.f, 0.6f, 0.1f);
-	case tta::ReplayEventType::Wipeout: return FLinearColor(1.f, 0.15f, 0.15f);
-	case tta::ReplayEventType::Smite: return FLinearColor(1.f, 1.f, 0.3f);
+	case tta::ReplayEventType::Hit: return UTTAUIStyle::Color(ETTAColor::Orange);
+	case tta::ReplayEventType::Wipeout: return UTTAUIStyle::Color(ETTAColor::Red);
+	case tta::ReplayEventType::Smite: return UTTAUIStyle::Color(ETTAColor::Yellow);
 	}
-	return FLinearColor::White;
+	return UTTAUIStyle::Color(ETTAColor::Bone);
 }
 
 void Box(FSlateWindowElementList& Out, int32 Layer, const FGeometry& G, float X, float Y, float W, float H, const FLinearColor& C)
@@ -43,8 +39,8 @@ int32 UTTATimelineWidget::NativePaint(const FPaintArgs& Args, const FGeometry& G
 	Layer = Super::NativePaint(Args, G, Culling, Out, Layer, Style, bParentEnabled);
 	const float W = G.GetLocalSize().X;
 	const float CutY = StripHeight + 8.f;
-	Box(Out, ++Layer, G, 0, 0, W, StripHeight, kStrip);
-	Box(Out, Layer, G, 0, CutY, W, StripHeight, kStrip);
+	Box(Out, ++Layer, G, 0, 0, W, StripHeight, UTTAUIStyle::Color(ETTAColor::Ink));
+	Box(Out, Layer, G, 0, CutY, W, StripHeight, UTTAUIStyle::Color(ETTAColor::Ink));
 	++Layer;
 	for (const TPair<uint32, uint8>& M : Markers)
 	{
@@ -57,15 +53,15 @@ int32 UTTATimelineWidget::NativePaint(const FPaintArgs& Args, const FGeometry& G
 	for (int32 i = 0; i < static_cast<int32>(Cut->clips().size()); ++i)
 	{
 		const float ClipW = Cut->clips()[i].durationMs() * PxPerMs;
-		Box(Out, Layer, G, X + 1.f, CutY + 2.f, ClipW - 2.f, StripHeight - 4.f, i == Selected ? kClipSelected : kClip);
+		Box(Out, Layer, G, X + 1.f, CutY + 2.f, ClipW - 2.f, StripHeight - 4.f, i == Selected ? UTTAUIStyle::Color(ETTAColor::Yellow) : UTTAUIStyle::Color(ETTAColor::Sky));
 		X += ClipW;
 	}
 	++Layer;
 	for (const tta::Overlay& O : Cut->overlays())
 	{
-		Box(Out, Layer, G, O.atMs * PxPerMs, CutY + StripHeight - 8.f, FMath::Max(O.durationMs * PxPerMs, 2.f), 6.f, kOverlay);
+		Box(Out, Layer, G, O.atMs * PxPerMs, CutY + StripHeight - 8.f, FMath::Max(O.durationMs * PxPerMs, 2.f), 6.f, UTTAUIStyle::Color(ETTAColor::Bone));
 	}
-	Box(Out, Layer, G, Playhead * PxPerMs - 1.f, CutY - 4.f, 2.f, StripHeight + 8.f, kPlayhead);
+	Box(Out, Layer, G, Playhead * PxPerMs - 1.f, CutY - 4.f, 2.f, StripHeight + 8.f, UTTAUIStyle::Color(ETTAColor::Pink));
 	return Layer;
 }
 

@@ -1,8 +1,10 @@
 #include "TTAEditorWidget.h"
 
 #include "Blueprint/WidgetTree.h"
+#include "Components/Border.h"
 #include "Components/EditableTextBox.h"
 #include "Components/HorizontalBox.h"
+#include "Components/HorizontalBoxSlot.h"
 #include "Components/Image.h"
 #include "Components/SizeBox.h"
 #include "Components/TextBlock.h"
@@ -14,6 +16,7 @@
 #include "TTAGameState.h"
 #include "TTAReels.h"
 #include "TTATimelineWidget.h"
+#include "TTAUIStyle.h"
 
 #include <stdexcept>
 
@@ -43,12 +46,13 @@ void UTTAEditorWidget::NativeOnInitialized()
 	WidgetTree->RootWidget = Root;
 
 	UHorizontalBox* Top = WidgetTree->ConstructWidget<UHorizontalBox>();
-	TimerText = WidgetTree->ConstructWidget<UTextBlock>();
-	Top->AddChildToHorizontalBox(TimerText);
-	AddButton(Top, TEXT("AUTO-EDIT"))->OnClicked.AddDynamic(this, &UTTAEditorWidget::OnAutoEdit);
+	UBorder* Timer = UTTAUIStyle::MakeBanner(WidgetTree, FText::GetEmpty());
+	TimerText = Cast<UTextBlock>(Timer->GetContent());
+	Top->AddChildToHorizontalBox(Timer)->SetPadding(UTTAUIStyle::PadAfter(Orient_Horizontal, UTTAUIStyle::Space(2)));
+	AddButton(Top, TEXT("AUTO-EDIT"), ETTAButtonKind::Primary)->OnClicked.AddDynamic(this, &UTTAEditorWidget::OnAutoEdit);
 	AddButton(Top, TEXT("Play"))->OnClicked.AddDynamic(this, &UTTAEditorWidget::OnPlay);
-	StatusText = WidgetTree->ConstructWidget<UTextBlock>();
-	Top->AddChildToHorizontalBox(StatusText);
+	StatusText = UTTAUIStyle::MakeLabel(WidgetTree, FText::GetEmpty(), ETTAFont::Small, ETTAColor::Red);
+	Top->AddChildToHorizontalBox(StatusText)->SetVerticalAlignment(VAlign_Center);
 	Root->AddChildToVerticalBox(Top);
 
 	USizeBox* PreviewBox = WidgetTree->ConstructWidget<USizeBox>();
@@ -84,21 +88,20 @@ void UTTAEditorWidget::NativeOnInitialized()
 	AddButton(Ops, TEXT("Slow-mo"))->OnClicked.AddDynamic(this, &UTTAEditorWidget::OnSlowMo);
 	AddButton(Ops, TEXT("Zoom"))->OnClicked.AddDynamic(this, &UTTAEditorWidget::OnZoom);
 	AddButton(Ops, TEXT("Sticker"))->OnClicked.AddDynamic(this, &UTTAEditorWidget::OnSticker);
-	CaptionBox = WidgetTree->ConstructWidget<UEditableTextBox>();
+	CaptionBox = UTTAUIStyle::MakeTextField(WidgetTree);
 	CaptionBox->SetHintText(FText::FromString(TEXT("caption")));
 	Ops->AddChildToHorizontalBox(CaptionBox);
 	AddButton(Ops, TEXT("Caption"))->OnClicked.AddDynamic(this, &UTTAEditorWidget::OnCaption);
 	AddButton(Ops, TEXT("WASTED"))->OnClicked.AddDynamic(this, &UTTAEditorWidget::OnWasted);
-	Root->AddChildToVerticalBox(Ops);
+	UBorder* OpsPanel = UTTAUIStyle::MakePanel(WidgetTree, ETTAPanelKind::Panel);
+	OpsPanel->SetContent(Ops);
+	Root->AddChildToVerticalBox(OpsPanel);
 }
 
-UButton* UTTAEditorWidget::AddButton(UHorizontalBox* Row, const FString& Label)
+UButton* UTTAEditorWidget::AddButton(UHorizontalBox* Row, const FString& Label, ETTAButtonKind Kind)
 {
-	UButton* Button = WidgetTree->ConstructWidget<UButton>();
-	UTextBlock* Text = WidgetTree->ConstructWidget<UTextBlock>();
-	Text->SetText(FText::FromString(Label));
-	Button->AddChild(Text);
-	Row->AddChildToHorizontalBox(Button);
+	UButton* Button = UTTAUIStyle::MakeButton(WidgetTree, FText::FromString(Label), Kind);
+	Row->AddChildToHorizontalBox(Button)->SetPadding(UTTAUIStyle::PadAfter(Orient_Horizontal, UTTAUIStyle::Space(1)));
 	return Button;
 }
 
