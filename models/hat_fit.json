@@ -1,0 +1,131 @@
+{
+ "_note": "Gen 3 angel (59,972 tris). Hat parented to bone head_hat (rest head at world z=1.0). Apply: rotate rot_z_deg about Z, uniform scale, then translate offset (world axes, rest pose; hat origin = base centre).",
+ "crown": {
+  "tris": 19972,
+  "rot_z_deg": 0,
+  "scale": 1.2969,
+  "offset_from_head_hat_m": [
+   0.0,
+   0.0,
+   0.0008
+  ],
+  "dims_m(blender,Z up)": [
+   0.428,
+   0.438,
+   0.353
+  ],
+  "verts_inside_head": 0
+ },
+ "propeller-beanie": {
+  "tris": 19970,
+  "rot_z_deg": 90,
+  "scale": 1.5071,
+  "offset_from_head_hat_m": [
+   0.0,
+   0.0,
+   -0.0639
+  ],
+  "dims_m(blender,Z up)": [
+   0.416,
+   0.498,
+   0.499
+  ],
+  "verts_inside_head": 0
+ },
+ "viking-helmet": {
+  "tris": 19986,
+  "rot_z_deg": 0,
+  "scale": 1.4743,
+  "offset_from_head_hat_m": [
+   0.0,
+   0.0,
+   -0.0886
+  ],
+  "dims_m(blender,Z up)": [
+   0.502,
+   0.658,
+   0.547
+  ],
+  "verts_inside_head": 0
+ },
+ "party-cone": {
+  "tris": 19906,
+  "rot_z_deg": 0,
+  "scale": 1.04,
+  "offset_from_head_hat_m": [
+   0.0,
+   0.0,
+   0.0028
+  ],
+  "dims_m(blender,Z up)": [
+   0.218,
+   0.218,
+   0.302
+  ],
+  "verts_inside_head": 0
+ },
+ "traffic-cone": {
+  "tris": 19988,
+  "rot_z_deg": 0,
+  "scale": 1.0481,
+  "offset_from_head_hat_m": [
+   0.0,
+   0.0,
+   0.0029
+  ],
+  "dims_m(blender,Z up)": [
+   0.22,
+   0.218,
+   0.289
+  ],
+  "verts_inside_head": 0
+ },
+ "devil-horns": {
+  "tris": 19994,
+  "rot_z_deg": 90,
+  "scale": 1.2,
+  "offset_from_head_hat_m": [
+   0.0,
+   0.0,
+   -0.0046
+  ],
+  "dims_m(blender,Z up)": [
+   0.074,
+   0.336,
+   0.362
+  ],
+  "verts_inside_head": 0
+ },
+ "bunny-ears": {
+  "tris": 19996,
+  "rot_z_deg": 90,
+  "scale": 1.15,
+  "offset_from_head_hat_m": [
+   0.0,
+   0.0,
+   0.0006
+  ],
+  "dims_m(blender,Z up)": [
+   0.065,
+   0.276,
+   0.325
+  ],
+  "verts_inside_head": 0
+ },
+ "halo": {
+  "tris": 19994,
+  "rot_z_deg": 0,
+  "scale": 1.0,
+  "offset_from_head_hat_m": [
+   0.0,
+   0.0,
+   0.0592
+  ],
+  "dims_m(blender,Z up)": [
+   0.3,
+   0.314,
+   0.073
+  ],
+  "verts_inside_head": 0
+ }
+}
