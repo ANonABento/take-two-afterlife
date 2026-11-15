@@ -371,3 +371,8 @@ Scored 1-5 by judges on: ambition/innovation, theme, fun, gameplay, visuals, lev
 - Done: `backyard_layout.py` adds `THIRDPARTY_ROOT`, `MISS_REPORT`, `norm_name`/`resolve`/`closest`/`resolve_all`/`miss_report`. `build_backyard_map.py` lists `/Game/ThirdParty/<kit>` and uses those meshes first; FBX import only for meshes not found there; cube last; every fallback is written to `Saved/backyard_miss_report.txt`. PlayerStart, TTAFinishGate, TTAKillPlane, KillZ unchanged. `Scripts/tests/test_backyard_kits.py` resolves all layout meshes against Content/ThirdParty: 0 misses.
 - Left: run `py Scripts/build_backyard_map.py` in the editor on the user's PC and check the report says "no misses" (UE side untested here).
 - Surprises: current layout names already match ThirdParty asset names exactly; the `building-type-a` mismatch in the plan is not in this layout, but normalisation covers it. `make test` stops at cmake in the sandbox, so the Python suite was run directly.
+
+### MVP task 2 handoff: No avatar or controls after Host
+- Done: cause was `ATTAGameMode` leaving `DefaultPawnClass` at the engine's ADefaultPawn (no runner bindings, sphere), plus the Title's UIOnly input mode surviving travel. Default pawn is now `RunnerPawnClass`; `RestartPlayer` override sets start location + human form; Lobby without travel restarts runners; `ATTAPlayerController::BeginPlay` sets GameOnly and hides the cursor. Config already correct (RunnerMesh=SK_Angel, 3 maps, WASD/Space); `test_runner_spawn.py` locks it. DEVLOG has the 5-step PC check.
+- Left: run that check on the user's PC (UE compile untested here).
+- Surprises: none in config; the plan was right that input ini wasn't the cause.

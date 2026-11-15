@@ -29,6 +29,8 @@ ATTAGameMode::ATTAGameMode()
 	bUseSeamlessTravel = true;
 	BuildPawnClass = ATTABuildPawn::StaticClass();
 	RunnerPawnClass = ATTARunnerPawn::StaticClass();
+	// Was the engine's ADefaultPawn (plain sphere, no runner input) - Host landed in Lobby on that.
+	DefaultPawnClass = ATTARunnerPawn::StaticClass();
 	PrimaryActorTick.bCanEverTick = true;
 }
 
@@ -63,7 +65,49 @@ bool ATTAGameMode::ReturnToLobby()
 	{
 		TravelTo(Session->GetLobbyMap());
 	}
+	else
+	{
+		RestartLobbyRunners();
+	}
 	return true;
+}
+
+void ATTAPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+	if (!IsLocalController()) return;
+	SetInputMode(FInputModeGameOnly());
+	bShowMouseCursor = false;
+}
+
+UClass* ATTAGameMode::GetDefaultPawnClassForController_Implementation(AController* InController)
+{
+	return RunnerPawnClass ? RunnerPawnClass.Get() : Super::GetDefaultPawnClassForController_Implementation(InController);
+}
+
+void ATTAGameMode::RestartPlayer(AController* NewPlayer)
+{
+	Super::RestartPlayer(NewPlayer); // spawns DefaultPawn at FindPlayerStart and possesses it
+	if (ATTARunnerPawn* Runner = NewPlayer ? Cast<ATTARunnerPawn>(NewPlayer->GetPawn()) : nullptr)
+	{
+		Runner->SetStartLocation(Runner->GetActorLocation());
+		Runner->SetForm(ETTAForm::Human);
+	}
+}
+
+void ATTAGameMode::RestartLobbyRunners()
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		APlayerController* PC = It->Get();
+		if (!PC || Cast<ATTARunnerPawn>(PC->GetPawn())) continue;
+		if (APawn* Old = PC->GetPawn())
+		{
+			PC->UnPossess();
+			Old->Destroy();
+		}
+		RestartPlayer(PC);
+	}
 }
 
 bool ATTAGameMode::TravelTo(const FString& Map)
