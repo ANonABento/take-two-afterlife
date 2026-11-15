@@ -6,8 +6,8 @@
 
 using namespace tta;
 
-TEST_CASE("catalogue has 6 traps with 2 settings and a cost") {
-    CHECK(trapCatalogue().size() == 6);
+TEST_CASE("catalogue has 7 traps with 2 settings and a cost") {
+    CHECK(trapCatalogue().size() == 7);
     for (const TrapSpec& s : trapCatalogue()) {
         CHECK(s.cost > 0);
         for (const SettingSpec& set : s.settings) CHECK(set.defaultValue >= set.min);
@@ -41,7 +41,7 @@ TEST_CASE("corridor bounds") {
 
 TEST_CASE("budget is 100 per owner") {
     Layout l;
-    for (int i = 0; i < 4; ++i) CHECK(l.placeTrap(1, TrapType::Cannon, i, 0, 0) == PlaceResult::Ok);
+    for (int i = 0; i < 4; ++i) CHECK(l.placeTrap(1, TrapType::Lawnmower, i, 0, 0) == PlaceResult::Ok);
     CHECK(l.remaining(1) == 0);
     CHECK(l.placeTrap(1, TrapType::Banana, 5, 0, 0) == PlaceResult::OverBudget);
     CHECK(l.placeTrap(2, TrapType::Banana, 5, 0, 0) == PlaceResult::Ok);
@@ -113,10 +113,10 @@ TEST_CASE("bad layout JSON is rejected") {
 
 TEST_CASE("canPlace previews the place rules without placing") {
     Layout l;
-    CHECK(l.canPlace(1, false, TrapType::Cannon, 10.0, 0.0) == PlaceResult::Ok);
-    CHECK(l.canPlace(1, false, TrapType::Cannon, -1.0, 0.0) == PlaceResult::OutOfBounds);
+    CHECK(l.canPlace(1, false, TrapType::Lawnmower, 10.0, 0.0) == PlaceResult::Ok);
+    CHECK(l.canPlace(1, false, TrapType::Lawnmower, -1.0, 0.0) == PlaceResult::OutOfBounds);
     CHECK(l.canPlace(1, true, TrapType::Hammer, 10.0, 4.3) == PlaceResult::OutOfBounds);
-    for (int i = 0; i < 4; ++i) REQUIRE(l.placeTrap(1, TrapType::Cannon, 5.0 * i, 0.0, 0.0) == PlaceResult::Ok);
+    for (int i = 0; i < 4; ++i) REQUIRE(l.placeTrap(1, TrapType::Lawnmower, 5.0 * i, 0.0, 0.0) == PlaceResult::Ok);
     CHECK(l.canPlace(1, false, TrapType::Banana, 30.0, 0.0) == PlaceResult::OverBudget);
     CHECK(l.canPlace(2, false, TrapType::Banana, 30.0, 0.0) == PlaceResult::Ok);
     for (int i = 0; i < kCameraCap; ++i) REQUIRE(l.placeCamera(1, CameraType::Pan, i, 1.0, 0.0) == PlaceResult::Ok);
@@ -138,21 +138,21 @@ TEST_CASE("placements stay between rounds and the budget resets each Build") {
     const int bananas = kBudget / trapSpec(TrapType::Banana).cost;
 
     build();
-    int cannon = 0;
-    CHECK(layout.placeTrap(1, TrapType::Cannon, 10, 0, 0, &cannon) == PlaceResult::Ok);
+    int mower = 0;
+    CHECK(layout.placeTrap(1, TrapType::Lawnmower, 10, 0, 0, &mower) == PlaceResult::Ok);
     CHECK(layout.placeCamera(1, CameraType::Fixed, 5, 0, 0) == PlaceResult::Ok);
-    CHECK(layout.spent(1) == trapSpec(TrapType::Cannon).cost);
+    CHECK(layout.spent(1) == trapSpec(TrapType::Lawnmower).cost);
     finish();
 
     build();
     CHECK(m.round() == 2);
     REQUIRE(layout.all().size() == 2);
-    CHECK(layout.all()[0].id == cannon);
+    CHECK(layout.all()[0].id == mower);
     CHECK(layout.all()[0].round == 1);
     CHECK(layout.all()[1].isCamera);
     CHECK(layout.remaining(1) == kBudget);
     CHECK(layout.remaining(2) == kBudget);
-    // Round 1's cannon is paid for: a full budget of new traps still fits.
+    // Round 1's lawnmower is paid for: a full budget of new traps still fits.
     for (int i = 0; i < bananas; ++i)
         CHECK(layout.placeTrap(1, TrapType::Banana, 20 + i, 1, 0) == PlaceResult::Ok);
     CHECK(layout.remaining(1) == 0);
@@ -172,7 +172,7 @@ TEST_CASE("placements stay between rounds and the budget resets each Build") {
 TEST_CASE("layout JSON keeps each placement's round and the current round") {
     Layout layout;
     layout.beginBuild(1);
-    REQUIRE(layout.placeTrap(1, TrapType::Cannon, 10, 0, 0) == PlaceResult::Ok);
+    REQUIRE(layout.placeTrap(1, TrapType::Lawnmower, 10, 0, 0) == PlaceResult::Ok);
     layout.beginBuild(2);
     REQUIRE(layout.placeTrap(1, TrapType::Hammer, 12, 0, 0) == PlaceResult::Ok);
     const Layout back = parseLayout(toJson(layout));

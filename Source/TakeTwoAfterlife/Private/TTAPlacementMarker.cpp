@@ -10,18 +10,29 @@
 #include "Net/UnrealNetwork.h"
 
 static_assert(static_cast<int>(ETTAPlaceOutcome::BadSetting) == static_cast<int>(tta::PlaceResult::BadSetting),
-	"ETTAPlaceOutcome must mirror tta::PlaceResult");
+	"ETTAPlaceOutcome must mirror tta::PlaceResult up to BadSetting");
 
 namespace
 {
 constexpr double kCmPerMeter = 100.0;
 constexpr int32 kCameraTypeCount = static_cast<int32>(tta::CameraType::TrapCam) + 1;
-int32 TrapCount() { return static_cast<int32>(tta::trapCatalogue().size()); }
+// Placeable traps in catalogue order; the Cannon stays in Core but out of the menu.
+const TArray<tta::TrapType>& BuildTraps()
+{
+	static const TArray<tta::TrapType> Traps = []
+	{
+		TArray<tta::TrapType> Out;
+		for (const tta::TrapSpec& S : tta::trapCatalogue()) if (tta::trapPlaceable(S.type)) Out.Add(S.type);
+		return Out;
+	}();
+	return Traps;
+}
+int32 TrapCount() { return BuildTraps().Num(); }
 }
 
 int32 TTABuildItem::Count() { return TrapCount() + kCameraTypeCount; }
 bool TTABuildItem::IsCamera(int32 Item) { return Item >= TrapCount(); }
-tta::TrapType TTABuildItem::Trap(int32 Item) { return tta::trapCatalogue().at(static_cast<size_t>(Item)).type; }
+tta::TrapType TTABuildItem::Trap(int32 Item) { return BuildTraps()[Item]; }
 tta::CameraType TTABuildItem::Camera(int32 Item) { return static_cast<tta::CameraType>(Item - TrapCount()); }
 
 FString TTABuildItem::Label(int32 Item)
@@ -39,7 +50,7 @@ FTTAPlacementRep FTTAPlacementRep::FromCore(const tta::Placement& P)
 	FTTAPlacementRep Rep;
 	Rep.Id = P.id;
 	Rep.Owner = P.owner;
-	Rep.Item = P.isCamera ? TrapCount() + static_cast<int32>(P.camera) : static_cast<int32>(P.trap);
+	Rep.Item = P.isCamera ? TrapCount() + static_cast<int32>(P.camera) : BuildTraps().IndexOfByKey(P.trap);
 	Rep.CellX = P.cellX;
 	Rep.CellY = P.cellY;
 	Rep.Rotation = P.rotation;

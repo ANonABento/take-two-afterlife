@@ -54,7 +54,7 @@ bool FTTABuildPlaceReplicateTest::RunTest(const FString& Parameters)
 	A->PlayerState->SetPlayerId(1);
 	B->PlayerState->SetPlayerId(2);
 
-	const int32 Hammer = 0, Cannon = 1, FirstCamera = 6;
+	const int32 Hammer = 0, Lawnmower = 5, FirstCamera = 6;
 	TestEqual(TEXT("no placing in Lobby"), Mode->PlaceItem(A, Hammer, FVector(1000, 0, 0), 0.f), ETTAPlaceOutcome::WrongPhase);
 	TestTrue(TEXT("Lobby -> Build"), Mode->RequestPhase(ETTAPhase::Build));
 	TestNotNull(TEXT("A flies a build pawn"), Cast<ATTABuildPawn>(A->GetPawn()));
@@ -86,7 +86,7 @@ bool FTTABuildPlaceReplicateTest::RunTest(const FString& Parameters)
 	// Bounds, budget, items.
 	TestEqual(TEXT("out of corridor"), Mode->PlaceItem(A, Hammer, FVector(-100, 0, 0), 0.f), ETTAPlaceOutcome::OutOfBounds);
 	TestEqual(TEXT("bad item"), Mode->PlaceItem(A, 99, FVector(500, 0, 0), 0.f), ETTAPlaceOutcome::BadItem);
-	for (int32 i = 0; i < 4; ++i) TestEqual(TEXT("B cannon"), Mode->PlaceItem(B, Cannon, FVector(500.f * i, 0, 0), 0.f), ETTAPlaceOutcome::Ok);
+	for (int32 i = 0; i < 4; ++i) TestEqual(TEXT("B lawnmower"), Mode->PlaceItem(B, Lawnmower, FVector(500.f * i, 0, 0), 0.f), ETTAPlaceOutcome::Ok);
 	TestEqual(TEXT("B over budget"), Mode->PlaceItem(B, Hammer, FVector(3000, 0, 0), 0.f), ETTAPlaceOutcome::OverBudget);
 
 	// Cameras by type, capped at 12 per type, lifted off the floor.

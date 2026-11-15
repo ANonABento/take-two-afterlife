@@ -12,9 +12,13 @@ class UStaticMeshComponent;
 UENUM(BlueprintType)
 enum class ETTAPlaceOutcome : uint8 { Ok, OutOfBounds, OverBudget, CameraCapReached, BadSetting, WrongPhase, NotOwner, BadItem };
 
-inline ETTAPlaceOutcome ToUE(tta::PlaceResult Result) { return static_cast<ETTAPlaceOutcome>(Result); }
+// Core's BadItem comes after BadSetting there but not here, so map it by name.
+inline ETTAPlaceOutcome ToUE(tta::PlaceResult Result)
+{
+	return Result == tta::PlaceResult::BadItem ? ETTAPlaceOutcome::BadItem : static_cast<ETTAPlaceOutcome>(Result);
+}
 
-// Build menu items: the Core trap catalogue in order, then the camera types.
+// Build menu items: the placeable Core traps in catalogue order, then the camera types.
 namespace TTABuildItem
 {
 	TAKETWOAFTERLIFE_API int32 Count();

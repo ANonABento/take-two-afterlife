@@ -61,6 +61,7 @@ FTransform ATTATrapActor::MovingTransform(tta::TrapType Type, const tta::TrapPos
 	case tta::TrapType::PusherWall: return FTransform(FVector(Reach, 0.f, 0.f));
 	case tta::TrapType::Trapdoor: return FTransform(FRotator(Angle, 0.f, 0.f));
 	case tta::TrapType::Cannon:
+	case tta::TrapType::Lawnmower:
 	case tta::TrapType::Banana: return FTransform::Identity;
 	}
 	checkNoEntry();

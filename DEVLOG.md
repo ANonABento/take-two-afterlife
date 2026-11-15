@@ -365,3 +365,8 @@ Added `tta::Punch` (wind-up/active/recovery + 1.5 s cooldown) and a PawnLife stu
 - **Prompt:** record each `SM_Trap_*` bounding box plus a 1.0 x 0.6 x 0.5 m lawnmower box; verify exports are within +-10% with the pivot at the origin.
 - **Agent did:** `models/trap_bounds.json` + `models/trap_fit.py`; `verify_traps_cams.py` now fails a trap that is off-size or off-pivot. Unittest `test_trap_bounds.py` (placeholders pass, 2x scale fails).
 - **Failed / fixed by hand:** boxes read from `traps_cams.glb`; the Blender run on the FBX files is still pending.
+
+## Trap swap task 3 — lawnmower core
+- **Prompt:** add a one-shot Lawnmower trap (Idle -> Driving -> Spent, 3 x 1.5 m trigger zone, 4 m at 4 m/s, hits through the existing path) and hide Cannon from placement and bots with `BadItem`.
+- **Agent did:** `tta::Lawnmower` + `TrapType::Lawnmower`, `trapPlaceable()` / `PlaceResult::BadItem`, bots and UE build menu skip the cannon. Doctests in `LawnmowerTests.cpp`.
+- **Failed / fixed by hand:** UE side not compiled here; the mower does not move in game until the UE hookup task.
