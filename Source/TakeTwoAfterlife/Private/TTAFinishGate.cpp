@@ -5,6 +5,7 @@
 #include "EngineUtils.h"
 #include "TTARunDirector.h"
 #include "TTARunnerPawn.h"
+#include "Engine/HitResult.h"
 
 ATTAFinishGate::ATTAFinishGate()
 {

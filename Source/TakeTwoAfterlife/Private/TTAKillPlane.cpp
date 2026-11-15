@@ -2,6 +2,7 @@
 
 #include "Components/BoxComponent.h"
 #include "TTARunnerPawn.h"
+#include "Engine/HitResult.h"
 
 ATTAKillPlane::ATTAKillPlane()
 {

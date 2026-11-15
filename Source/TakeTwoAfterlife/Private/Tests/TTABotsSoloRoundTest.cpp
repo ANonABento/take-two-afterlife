@@ -18,6 +18,7 @@
 #include "TTAGameState.h"
 #include "TTARunDirector.h"
 #include "TTARunnerPawn.h"
+#include "Components/StaticMeshComponent.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 

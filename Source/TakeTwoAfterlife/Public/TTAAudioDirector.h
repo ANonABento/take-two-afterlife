@@ -4,6 +4,7 @@
 #include "Subsystems/WorldSubsystem.h"
 #include "TTAGameState.h"
 #include "tta/AudioCues.h"
+#include "Engine/World.h"
 #include "TTAAudioDirector.generated.h"
 
 class UAudioComponent;
