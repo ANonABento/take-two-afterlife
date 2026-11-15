@@ -347,3 +347,6 @@ Generated UI art (18 alpha PNGs: buttons, panel, code pill, timer banner, slider
 
 ## Heaven props on the cloud floor
 Props were placed at world Z 0 instead of the cloud top (the cinema actor's origin), and dress_heaven.py crashed on a missing `mesh_bounds`. Placement now goes through the cinema transform; the podium slab sits 0.5 cm up to stop z-fighting. Editor rerun still needed.
+
+## Punch rules in Core
+Added `tta::Punch` (wind-up/active/recovery + 1.5 s cooldown) and a PawnLife stun: 1 s ragdoll, get up in place, 2 s punch immunity; a trap hit during a stun still respawns. Doctest only; UE wiring is the next task.
