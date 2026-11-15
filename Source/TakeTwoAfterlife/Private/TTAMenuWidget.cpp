@@ -23,6 +23,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Misc/Paths.h"
 #include "TTAReels.h"
+#include "TTAUIStyle.h"
 #include "tta/JoinCode.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogTTAMenu, Log, All);
@@ -37,15 +38,7 @@ constexpr float kButtonW = 480.f, kButtonH = 72.f, kGap = 12.f, kCorner = 18.f;
 constexpr float kRowLabelW = 180.f, kRowControlW = 280.f;  // fits inside a Card (520 - 2 * 30)
 constexpr float kTitleTilt = -4.f, kSkyOpacity = 0.5f;
 constexpr float kHoverDarken = 0.25f, kPressedDarken = 0.45f;  // lerp toward Ink
-const TCHAR* const kDisplayFontPath = TEXT("/Game/UI/Fonts/LilitaOne.LilitaOne");
-const TCHAR* const kBodyFontPath = TEXT("/Game/UI/Fonts/Nunito.Nunito");
 
-UObject* LoadMenuFont(const TCHAR* Path)
-{
-	UObject* Font = LoadObject<UObject>(nullptr, Path, nullptr, LOAD_NoWarn | LOAD_Quiet);
-	if (!Font) UE_LOG(LogTTAMenu, Warning, TEXT("Menu font %s not imported; using the engine font"), Path);
-	return Font;
-}
 
 // Puts a gap after the child along its box's direction.
 void GapAfter(UPanelSlot* Slot)
@@ -60,43 +53,19 @@ constexpr int32 SlotOf(tta::MenuScreen Screen) { return static_cast<int32>(Scree
 
 FLinearColor UTTAMenuWidget::Palette(int32 Index)
 {
-	check(Index >= 0 && Index < static_cast<int32>(tta::kPaletteHex.size()));
-	return FLinearColor(FColor::FromHex(FString(tta::kPaletteHex[Index])));
+	return UTTAUIStyle::Colour(Index);
 }
 
 UBorder* UTTAMenuWidget::Card(UPanelWidget* Parent, int32 Fill)
 {
-	// Sticker card: Ink outline around a palette fill.
-	UBorder* Outline = WidgetTree->ConstructWidget<UBorder>();
-	Outline->SetBrushColor(Palette(tta::kInk));
-	Outline->SetPadding(FMargin(6.f));
-	UBorder* Face = WidgetTree->ConstructWidget<UBorder>();
-	Face->SetBrushColor(Palette(Fill));
-	Face->SetPadding(FMargin(24.f));
-	Outline->SetContent(Face);
-	Parent->AddChild(Outline);
-	return Face;
+	return UTTAUIStyle::AddCard(WidgetTree, Parent, Fill);
 }
 
 UTextBlock* UTTAMenuWidget::Label(UPanelWidget* Parent, const FString& Text, int32 Size, bool bDisplay)
 {
 	UTextBlock* Block = WidgetTree->ConstructWidget<UTextBlock>();
 	Block->SetText(FText::FromString(Text));
-	FSlateFontInfo Font = Block->GetFont();
-	Font.Size = Size;
-	// Lilita One / Nunito when imported; otherwise the engine face, Bold for display.
-	if (UObject* Face = bDisplay ? DisplayFont : BodyFont)
-	{
-		Font.FontObject = Face;
-		Font.TypefaceFontName = NAME_None;
-	}
-	else
-	{
-		Font.TypefaceFontName = bDisplay ? FName("Bold") : FName("Regular");
-	}
-	Font.OutlineSettings.OutlineSize = bDisplay ? 3 : 0;
-	Font.OutlineSettings.OutlineColor = Palette(tta::kInk);
-	Block->SetFont(Font);
+	Block->SetFont(UTTAUIStyle::MakeFont(bDisplay ? DisplayFont : BodyFont, bDisplay, Size));
 	Block->SetColorAndOpacity(FSlateColor(bDisplay ? Palette(tta::kBone) : Palette(tta::kInk)));
 	Parent->AddChild(Block);
 	return Block;
@@ -174,14 +143,14 @@ void UTTAMenuWidget::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
-	DisplayFont = LoadMenuFont(kDisplayFontPath);
-	BodyFont = LoadMenuFont(kBodyFontPath);
+	DisplayFont = UTTAUIStyle::Get().LoadFont(true);
+	BodyFont = UTTAUIStyle::Get().LoadFont(false);
 
 	// Overlay root: half-opacity Sky so a 3D backdrop shows through, screens on top.
 	UOverlay* Root = WidgetTree->ConstructWidget<UOverlay>();
 	WidgetTree->RootWidget = Root;
 	UBorder* Background = WidgetTree->ConstructWidget<UBorder>();
-	Background->SetBrushColor(Palette(tta::kSky).CopyWithNewOpacity(kSkyOpacity));
+	UTTAUIStyle::Get().ApplyBackground(Background, ETTAUIScreen::Menu, tta::kSky, kSkyOpacity);
 	UOverlaySlot* BackgroundSlot = Root->AddChildToOverlay(Background);
 	BackgroundSlot->SetHorizontalAlignment(HAlign_Fill);
 	BackgroundSlot->SetVerticalAlignment(VAlign_Fill);
@@ -189,6 +158,7 @@ void UTTAMenuWidget::NativeOnInitialized()
 	UOverlaySlot* SwitcherSlot = Root->AddChildToOverlay(Switcher);
 	SwitcherSlot->SetHorizontalAlignment(HAlign_Fill);
 	SwitcherSlot->SetVerticalAlignment(VAlign_Fill);
+	SwitcherSlot->SetPadding(UTTAUIStyle::Get().SafeArea);
 
 	// Title
 	{
