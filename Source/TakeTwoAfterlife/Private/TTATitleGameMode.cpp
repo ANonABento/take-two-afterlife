@@ -6,6 +6,7 @@
 #include "GameFramework/HUD.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "OnlineSubsystem.h"
+#include "TTAGameMode.h"
 #include "TTAMenuWidget.h"
 #include "TTASessionSubsystem.h"
 
@@ -38,6 +39,7 @@ void ATTATitlePlayerController::BeginPlay()
 	const IOnlineSubsystem* Online = IOnlineSubsystem::Get();
 	const bool bEos = Online && Online->GetSubsystemName() == TEXT("EOS");
 	Menu->OnHost.BindLambda([Session, bEos]() { if (bEos) Session->HostLobby(); else Session->HostDirect(); });
+	Menu->OnPlaySolo.BindLambda([Session]() { Session->HostSolo(ATTAGameMode::MaxBots); });
 	Menu->OnJoinCode.BindLambda([Session](const FString& Code) { Session->JoinByCode(Code); });
 	Menu->OnJoinDirect.BindLambda([Session](const FString& Address) { Session->JoinDirect(Address); });
 	Menu->OnQuit.BindLambda([this]() { UKismetSystemLibrary::QuitGame(this, this, EQuitPreference::Quit, false); });

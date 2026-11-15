@@ -50,9 +50,16 @@ RunnerPlan BotBrain::planRun() {
 
 void BotBrain::rate(RatingBook& book, const std::vector<std::pair<int, Cut>>& cuts) {
     for (const auto& [cutId, cut] : cuts) {
-        if (cut.editor == playerId_ || cut.builder == playerId_) continue;
-        book.rate(cutId, playerId_, range(kMinRating, kMaxRating), range(kMinRating, kMaxRating));
+        if (const auto scores = vote(cut)) book.rate(cutId, playerId_, scores->first, scores->second);
     }
 }
+
+std::optional<std::pair<int, int>> BotBrain::vote(const Cut& cut) {
+    if (cut.editor == playerId_ || cut.builder == playerId_) return std::nullopt;
+    const int funny = range(kMinRating, kMaxRating);
+    return std::make_pair(funny, range(kMinRating, kMaxRating));
+}
+
+bool BotBrain::rollFail(const RunnerPlan& plan) { return unit() < plan.failChance; }
 
 } // namespace tta

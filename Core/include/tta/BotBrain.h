@@ -4,6 +4,7 @@
 #include "tta/Ratings.h"
 
 #include <cstdint>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -28,6 +29,10 @@ public:
     RunnerPlan planRun();
     // Rates every cut in `cuts` (already opened in `book`) whose editor and builder are not this bot.
     void rate(RatingBook& book, const std::vector<std::pair<int, Cut>>& cuts);
+    // {funny, evil} 1-5 for one cut; empty when this bot edited or built it (no self-rating).
+    std::optional<std::pair<int, int>> vote(const Cut& cut);
+    // One deliberate-fail roll for an obstacle (gap) under `plan`.
+    bool rollFail(const RunnerPlan& plan);
 
 private:
     std::uint64_t next();

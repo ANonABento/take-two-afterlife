@@ -223,3 +223,16 @@ Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prom
 3. Click Host; the Backyard loads and the menu and cursor are gone.
 4. The white angel (SK_Angel) stands at the PlayerStart, not a grey sphere.
 5. WASD moves, the mouse turns the camera, Space jumps.
+
+## MVP task 4 — Bot pawns + Play Solo
+- **Prompt:** bots that run the Backyard route to the gate, build and rate through BotBrain, auto-edit a cut; a Play Solo button that hosts Backyard with 3 bots.
+- **Agent did:** `ATTABotController` (AI controller with a PlayerState, ids 1000+) possesses `ATTARunnerPawn`; steering is Core `tta::BotRoute` (marker to marker, jump at gaps and step-ups, respawn through `PawnLife` via `Hit()` when stuck 3 s); `BotBrain` builds in Build, `vote()` rates in the cinema, `rollFail()` makes some gaps fail on purpose. `ATTAGameMode` reads `?bots=N`, adds bots at StartPlay, keeps them through travel, runs them in Run and auto-edits their cut when Run ends. Title has PLAY SOLO → `UTTASessionSubsystem::HostSolo(3)`. Backyard route markers get the `TTARoute` tag. Automation test `TTA.Bots.SoloRound`; `Scripts/tests/test_bots.py`.
+- **Failed / fixed by hand:** UE side untested in the sandbox. Re-run `py Scripts/build_backyard_map.py` so the markers get their tag, then run the check below.
+
+## Solo round check (user PC)
+1. Build the editor target; in Session Frontend run `TTA.Bots.SoloRound` and see it pass.
+2. In the editor run `py Scripts/build_backyard_map.py`; select a bone stepping stone and see the `TTARoute` tag.
+3. Launch (PIE or packaged) to Title and click PLAY SOLO; the Backyard loads with you and 3 other angels.
+4. Press START; in Build, bot traps and cameras appear on the course.
+5. In Run, the 3 bots run the stepping stones toward the gate and jump the gaps; a bot that falls or gets stuck respawns at the start.
+6. Run ends (all at the gate or the timer); Edit opens and the round goes on to the Heaven podium.

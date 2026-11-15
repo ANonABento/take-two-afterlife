@@ -57,6 +57,9 @@ def _floor():
     return props
 
 
+ROUTE_TAG = "TTARoute"  # ATTABotController::RouteTag: bots walk these markers start to gate
+
+
 def _markers():
     """Bone stepping stones down the centre line every 4 m: the route reads at a glance."""
     return [Prop("KayKitPrototypeBits", "Coin_A", "marker", x, 0.0, 0.0, 0, "Bone", ("box", (0.6, 0.6, 0.03)))

@@ -23,6 +23,7 @@ add_library(tta_core
   src/AudioCues.cpp
   src/MatchFlow.cpp
   src/BotBrain.cpp
+  src/BotRoute.cpp
 )
 target_include_directories(tta_core PUBLIC include)
 if(MSVC)
@@ -51,6 +52,7 @@ add_executable(tta_core_tests
   tests/AudioCuesTests.cpp
   tests/MatchFlowTests.cpp
   tests/BotBrainTests.cpp
+  tests/BotRouteTests.cpp
 )
 target_include_directories(tta_core_tests PRIVATE third_party)
 target_link_libraries(tta_core_tests PRIVATE tta_core)
