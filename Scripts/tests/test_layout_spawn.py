@@ -146,6 +146,23 @@ class LegacyPurge(unittest.TestCase):
         self.assertEqual(gone, 3)
         self.assertEqual(sub.actors, keep)
 
+    def test_no_actor_is_read_after_a_destroy(self):
+        """Reading actors after a destroy in the same pass crashed the editor on a backyard rebuild."""
+        sub = FakeSubsystem([])
+        destroy = sub.destroy_actor
+        sub.destroy_actor = lambda actor: (setattr(sub, "destroyed", True), destroy(actor))
+
+        class Watched(FakeLabelled):
+            def get_class(self):
+                if getattr(sub, "destroyed", False):
+                    raise AssertionError("actor read after a destroy")
+                return super().get_class()
+
+        sub.actors = [Watched("StaticMeshActor", [], label) for label in ("RedCarpet", "Keep", "Podium")]
+        gone = S.delete_previous(sub, lambda cls, label: label in ("RedCarpet", "Podium"))
+        self.assertEqual(gone, 2)
+        self.assertEqual([a.label for a in sub.actors], ["Keep"])
+
     def test_both_scripts_purge_legacy_actors(self):
         self.assertIn("S.delete_previous(actors, legacy)", (SCRIPTS / "build_backyard_map.py").read_text(encoding="utf-8"))
         self.assertRegex((SCRIPTS / "dress_heaven.py").read_text(encoding="utf-8"), r"S\.delete_previous\(subsystem, lambda")
