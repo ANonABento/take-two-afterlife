@@ -375,3 +375,6 @@ Added `tta::Punch` (wind-up/active/recovery + 1.5 s cooldown) and a PawnLife stu
 - **Prompt:** import the CC0 trap downloads, rotate/pivot/scale them to the recorded boxes, recolour from palette.md, export as `SM_Trap_*` plus a new `SM_Trap_Lawnmower`; primitives when a file is missing.
 - **Agent did:** `trap_fit.THIRDPARTY` + `fit_matrix` + `palette()`, import step in `build_traps_cams.py`, procedural lawnmower, `fetch_traps.py`, CREDITS rows and a third-party credits rule in `check_credits.py`; unittests in `test_trap_bounds.py`.
 - **Failed / fixed by hand:** downloads blocked (403) in the sandbox; fetch and commit the .glb files locally and check orientation in the preview.
+
+## Lawnmower in UE (trap swap task 6)
+Trap actor steps the Core lawnmower each tick, hits go through TryHit, blade spins while driving; build item mesh is Pallet_Small instead of the cannon barrel.
