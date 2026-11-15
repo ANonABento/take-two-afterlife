@@ -21,6 +21,8 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/Texture2D.h"
 #include "tta/MenuFlow.h"
+#include "UObject/ConstructorHelpers.h"
+#include "Animation/AnimInstance.h"
 
 namespace
 {
@@ -59,6 +61,17 @@ ATTARunnerPawn::ATTARunnerPawn()
 	for (UStaticMeshComponent* Part : {Wings.Get(), Halo.Get(), Hat.Get()})
 	{
 		Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+
+	// Gen 3 angel animation
+	static ConstructorHelpers::FClassFinder<UAnimInstance> AngelABP(
+		TEXT("/Game/Characters/Angel/Anims/ABP_Angel"));
+	if (AngelABP.Succeeded())
+	{
+		GetMesh()->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+		GetMesh()->SetAnimInstanceClass(AngelABP.Class);
+		// Gen 3 mesh faces -X; turn to face +X
+		GetMesh()->SetRelativeRotation(FRotator(0.f, 180.f, 0.f));
 	}
 }
 
@@ -186,8 +199,9 @@ void ATTARunnerPawn::SetForm(ETTAForm NewForm)
 {
 	Form = NewForm;
 	const tta::Form CoreForm = NewForm == ETTAForm::Angel ? tta::Form::Angel : tta::Form::Human;
-	Wings->SetVisibility(tta::wingsVisible(CoreForm));
-	Halo->SetVisibility(tta::haloVisible(CoreForm));
+	// Gen 3 angel: wings are built into SK_Angel and there is no halo.
+	Wings->SetVisibility(false);
+	Halo->SetVisibility(false);
 	Hat->SetVisibility(CoreForm == tta::Form::Human);
 }
 

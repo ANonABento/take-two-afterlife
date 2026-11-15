@@ -1,14 +1,16 @@
 # Run inside the UE editor (PythonScriptPlugin), after Scripts/create_toon_assets.py:
 #   py Scripts/build_backyard_map.py [downloads folder]   (default: <repo>/Downloads, see Scripts/fetch_assets.ps1)
 # The downloads folder holds the unzipped packs from Scripts/backyard_layout.KITS, one sub-folder each named by
-# its kit key (KayKitPrototypeBits, KenneyCitySuburban, KenneyNature). Each layout mesh comes from
-# /Game/ThirdParty/<kit> first (names matched lowercase, "-" == "_"); only meshes not found there are imported
-# from FBX into /Game/Imported/<kit> without materials; a mesh found nowhere becomes a toon-coloured
-# /Engine/BasicShapes/Cube placeholder, fitted to the same size, and is listed in Saved/backyard_miss_report.txt. Then (re)builds /Game/Maps/Backyard: floor, route markers,
-# dressing, PlayerStart, TTAFinishGate, TTAKillPlane and KillZ. Every slot gets an MI_TTA_Toon_Pal_<colour>.
+# its kit key (KayKitPrototypeBits, KenneyCitySuburban, KenneyNature). Each layout mesh comes from its kit's
+# /Game folder first (backyard_layout.kit_root; names matched lowercase, "-" == "_"); only meshes not found
+# there are imported from FBX into /Game/Imported/<kit> without materials; a mesh found nowhere becomes a
+# toon-coloured /Engine/BasicShapes/Cube placeholder, fitted to the same size, and is listed in
+# Saved/backyard_miss_report.txt. Then (re)builds /Game/Maps/Backyard: ground, trench water, route markers,
+# dressing, sky and sun, PlayerStart, TTAFinishGate, TTAKillPlane and KillZ. Every slot gets an
+# MI_TTA_Toon_Pal_<colour>. Reruns replace everything an earlier run placed (tagged TTA_Layout, plus the
+# untagged leftovers of runs from before the tag) and move start, gate and kill plane to the layout's spots.
 import os
 import sys
-from pathlib import Path
 
 import unreal
 
@@ -21,11 +23,13 @@ EAL = unreal.EditorAssetLibrary
 MEL = unreal.MaterialEditingLibrary
 CM = 100.0
 PLACEHOLDER = "/Engine/BasicShapes/Cube"
+SOLID_ROLES = ("floor", "dressing")              # everything else is seen, not touched
+LEGACY_PREFIXES = tuple(f"{role}_" for role in L.ROLES)
 
 
-def thirdparty_assets(kit):
-    """{asset name: asset path} under /Game/ThirdParty/<kit>."""
-    paths = EAL.list_assets(f"{L.THIRDPARTY_ROOT}/{kit}", recursive=True, include_folder=False)
+def kit_assets(kit):
+    """{asset name: asset path} under the kit's /Game folder."""
+    paths = EAL.list_assets(L.kit_root(kit), recursive=True, include_folder=False)
     return {str(p).rsplit("/", 1)[1].split(".", 1)[0]: str(p).split(".", 1)[0] for p in paths}
 
 
@@ -57,7 +61,7 @@ def import_meshes(downloads, found):
 
 
 def resolve_meshes(found, assets):
-    """{(kit, mesh): asset path}: ThirdParty first, then the FBX import, else the cube; plus the miss list."""
+    """{(kit, mesh): asset path}: the kit folder first, then the FBX import, else the cube; plus the miss list."""
     paths, misses = {}, []
     for kit, names in L.meshes_by_kit().items():
         for name in names:
@@ -66,16 +70,16 @@ def resolve_meshes(found, assets):
                 paths[(kit, name)] = assets[kit][found[(kit, name)]]
             elif EAL.does_asset_exist(imported):
                 paths[(kit, name)] = imported
-                misses.append((kit, name, f"not in {L.THIRDPARTY_ROOT}, used FBX import {imported}"))
+                misses.append((kit, name, f"not in {L.kit_root(kit)}, used FBX import {imported}"))
             else:
                 paths[(kit, name)] = PLACEHOLDER
-                misses.append((kit, name, "not in ThirdParty or FBX: placeholder cube"))
+                misses.append((kit, name, "not in its kit folder or FBX: placeholder cube"))
                 unreal.log_warning(f"{kit}/{name} missing everywhere: placeholder block")
     return paths, misses
 
 
 def prop_mesh(prop, paths):
-    """ThirdParty mesh, else FBX import, else the engine cube (fitted + toon-coloured like the real one)."""
+    """Kit mesh, else FBX import, else the engine cube (fitted + toon-coloured like the real one)."""
     return EAL.load_asset(paths[(prop.kit, prop.mesh)])
 
 
@@ -111,6 +115,10 @@ def target_fit(prop):
     return (kind, target * CM)
 
 
+def rot(yaw=0.0, pitch=0.0):
+    return unreal.Rotator(roll=0.0, pitch=pitch, yaw=yaw)
+
+
 def fit_component(comp, mesh, prop):
     """Child component (the gate Arch): scale + relative offset, bottom-centre on the actor origin."""
     box = mesh.get_bounding_box()
@@ -120,7 +128,8 @@ def fit_component(comp, mesh, prop):
     off = S.placement((0.0, 0.0, 0.0), 0.0, rlo, rhi, (1.0, 1.0, 1.0))
     comp.set_relative_rotation(unreal.Rotator(float(rot[0]), float(rot[1]), 0.0), False, False)
     comp.set_relative_scale3d(unreal.Vector(*scale))
-    comp.set_relative_location(unreal.Vector(*off), False, False)
+    comp.set_relative_rotation(rot(yaw=float(prop.yaw)), False, False)
+    comp.set_relative_location(unreal.Vector(*S.placement((0.0, 0.0, 0.0), prop.yaw, lo, hi, scale)), False, False)
 
 
 def place(actors, prop, toon, paths):
@@ -133,9 +142,38 @@ def place(actors, prop, toon, paths):
     comp = actor.static_mesh_component
     for slot in range(comp.get_num_materials()):
         comp.set_material(slot, palette_instance(prop.palette, toon))
-    if prop.role == "marker":
-        comp.set_collision_enabled(unreal.CollisionEnabled.NO_COLLISION)
     return actor
+
+
+def light_sky(actors):
+    """Sun, sky light, atmosphere and thin haze, all dynamic (nothing is baked). Tagged, so a rerun replaces them."""
+    sun = actors.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 2000),
+                                        rot(yaw=35.0, pitch=-48.0))   # from behind the start, over one shoulder
+    sun.set_actor_label("Sun")
+    light = sun.get_component_by_class(unreal.DirectionalLightComponent)
+    light.set_mobility(unreal.ComponentMobility.MOVABLE)
+    light.set_editor_property("atmosphere_sun_light", True)
+    sky = actors.spawn_actor_from_class(unreal.SkyLight, unreal.Vector(0, 0, 1500))
+    sky.set_actor_label("SkyLight")
+    capture = sky.get_component_by_class(unreal.SkyLightComponent)
+    capture.set_mobility(unreal.ComponentMobility.MOVABLE)
+    capture.set_editor_property("real_time_capture", True)
+    air = actors.spawn_actor_from_class(unreal.SkyAtmosphere, unreal.Vector(0, 0, 0))
+    air.set_actor_label("SkyAtmosphere")
+    fog = actors.spawn_actor_from_class(unreal.ExponentialHeightFog, unreal.Vector(0, 0, 0))
+    fog.set_actor_label("HeightFog")
+    haze = fog.get_component_by_class(unreal.ExponentialHeightFogComponent)
+    haze.set_editor_property("fog_density", 0.006)
+    haze.set_editor_property("start_distance", 3000.0)
+    for actor in (sun, sky, air, fog):
+        S.tag(unreal, actor)
+
+
+def legacy(cls, label):
+    """Untagged leftovers of runs from before the TTA_Layout tag: `<role>_<mesh>` meshes and the extra suns."""
+    if cls == "StaticMeshActor":
+        return label.startswith(LEGACY_PREFIXES)
+    return cls == "DirectionalLight" and label == "Sun"
 
 
 def build(downloads):
@@ -143,7 +181,7 @@ def build(downloads):
     toon = EAL.load_asset(toon_spec.TOON_MATERIAL)
     if toon is None:
         raise RuntimeError(f"{toon_spec.TOON_MATERIAL} missing: run Scripts/create_toon_assets.py first")
-    assets = {kit: thirdparty_assets(kit) for kit in L.KITS}
+    assets = {kit: kit_assets(kit) for kit in L.KITS}
     found, _ = L.resolve_all({kit: list(a) for kit, a in assets.items()})
     import_meshes(downloads, found)
     paths, misses = resolve_meshes(found, assets)
@@ -156,49 +194,48 @@ def build(downloads):
     elif not level.new_level(L.MAP_PATH):
         raise RuntimeError(f"could not create {L.MAP_PATH}")
     actors = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
-    # Reruns: only what an earlier run tagged TTA_Layout goes. PlayerStart, gate, kill plane, KillZ, NavMesh stay.
-    unreal.log(f"removed {S.delete_previous(actors)} old {S.LAYOUT_TAG} actors")
+    # Reruns: what earlier runs placed goes. PlayerStart, gate, kill plane, NavMesh and hand-placed actors stay.
+    unreal.log(f"removed {S.delete_previous(actors, legacy)} old {S.LAYOUT_TAG} actors")
     level_actors = actors.get_all_level_actors()
 
     def first(cls):
         return next((a for a in level_actors if isinstance(a, cls)), None)
 
+    def at(point, lift=0.0):
+        return unreal.Vector(point.x * CM, point.y * CM, point.z * CM + lift)
+
     for prop in L.props():
         if prop.role != "gate":
             place(actors, prop, toon, paths)
-        elif first(unreal.TTAFinishGate) is None:
-            gate = actors.spawn_actor_from_class(unreal.TTAFinishGate, unreal.Vector(L.GATE.x * CM, L.GATE.y * CM,
-                                                                                     L.GATE.z * CM))
-            mesh = prop_mesh(prop, paths)
-            arch = component(gate, "Arch")
-            arch.set_static_mesh(mesh)
-            fit_component(arch, mesh, prop)
-            for slot in range(arch.get_num_materials()):
-                arch.set_material(slot, palette_instance(prop.palette, toon))
-            hx, hy, hz = L.GATE_TRIGGER_HALF
-            component(gate, "Trigger").set_box_extent(unreal.Vector(hx * CM, hy * CM, hz * CM))
+            continue
+        gate = first(unreal.TTAFinishGate) or actors.spawn_actor_from_class(unreal.TTAFinishGate, at(L.GATE))
+        gate.set_actor_location(at(L.GATE), False, False)
+        gate.set_actor_rotation(rot(), False)
+        mesh = prop_mesh(prop, paths)
+        arch = component(gate, "Arch")
+        arch.set_static_mesh(mesh)
+        fit_component(arch, mesh, prop)
+        for slot in range(arch.get_num_materials()):
+            arch.set_material(slot, palette_instance(prop.palette, toon))
+        hx, hy, hz = L.GATE_TRIGGER_HALF
+        component(gate, "Trigger").set_box_extent(unreal.Vector(hx * CM, hy * CM, hz * CM))
 
-    if first(unreal.PlayerStart) is None:
-        actors.spawn_actor_from_class(unreal.PlayerStart,
-                                      unreal.Vector(L.START.x * CM, L.START.y * CM, L.START.z * CM + 100.0))
-    first_build = first(unreal.TTAKillPlane) is None
-    if first_build:
-        k = L.KILL_PLANE
-        kill = actors.spawn_actor_from_class(unreal.TTAKillPlane, unreal.Vector(
-            (k.min_x + k.max_x) / 2 * CM, (k.min_y + k.max_y) / 2 * CM, (k.min_z + k.max_z) / 2 * CM))
-        component(kill, "Volume").set_box_extent(unreal.Vector((k.max_x - k.min_x) / 2 * CM,
-                                                               (k.max_y - k.min_y) / 2 * CM,
-                                                               (k.max_z - k.min_z) / 2 * CM))
+    start = first(unreal.PlayerStart) or actors.spawn_actor_from_class(unreal.PlayerStart, at(L.START, 100.0))
+    start.set_actor_location(at(L.START, 100.0), False, False)
+    start.set_actor_rotation(rot(), False)                       # facing down the route
+    k = L.KILL_PLANE
+    centre = unreal.Vector((k.min_x + k.max_x) / 2 * CM, (k.min_y + k.max_y) / 2 * CM, (k.min_z + k.max_z) / 2 * CM)
+    kill = first(unreal.TTAKillPlane) or actors.spawn_actor_from_class(unreal.TTAKillPlane, centre)
+    kill.set_actor_location(centre, False, False)
+    component(kill, "Volume").set_box_extent(unreal.Vector((k.max_x - k.min_x) / 2 * CM,
+                                                           (k.max_y - k.min_y) / 2 * CM,
+                                                           (k.max_z - k.min_z) / 2 * CM))
     world = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()
-    if first_build:
-        world.get_world_settings().set_editor_property("kill_z", L.WORLD_KILL_Z * CM)
+    world.get_world_settings().set_editor_property("kill_z", L.WORLD_KILL_Z * CM)
     # Only the backyard runs the match/build mode (TTABuildHUD); Title overrides to TTATitleGameMode.
     world.get_world_settings().set_editor_property(
         "default_game_mode", unreal.load_class(None, "/Script/TakeTwoAfterlife.TTAGameMode"))
-    sun = actors.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 2000),
-                                        unreal.Rotator(0.0, -50.0, 30.0))
-    sun.set_actor_label("Sun")
-    S.tag(unreal, sun)
+    light_sky(actors)
     if not level.save_current_level():
         raise RuntimeError(f"could not save {L.MAP_PATH}")
     EAL.save_directory(toon_spec.INSTANCE_DIR, only_if_is_dirty=False, recursive=True)
