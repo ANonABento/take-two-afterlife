@@ -12,6 +12,7 @@ class UBorder;
 class UButton;
 class UEditableTextBox;
 class UHorizontalBox;
+class UImage;
 class USlider;
 class UFont;
 class UPanelWidget;
@@ -167,6 +168,8 @@ public:
 	static UBorder* MakeBanner(UWidgetTree* Tree, const FText& Text);
 	static USlider* MakeSlider(UWidgetTree* Tree);
 	static UEditableTextBox* MakeTextField(UWidgetTree* Tree);
+	// Angel placeholder art (an existing /Game/Characters/Angel texture); panel brush (logged) when it does not load.
+	static UImage* MakeAngel(UWidgetTree* Tree);
 
 	// UMG builders shared by the TTA widgets.
 	static UBorder* AddCard(UWidgetTree* Tree, UPanelWidget* Into, int32 Fill);
