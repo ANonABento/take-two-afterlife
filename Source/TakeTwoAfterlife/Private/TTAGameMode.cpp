@@ -8,6 +8,7 @@
 #pragma warning(disable: 4458) // local Owner shadows AActor::Owner
 
 #include "Engine/World.h"
+#include "UObject/Package.h"
 #include "Misc/FileHelper.h"
 #include "Misc/PackageName.h"
 #include "Misc/Paths.h"

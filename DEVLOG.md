@@ -312,3 +312,14 @@ It should end with `Result: Succeeded`. If not, paste the first `error C` lines.
 
 ## Plan 6 task 5: Title menu simplified
 Title is Play Solo / Host Game / Join (code or IP) / Settings / Quit. Logo and button art slots added to TTAUIStyle (DefaultGame.ini) so generated art drops in with no code change. Check: build, open the Title map, confirm 5 buttons each work; set MenuLogo to a texture and confirm it replaces the text title.
+
+## Build watch: automation green on UE 5.5 (Nov 15)
+- Editor build of main (fbaaf9f) succeeded with no changes.
+- `TTA.Bots.SoloRound`: the test called `World->Tick` 840 times inside one engine frame; tick functions queue once per `GFrameCounter`, so only the first tick ran (bots never moved, Run never ended). The test now bumps `GFrameCounter` per simulated frame. Game code untouched.
+- `TTA.UI.MenuFlow`: `ULocalPlayer` is `Within=Engine`; outering it to the game instance tripped an ensure. The test now outers it to `GEngine`; `test_menu_init.py` asserted the opposite and was corrected.
+- **Verified on this PC:** Build.bat exits 0 (all 22 actions, DLL linked); `Automation RunTests TTA.` 16/16 pass; `Scripts/test.ps1` green (doctest + 180 Python tests).
+
+## Merge main into plan branch (Nov 15)
+- Merged `origin/main` (build-watch test fixes) into the plan branch. Only DEVLOG.md and plan.md conflicted; both sides' entries kept. The three test files merged cleanly.
+- First real UE 5.5 compile of the plan-branch features needed two fixes: `TTAGameMode.cpp` includes `UObject/Package.h` (`IsOnMap` calls `GetOutermost()->GetName()`), and `InputCore` is now a module dependency (`EKeys::Enter` / `Gamepad_Special_Right` for the host's START key failed to link).
+- **Verified on this PC:** Build.bat exits 0 (DLL linked); `Automation RunTests TTA.` 16/16 pass headless (`-nullrhi`); `Scripts/test.ps1` green (doctest + 196 Python tests). The manual checks listed above (lobby gate, 3 rounds, podium, voice, menu) are still unplayed.
