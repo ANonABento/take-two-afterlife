@@ -31,11 +31,12 @@ DEFINE_LOG_CATEGORY_STATIC(LogTTAMenu, Log, All);
 
 namespace
 {
-// Layout: screens are a centred column (two of them for Title / Lobby / How to play).
+// Layout: screens are a centred column (two of them for Title / How to play; Lobby is one on the left).
 constexpr float kScreenW = 520.f, kWideW = 2 * kScreenW + 40.f;
 constexpr float kButtonW = 480.f, kButtonH = 72.f;
 constexpr float kRowLabelW = 180.f, kRowControlW = 280.f;  // fits inside a panel (520 - 2 * 32)
 constexpr float kJoinW = 160.f;
+constexpr float kLobbyW = 420.f;  // lobby panel hugs the left edge so Heaven stays visible
 constexpr float kTitleTilt = -4.f, kSkyOpacity = 0.5f;
 const float kGap = UTTAUIStyle::Space(3);
 
@@ -210,37 +211,33 @@ void UTTAMenuWidget::NativeOnInitialized()
 	}
 	// Lobby
 	{
-		// Two columns (players | cosmetics), action buttons in a bottom row.
-		UVerticalBox* Box = ScreenPanel(kWideW);
-		UHorizontalBox* Columns = WidgetTree->ConstructWidget<UHorizontalBox>();
-		Box->AddChild(Columns);
-		GapAfter(Columns->Slot);
-		auto Column = [&]()
-		{
-			USizeBox* Size = WidgetTree->ConstructWidget<USizeBox>();
-			Size->SetWidthOverride(kScreenW);
-			UVerticalBox* Inner = WidgetTree->ConstructWidget<UVerticalBox>();
-			Size->SetContent(Inner);
-			Columns->AddChild(Size);
-			return Inner;
-		};
-		UVerticalBox* Players = Column();
-		Cast<UHorizontalBoxSlot>(Players->GetParent()->Slot)->SetPadding(UTTAUIStyle::PadAfter(Orient_Horizontal, kWideW - 2 * kScreenW));
-		RoomCodeText = Label(Card(Players), TEXT("------"), ETTAFont::Title);
-		WaitingText = Label(Players, TEXT(""), ETTAFont::Body);
-		UVerticalBox* Cosmetics = Column();
-		LookSwatch = Card(Cosmetics, ETTAColor::Red);
-		LookText = Label(LookSwatch, TEXT(""), ETTAFont::Body);
-		MenuButton(Cosmetics, TEXT("COLOUR >"), ETTAButtonKind::Secondary)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnColourNext);
-		MenuButton(Cosmetics, TEXT("HAT >"), ETTAButtonKind::Secondary)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnHatNext);
-		MenuButton(Cosmetics, TEXT("FACE >"), ETTAButtonKind::Secondary)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnFaceNext);
-		UHorizontalBox* Bottom = WidgetTree->ConstructWidget<UHorizontalBox>();
-		const float ActionW = (kWideW - 2 * kGap) / 3.f;
-		StartButton = MenuButton(Bottom, TEXT("START"), ETTAButtonKind::Primary, ActionW);
+		// Compact left panel over the walkable Heaven: code pill, look pickers, actions, ready count.
+		UVerticalBox* Box = ScreenPanel(kLobbyW);
+		CastChecked<UWidgetSwitcherSlot>(Box->GetParent()->Slot)->SetHorizontalAlignment(HAlign_Left);
+		UBorder* Face = Card(Box);
+		UVerticalBox* Inner = WidgetTree->ConstructWidget<UVerticalBox>();
+		Face->SetContent(Inner);
+		const float InnerW = kLobbyW - 2 * UTTAUIStyle::Space(4);
+		Label(Inner, TEXT("ROOM CODE"), ETTAFont::Small);
+		UBorder* Pill = UTTAUIStyle::MakePanel(WidgetTree, ETTAPanelKind::CodePill);
+		GapAfter(Inner->AddChild(Pill));
+		RoomCodeText = UTTAUIStyle::MakeLabel(WidgetTree, FText::FromString(TEXT("------")), ETTAFont::H2);
+		RoomCodeText->SetJustification(ETextJustify::Center);
+		Pill->SetContent(RoomCodeText);
+		LookSwatch = Card(Inner, ETTAColor::Red);
+		LookText = Label(LookSwatch, TEXT(""), ETTAFont::Small);
+		MenuButton(Inner, TEXT("COLOUR >"), ETTAButtonKind::Secondary, InnerW)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnColourNext);
+		MenuButton(Inner, TEXT("HAT >"), ETTAButtonKind::Secondary, InnerW)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnHatNext);
+		MenuButton(Inner, TEXT("FACE >"), ETTAButtonKind::Secondary, InnerW)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnFaceNext);
+		StartButton = MenuButton(Inner, TEXT("START"), ETTAButtonKind::Primary, InnerW);
 		StartButton->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnStartClicked);
-		MenuButton(Bottom, TEXT("SETTINGS"), ETTAButtonKind::Secondary, ActionW)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnSettingsClicked);
-		MenuButton(Bottom, TEXT("LEAVE"), ETTAButtonKind::Secondary, ActionW)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnBackClicked);
-		Box->AddChild(Bottom);
+		MenuButton(Inner, TEXT("SETTINGS"), ETTAButtonKind::Secondary, InnerW)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnSettingsClicked);
+		MenuButton(Inner, TEXT("LEAVE"), ETTAButtonKind::Secondary, InnerW)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnBackClicked);
+		// Ready count: tick icon + the label SetPlayers writes to.
+		UHorizontalBox* Ready = UTTAUIStyle::MakeIconCount(WidgetTree, ETTAAsset::IconReady, FText::GetEmpty());
+		WaitingText = CastChecked<UTextBlock>(Ready->GetChildAt(1));
+		WaitingText->SetAutoWrapText(true);
+		Inner->AddChild(Ready);
 	}
 	// Settings
 	{
