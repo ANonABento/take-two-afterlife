@@ -29,10 +29,17 @@ class FitScale(unittest.TestCase):
     def test_flat_carpet_is_not_blown_up_100x(self):
         # The reported bug: a 2 cm thick carpet came out at scale 100 and x = -11945.
         carpet = next(p for p in heaven() if p["label"] == "RedCarpet")
-        scale = S.fit_scale((251.5, 150.0, 2.0), carpet["fit"])
-        self.assertTrue(all(s <= S.MAX_SCALE for s in scale), scale)
-        self.assertAlmostEqual(251.5 * scale[0], 480.0)
-        self.assertEqual(carpet["at"][:2], (390.0, 0.0))
+        scale = S.fit_scale((250.0, 1200.0, 2.0), carpet["fit"])       # SM_Heaven_RedCarpet: long along Y
+        self.assertTrue(all(S.MIN_SCALE <= s <= S.MAX_SCALE for s in scale), scale)
+        self.assertAlmostEqual(scale[0], 1.0)                           # full width, only shortened
+        self.assertAlmostEqual(1200.0 * scale[1], 700.0)
+        self.assertEqual(carpet["at"][:2], (150.0, 600.0))
+
+    def test_kit_metres_read_as_centimetres_raise(self):
+        # KayKit as UE imported its OBJ: a 4 m floor tile 4 cm wide. The build must stop, not scale by 150.
+        with self.assertRaises(ValueError):
+            S.fit_scale((4.0, 1.0, 4.0), ("box", (600.0, 800.0, 450.0)))
+        S.fit_scale((400.0, 400.0, 100.0), ("box", (600.0, 800.0, 450.0)))
 
     def test_wrong_units_raise(self):
         with self.assertRaises(ValueError):
@@ -114,6 +121,34 @@ class FakeSubsystem:
 
     def destroy_actor(self, actor):
         self.actors.remove(actor)
+
+
+class FakeLabelled(FakeActor):
+    def __init__(self, cls, tags, label):
+        super().__init__(cls, tags)
+        self.label = label
+
+    def get_actor_label(self):
+        return self.label
+
+
+class LegacyPurge(unittest.TestCase):
+    """Maps built before the TTA_Layout tag kept every old actor: two podiums, three suns, a 250 m carpet."""
+
+    def test_untagged_leftovers_go_and_hand_placed_actors_stay(self):
+        labels = S.heaven_labels(json.loads((SCRIPTS / "heaven_layout.json").read_text(encoding="utf-8")))
+        old = [FakeLabelled("StaticMeshActor", [], "RedCarpet"), FakeLabelled("StaticMeshActor", [], "Podium"),
+               FakeLabelled("TargetPoint", ["1st"], "Podium_1st")]
+        keep = [FakeLabelled("StaticMeshActor", [], "HandPlacedRock"), FakeLabelled("PlayerStart", [], "Podium"),
+                FakeLabelled("TTACinema", [], "Cinema")]
+        sub = FakeSubsystem(old + keep)
+        gone = S.delete_previous(sub, lambda cls, label: cls in ("StaticMeshActor", "TargetPoint") and label in labels)
+        self.assertEqual(gone, 3)
+        self.assertEqual(sub.actors, keep)
+
+    def test_both_scripts_purge_legacy_actors(self):
+        self.assertIn("S.delete_previous(actors, legacy)", (SCRIPTS / "build_backyard_map.py").read_text(encoding="utf-8"))
+        self.assertRegex((SCRIPTS / "dress_heaven.py").read_text(encoding="utf-8"), r"S\.delete_previous\(subsystem, lambda")
 
 
 class Rerun(unittest.TestCase):
