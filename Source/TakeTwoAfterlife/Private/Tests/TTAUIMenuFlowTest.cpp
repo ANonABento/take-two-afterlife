@@ -47,7 +47,7 @@ bool FTTAUIMenuFlowTest::RunTest(const FString& Parameters)
 	World->InitializeActorsForPlay(FURL());
 	World->BeginPlay();
 
-	ULocalPlayer* LocalPlayer = NewObject<ULocalPlayer>(GEngine, GEngine->LocalPlayerClass);
+	ULocalPlayer* LocalPlayer = NewObject<ULocalPlayer>(Instance, GEngine->LocalPlayerClass) // owned by the game instance, like a real local player;
 	const AGameModeBase* Mode = World->GetAuthGameMode();
 	APlayerController* PC = World->SpawnActor<APlayerController>(Mode ? Mode->PlayerControllerClass.Get() : ATTAPlayerController::StaticClass());
 	if (!TestNotNull(TEXT("local controller"), PC) || !TestNotNull(TEXT("local player"), LocalPlayer)) return false;

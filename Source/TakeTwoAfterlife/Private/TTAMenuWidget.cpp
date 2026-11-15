@@ -276,7 +276,7 @@ void UTTAMenuWidget::NativeOnInitialized()
 		WindowModeBox->OnSelectionChanged.AddDynamic(this, &UTTAMenuWidget::OnWindowModeChanged);
 		ResolutionBox = SettingCombo(Inner, TEXT("Resolution"));
 		ResolutionBox->OnSelectionChanged.AddDynamic(this, &UTTAMenuWidget::OnResolutionChanged);
-		RefreshVideo();
+		// Video options fill in when Settings opens: Initialize must not need GameUserSettings/RHI.
 		MicMeter = WidgetTree->ConstructWidget<UProgressBar>();
 		MicMeter->SetFillColorAndOpacity(Palette(tta::kGrass));
 		SettingRow(Inner, TEXT("Mic test"), MicMeter);
@@ -331,6 +331,7 @@ bool UTTAMenuWidget::Open(tta::MenuScreen Screen)
 		JoinCard->SetBrushColor(Palette(tta::kBone));
 		JoinError->SetText(FText::GetEmpty());
 	}
+	if (Screen == tta::MenuScreen::Settings) RefreshVideo();
 	Switcher->SetActiveWidgetIndex(SlotOf(Flow.current()));
 	return true;
 }
@@ -435,8 +436,13 @@ static_assert(static_cast<int32>(tta::WindowMode::Fullscreen) == EWindowMode::Fu
 
 void UTTAMenuWidget::RefreshVideo()
 {
+	if (!ResolutionBox || !WindowModeBox) return;
 	UGameUserSettings* Video = UGameUserSettings::GetGameUserSettings();
-	check(Video);
+	if (!Video)
+	{
+		UE_LOG(LogTTAMenu, Warning, TEXT("No GameUserSettings (bare automation world); video settings skipped"));
+		return;
+	}
 	TArray<FIntPoint> Supported;
 	if (!UKismetSystemLibrary::GetSupportedFullscreenResolutions(Supported))
 	{
@@ -457,7 +463,11 @@ void UTTAMenuWidget::RefreshVideo()
 void UTTAMenuWidget::ApplyWindowMode(tta::WindowMode Mode)
 {
 	UGameUserSettings* Video = UGameUserSettings::GetGameUserSettings();
-	check(Video);
+	if (!Video)
+	{
+		UE_LOG(LogTTAMenu, Warning, TEXT("No GameUserSettings (bare automation world); video settings skipped"));
+		return;
+	}
 	Video->SetFullscreenMode(EWindowMode::ConvertIntToWindowMode(static_cast<int32>(Mode)));
 	Video->ApplySettings(false);
 }
@@ -470,7 +480,11 @@ bool UTTAMenuWidget::ApplyResolution(int32 ChoiceIndex)
 		return false;
 	}
 	UGameUserSettings* Video = UGameUserSettings::GetGameUserSettings();
-	check(Video);
+	if (!Video)
+	{
+		UE_LOG(LogTTAMenu, Warning, TEXT("No GameUserSettings (bare automation world); video settings skipped"));
+		return false;
+	}
 	const tta::Resolution& R = ResolutionChoices[ChoiceIndex];
 	Video->SetScreenResolution(FIntPoint(R.width, R.height));
 	Video->ApplySettings(false);
