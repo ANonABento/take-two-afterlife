@@ -17,7 +17,8 @@ struct FTTAResultRow
 	UPROPERTY() int32 Colour = 0;
 };
 
-// Results screen: one sticker row per player, best first. Styled by UTTAUIStyle.
+// Results screen: a RESULTS panel with rank, name and points per player, best first.
+// Built only from UTTAUIStyle builders; no buttons.
 UCLASS()
 class TAKETWOAFTERLIFE_API UTTAResultsWidget : public UUserWidget
 {

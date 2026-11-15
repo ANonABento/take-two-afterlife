@@ -7,7 +7,8 @@
 class UHorizontalBox;
 
 // Podium: 2nd / 1st / 3rd blocks from ATTACinema::GetPodium() (player ids, winner first).
-// Styled by UTTAUIStyle.
+// "AND THE WINNER IS..." banner over panel blocks, built only from UTTAUIStyle builders. No buttons:
+// the game mode returns everyone to the lobby.
 UCLASS()
 class TAKETWOAFTERLIFE_API UTTAPodiumWidget : public UUserWidget
 {
