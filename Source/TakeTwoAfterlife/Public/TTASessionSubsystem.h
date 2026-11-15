@@ -24,6 +24,8 @@ public:
 	UFUNCTION(BlueprintCallable) void HostLobby();
 	UFUNCTION(BlueprintCallable) void JoinByCode(const FString& TypedCode);
 	UFUNCTION(BlueprintCallable) void HostDirect();
+	// Play Solo: offline Lobby map with Bots bots (ATTAGameMode reads ?bots=).
+	UFUNCTION(BlueprintCallable) void HostSolo(int32 Bots);
 	UFUNCTION(BlueprintCallable) bool JoinDirect(const FString& TypedAddress);
 
 	// The code the host shows in the lobby; empty until HostLobby succeeds.

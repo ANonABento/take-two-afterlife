@@ -1,4 +1,7 @@
 #include "TTAGameMode.h"
+#include "EngineUtils.h"
+#include "Kismet/GameplayStatics.h"
+#include "TTABotController.h"
 #include "Engine/GameInstance.h"
 #include "GameFramework/PlayerState.h"
 #pragma warning(disable: 4458) // local Owner shadows AActor::Owner
@@ -7,6 +10,7 @@
 #include "Misc/FileHelper.h"
 #include "Misc/PackageName.h"
 #include "Misc/Paths.h"
+#include "TTAGameState.h"
 #include "TTAMatchCarry.h"
 #include "TTAPlayerState.h"
 #include "TTASessionSubsystem.h"
@@ -29,6 +33,8 @@ ATTAGameMode::ATTAGameMode()
 	bUseSeamlessTravel = true;
 	BuildPawnClass = ATTABuildPawn::StaticClass();
 	RunnerPawnClass = ATTARunnerPawn::StaticClass();
+	// Was the engine's ADefaultPawn (plain sphere, no runner input) - Host landed in Lobby on that.
+	DefaultPawnClass = ATTARunnerPawn::StaticClass();
 	PrimaryActorTick.bCanEverTick = true;
 }
 
@@ -63,7 +69,49 @@ bool ATTAGameMode::ReturnToLobby()
 	{
 		TravelTo(Session->GetLobbyMap());
 	}
+	else
+	{
+		RestartLobbyRunners();
+	}
 	return true;
+}
+
+void ATTAPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+	if (!IsLocalController()) return;
+	SetInputMode(FInputModeGameOnly());
+	bShowMouseCursor = false;
+}
+
+UClass* ATTAGameMode::GetDefaultPawnClassForController_Implementation(AController* InController)
+{
+	return RunnerPawnClass ? RunnerPawnClass.Get() : Super::GetDefaultPawnClassForController_Implementation(InController);
+}
+
+void ATTAGameMode::RestartPlayer(AController* NewPlayer)
+{
+	Super::RestartPlayer(NewPlayer); // spawns DefaultPawn at FindPlayerStart and possesses it
+	if (ATTARunnerPawn* Runner = NewPlayer ? Cast<ATTARunnerPawn>(NewPlayer->GetPawn()) : nullptr)
+	{
+		Runner->SetStartLocation(Runner->GetActorLocation());
+		Runner->SetForm(ETTAForm::Human);
+	}
+}
+
+void ATTAGameMode::RestartLobbyRunners()
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		APlayerController* PC = It->Get();
+		if (!PC || Cast<ATTARunnerPawn>(PC->GetPawn())) continue;
+		if (APawn* Old = PC->GetPawn())
+		{
+			PC->UnPossess();
+			Old->Destroy();
+		}
+		RestartPlayer(PC);
+	}
 }
 
 bool ATTAGameMode::TravelTo(const FString& Map)
@@ -80,7 +128,8 @@ bool ATTAGameMode::TravelTo(const FString& Map)
 		return false;
 	}
 	Carry->Save(Match, Score, Layout);
-	return GetWorld()->ServerTravel(Map + TEXT("?listen"));
+	const FString Bots = BotCount > 0 ? FString::Printf(TEXT("?bots=%d"), BotCount) : FString();
+	return GetWorld()->ServerTravel(Map + TEXT("?listen") + Bots);
 }
 
 void ATTAGameMode::PostSeamlessTravel()
@@ -112,6 +161,7 @@ FString ATTAGameMode::SettingsPath()
 void ATTAGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
 {
 	Super::InitGame(MapName, Options, ErrorMessage);
+	BotCount = FMath::Clamp(UGameplayStatics::GetIntOption(Options, TEXT("bots"), 0), 0, MaxBots);
 	const tta::MatchSettings Base = IniSettings();
 	Match = tta::MatchStateMachine(Base);
 	const FString Path = SettingsPath();
@@ -186,15 +236,44 @@ bool ATTAGameMode::EndPremiere(const std::map<int, double>& RatingPoints)
 	return RequestPhase(Match.canTransition(tta::Phase::Build) ? ETTAPhase::Build : ETTAPhase::Podium);
 }
 
+void ATTAGameMode::StartPlay()
+{
+	Super::StartPlay();
+	AddBots(BotCount);
+}
+
+void ATTAGameMode::AddBots(int32 Count)
+{
+	int32 Existing = 0;
+	for (TActorIterator<ATTABotController> It(GetWorld()); It; ++It) ++Existing;
+	for (int32 i = Existing; i < FMath::Min(Existing + Count, MaxBots); ++i)
+	{
+		FActorSpawnParameters Params;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		ATTABotController* Bot = GetWorld()->SpawnActor<ATTABotController>(ATTABotController::StaticClass(), FTransform::Identity, Params);
+		check(Bot);
+		Bot->InitBrain(ATTABotController::FirstBotId + i, static_cast<uint64>(FDateTime::UtcNow().GetTicks()) + i);
+		RestartPlayer(Bot);
+		if (GetGameState<ATTAGameState>()->GetPhase() == ETTAPhase::Build)
+		{
+			Bot->BuildTraps(Layout); // arrived mid-Build after travel
+			for (const tta::Placement& P : Layout.all()) SyncMarker(P.id);
+		}
+	}
+	BotCount = FMath::Max(BotCount, FMath::Min(Existing + Count, MaxBots));
+}
+
 void ATTAGameMode::EnterRun()
 {
 	RevealPlacements();
 	TArray<ATTARunnerPawn*> Runners;
 	std::vector<int> RunnerIds;
-	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	TArray<ATTABotController*> Bots;
+	for (FConstControllerIterator It = GetWorld()->GetControllerIterator(); It; ++It)
 	{
-		APlayerController* PC = It->Get();
-		if (!PC || !PC->PlayerState) continue;
+		AController* PC = It->Get();
+		ATTABotController* Bot = Cast<ATTABotController>(PC);
+		if (!PC || !PC->PlayerState || (!Cast<APlayerController>(PC) && !Bot)) continue;
 		const AActor* Start = FindPlayerStart(PC);
 		const FTransform StartTransform = Start ? Start->GetActorTransform() : FTransform::Identity;
 		FActorSpawnParameters Params;
@@ -209,6 +288,13 @@ void ATTAGameMode::EnterRun()
 		if (Old) Old->Destroy();
 		Runners.Add(Runner);
 		RunnerIds.push_back(PC->PlayerState->GetPlayerId());
+		if (Bot) Bots.Add(Bot);
+	}
+	if (Bots.Num() > 0)
+	{
+		const TArray<FVector> Route = ATTABotController::FindRoute(GetWorld());
+		if (Route.IsEmpty()) UE_LOG(LogTemp, Error, TEXT("ATTAGameMode: no TTARoute markers or finish gate; bots stand still"));
+		else for (ATTABotController* Bot : Bots) Bot->StartRun(Route);
 	}
 	RunPlayerIds = tta::runPlayers(RunnerIds, Layout);
 	RunnerCount = Runners.Num();
@@ -254,6 +340,11 @@ void ATTAGameMode::Tick(float DeltaSeconds)
 
 void ATTAGameMode::EndRun()
 {
+	for (TActorIterator<ATTABotController> It(GetWorld()); It; ++It)
+	{
+		It->StopRun();
+		It->FillCut(Director->GetReplay());
+	}
 	// Replay ids are indices into RunPlayerIds; totals are kept by PlayerState id.
 	Score.addRound(tta::toPlayerIds(Director->GetRoundInput(), RunPlayerIds, static_cast<std::size_t>(RunnerCount)));
 	verify(RequestPhase(ETTAPhase::Edit));
@@ -272,6 +363,8 @@ void ATTAGameMode::EnterBuild()
 		check(Pawn);
 		PC->Possess(Pawn);
 	}
+	for (TActorIterator<ATTABotController> It(GetWorld()); It; ++It) It->BuildTraps(Layout);
+	for (const tta::Placement& P : Layout.all()) SyncMarker(P.id);
 }
 
 void ATTAGameMode::RevealPlacements()
