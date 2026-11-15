@@ -130,16 +130,19 @@ def delete_previous(subsystem, legacy=None):
     legacy(class name, label) -> bool also removes untagged leftovers of runs from before the tag existed
     (those piled up as duplicates: two podiums, three suns). Protected classes never go.
     """
-    gone = 0
+    # Decide for every actor first, destroy after: reading actors after a destroy in the same pass
+    # crashed the editor (EXCEPTION_ACCESS_VIOLATION reading 0x40, right after this purge).
+    doomed = []
     for actor in subsystem.get_all_level_actors():
         cls = actor.get_class().get_name()
         stale = is_stale(cls, actor.get_editor_property("tags"))
         if not stale and legacy is not None and cls not in PROTECTED_CLASSES:
             stale = bool(legacy(cls, str(actor.get_actor_label())))
         if stale:
-            subsystem.destroy_actor(actor)
-            gone += 1
-    return gone
+            doomed.append(actor)
+    for actor in doomed:
+        subsystem.destroy_actor(actor)
+    return len(doomed)
 
 
 def tag(unreal, actor, *extra):
