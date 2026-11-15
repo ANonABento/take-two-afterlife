@@ -91,6 +91,8 @@ def main():
         return
     # Reruns: delete what the last run spawned (TTA_Layout). PlayerStarts, cinema, sky, fog, sun stay.
     unreal.log(f"removed {S.delete_previous(subsystem)} old {S.LAYOUT_TAG} actors")
+    legacy = S.heaven_labels(layout)
+    unreal.log(f"removed {S.delete_previous(subsystem, lambda cls, label: cls in ('StaticMeshActor', 'TargetPoint') and label in legacy)} untagged legacy actors")
     actors = subsystem.get_all_level_actors()
 
     if by_label(actors, "Sky") is None or not any(isinstance(a, unreal.SkyAtmosphere) for a in actors):

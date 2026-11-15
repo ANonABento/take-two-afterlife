@@ -340,3 +340,7 @@ Generated UI art (18 alpha PNGs: buttons, panel, code pill, timer banner, slider
 1. `UnrealEditor-Cmd.exe TakeTwoAfterlife.uproject -run=pythonscript -script=Scripts/import_ui_assets.py -unattended -nosplash`; `/Game/UI/Generated` has 18 `T_UI_*` textures, Mip Gen = NoMipmaps, group UI.
 2. Editor build passes.
 3. Edit phase: gold AUTO-EDIT, white buttons, timer banner, framed caption field, white panel behind the tool row; no stretched corners (else tune the slice in TTAUIStyle.cpp and ui-style.md together).
+## Plan task 1 — Toon outline misalignment
+- **Prompt:** outlines sit offset from mesh edges; fix the outline post-process and get world normals into the GBuffer.
+- **Agent did:** `OUTLINE_HLSL` now converts with `ViewportUVToBufferUV(UV)` and samples depth/normal at `buv`, stepping by `View.BufferSizeAndInvSize.zw` (was viewport UV + viewport pixel size, wrong whenever buffer != viewport: editor viewport, screen percentage, split screen). Scanline/vignette keep viewport UV. `M_TTA_Toon` is now Default Lit with the toon result in Emissive and black BaseColor, so it writes world normals. Static tests in `Scripts/tests/test_toon_outline.py`.
+- **Failed / fixed by hand:** not yet checked in the editor: rebuild with `Scripts/setup_content.ps1` and look at TTA_ArtTest.
