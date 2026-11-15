@@ -5,6 +5,8 @@ import sys
 import zipfile
 from pathlib import Path
 
+import release_checks
+
 GAME = "TakeTwoAfterlife"
 MAX_BYTES = 1024 ** 3  # jam rule: the zip must be under 1 GB
 
@@ -38,6 +40,7 @@ def main() -> int:
     p.add_argument("team", help="team name, used as <team>_TakeTwoAfterlife.zip")
     p.add_argument("--out", type=Path, default=Path("Dist"))
     a = p.parse_args()
+    release_checks.check()
     out = make_zip(a.build_dir, a.team, a.out)
     print(f"{out} ({out.stat().st_size / 1024 ** 2:.1f} MiB)")
     return 0
