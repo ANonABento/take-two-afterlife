@@ -68,5 +68,6 @@ private:
 	bool bBuiltThisRound = false;
 	bool bWasGroundAhead = true;
 	bool bSkipThisGap = false;
+	float LogClock = 0.f;
 	tta::LifeState LastLife = tta::LifeState::Alive;
 };

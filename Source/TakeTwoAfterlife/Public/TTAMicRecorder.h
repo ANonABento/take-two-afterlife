@@ -50,5 +50,7 @@ private:
 	TSharedPtr<IVoiceCapture> Capture;
 	TArray<uint8> Buffer;
 	int32 RecordingRound = INDEX_NONE;
+	// PlayerState id read when capture starts; the pawn can lose its PlayerState (unpossessed) before EndPlay saves.
+	int32 RecordingPlayerId = INDEX_NONE;
 	FDelegateHandle PhaseHandle;
 };
