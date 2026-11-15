@@ -344,3 +344,6 @@ Generated UI art (18 alpha PNGs: buttons, panel, code pill, timer banner, slider
 - **Prompt:** outlines sit offset from mesh edges; fix the outline post-process and get world normals into the GBuffer.
 - **Agent did:** `OUTLINE_HLSL` now converts with `ViewportUVToBufferUV(UV)` and samples depth/normal at `buv`, stepping by `View.BufferSizeAndInvSize.zw` (was viewport UV + viewport pixel size, wrong whenever buffer != viewport: editor viewport, screen percentage, split screen). Scanline/vignette keep viewport UV. `M_TTA_Toon` is now Default Lit with the toon result in Emissive and black BaseColor, so it writes world normals. Static tests in `Scripts/tests/test_toon_outline.py`.
 - **Failed / fixed by hand:** not yet checked in the editor: rebuild with `Scripts/setup_content.ps1` and look at TTA_ArtTest.
+
+## Heaven props on the cloud floor
+Props were placed at world Z 0 instead of the cloud top (the cinema actor's origin), and dress_heaven.py crashed on a missing `mesh_bounds`. Placement now goes through the cinema transform; the podium slab sits 0.5 cm up to stop z-fighting. Editor rerun still needed.
