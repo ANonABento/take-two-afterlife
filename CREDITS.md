@@ -19,6 +19,7 @@ TODO: confirm the KayKit/Kenney mesh names and pack versions once `fetch_assets.
 
 ## Audio
 Music and SFX WAVs in `Content/Audio/` are built by `Scripts/build_audio.py`. Narrator VO WAVs ship separately (`VO_wavs.zip`, unzip into `Content/Audio/VO/`).
+Music and SFX WAVs in `Content/Audio/` are built by `Scripts/build_audio.py`. Narrator VO is not recorded yet; the game shows captions only.
 | Asset | Author | License | Source |
 |---|---|---|---|
 | Narrator voice, 60 lines `VO_*` (script exported by `Core/tools/vo_script.cpp` → `build/tta_vo_script`; voice: George `JBFqnCBsd6RMkjVDRZzb`, model `eleven_multilingual_v2`) | ElevenLabs text-to-speech, script by Kevin | ElevenLabs Free tier: attribution required ("Voice generated with ElevenLabs, elevenlabs.io") | https://elevenlabs.io |
