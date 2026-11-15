@@ -296,3 +296,9 @@ It should end with `Result: Succeeded`. If not, paste the first `error C` lines.
 - Runner body MIDs only for slots the loaded SK_Angel has (`RunnerMesh=/Game/Characters/Angel/SK_Angel.SK_Angel`); hat MID guarded.
 - KayKit `prototype_texture` -> Masked: in the editor, `py Scripts/fix_prototype_material.py`.
 - **To run (UE 5.5):** `Automation RunTests TTA.` — TTA.UI.MenuFlow expected to pass. Untested here (no Unreal in the sandbox).
+
+## Build watch: automation green on UE 5.5 (Nov 15)
+- Editor build of main (fbaaf9f) succeeded with no changes.
+- `TTA.Bots.SoloRound`: the test called `World->Tick` 840 times inside one engine frame; tick functions queue once per `GFrameCounter`, so only the first tick ran (bots never moved, Run never ended). The test now bumps `GFrameCounter` per simulated frame. Game code untouched.
+- `TTA.UI.MenuFlow`: `ULocalPlayer` is `Within=Engine`; outering it to the game instance tripped an ensure. The test now outers it to `GEngine`; `test_menu_init.py` asserted the opposite and was corrected.
+- **Verified on this PC:** Build.bat exits 0 (all 22 actions, DLL linked); `Automation RunTests TTA.` 16/16 pass; `Scripts/test.ps1` green (doctest + 180 Python tests).
