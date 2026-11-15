@@ -211,3 +211,35 @@ Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prom
 - **Prompt:** fold `plan/take-two-afterlife-mwff6y6w` into main (submission text, phase timings, fullscreen and resolution, heaven travel, menu restyle).
 - **Agent did:** merged that branch. Kept the overnight devlog entries above. The other plan branch's task 28–31 notes described work that was already on main, so those notes were not copied over.
 - **Failed / fixed by hand:** Heaven.umap still has to be built before premiere travel works. Font assets `LilitaOne` and `Nunito` are still not imported.
+
+## MVP task 2 — No avatar or controls after Host
+- **Prompt:** after Title → Host → Backyard?listen nothing is possessed; spawn and possess a runner in Lobby.
+- **Agent did:** `ATTAGameMode` now uses `ATTARunnerPawn` as the default pawn (PostLogin/RestartPlayer spawn it at a PlayerStart, human form); Lobby without travel restarts runners; `ATTAPlayerController::BeginPlay` sets GameOnly input and hides the cursor. `Scripts/tests/test_runner_spawn.py` checks RunnerMesh, cooked maps, MoveForward/Jump mappings and this check list.
+- **Failed / fixed by hand:** UE side untested in the sandbox; run the check below.
+
+## Runner spawn check (user PC)
+1. Package Win64 Development (`Scripts/package.bat` or Platforms → Package Project) with no errors.
+2. Launch the packaged exe; the Title menu shows with a cursor.
+3. Click Host; the Backyard loads and the menu and cursor are gone.
+4. The white angel (SK_Angel) stands at the PlayerStart, not a grey sphere.
+5. WASD moves, the mouse turns the camera, Space jumps.
+
+## MVP task 4 — Bot pawns + Play Solo
+- **Prompt:** bots that run the Backyard route to the gate, build and rate through BotBrain, auto-edit a cut; a Play Solo button that hosts Backyard with 3 bots.
+- **Agent did:** `ATTABotController` (AI controller with a PlayerState, ids 1000+) possesses `ATTARunnerPawn`; steering is Core `tta::BotRoute` (marker to marker, jump at gaps and step-ups, respawn through `PawnLife` via `Hit()` when stuck 3 s); `BotBrain` builds in Build, `vote()` rates in the cinema, `rollFail()` makes some gaps fail on purpose. `ATTAGameMode` reads `?bots=N`, adds bots at StartPlay, keeps them through travel, runs them in Run and auto-edits their cut when Run ends. Title has PLAY SOLO → `UTTASessionSubsystem::HostSolo(3)`. Backyard route markers get the `TTARoute` tag. Automation test `TTA.Bots.SoloRound`; `Scripts/tests/test_bots.py`.
+- **Failed / fixed by hand:** UE side untested in the sandbox. Re-run `py Scripts/build_backyard_map.py` so the markers get their tag, then run the check below.
+
+## Solo round check (user PC)
+1. Build the editor target; in Session Frontend run `TTA.Bots.SoloRound` and see it pass.
+2. In the editor run `py Scripts/build_backyard_map.py`; select a bone stepping stone and see the `TTARoute` tag.
+3. Launch (PIE or packaged) to Title and click PLAY SOLO; the Backyard loads with you and 3 other angels.
+4. Press START; in Build, bot traps and cameras appear on the course.
+5. In Run, the 3 bots run the stepping stones toward the gate and jump the gaps; a bot that falls or gets stuck respawns at the start.
+6. Run ends (all at the gate or the timer); Edit opens and the round goes on to the Heaven podium.
+
+## MVP task 5 — automation crashes
+
+- **Fixed:** `TTA.UI.MenuFlow` crash. `UTTAMenuWidget::NativeOnInitialized` (run by `Menu->Initialize()`) built the Settings screen and called `RefreshVideo()`, which `check`ed `UGameUserSettings` and asked the RHI for fullscreen resolutions. In a bare automation world that assert takes down the whole run. Video options now fill in when Settings opens; `RefreshVideo`/`ApplyWindowMode`/`ApplyResolution` log and skip instead of `check`. The test's `ULocalPlayer` is now owned by the game instance, not `GEngine`. Locked by `Scripts/tests/test_menu_init.py`.
+- **Rechecked, no change:** premiere advance. Core `MatchStateMachine` allows Premiere -> Build (or Podium on the last round); `ATTAGameMode::EndPremiere` asks exactly that and `TTA.Match.ThreeRounds` drives it. In-game, nothing calls `EndPremiere` yet (cinema not wired: separate task).
+- **Rechecked, no change:** respawn timing. `ATTARunnerPawn::AdvanceLife` slices dt at 0.05 s so `PawnLife` walks Frozen (0.12 s) -> Ragdoll (1.5 s) -> Alive even when a test passes the whole delay at once; ticks use world dt so the frozen pawn still counts down.
+- **Untested here:** UE compile and Automation (no Unreal in the sandbox). On Windows, in the editor console: `RunTests TTA.` (or `UnrealEditor-Cmd.exe TakeTwoAfterlife.uproject -ExecCmds="Automation RunTests TTA.;Quit" -unattended -nullrhi -log`).

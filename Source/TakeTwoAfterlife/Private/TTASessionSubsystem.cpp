@@ -191,6 +191,11 @@ void UTTASessionSubsystem::HostDirect()
 	GetWorld()->ServerTravel(LobbyMap + TEXT("?listen"));
 }
 
+void UTTASessionSubsystem::HostSolo(int32 Bots)
+{
+	GetWorld()->ServerTravel(LobbyMap + FString::Printf(TEXT("?bots=%d"), Bots));
+}
+
 bool UTTASessionSubsystem::JoinDirect(const FString& TypedAddress)
 {
 	const std::optional<tta::DirectAddress> Address = tta::parseDirectAddress(TCHAR_TO_UTF8(*TypedAddress));

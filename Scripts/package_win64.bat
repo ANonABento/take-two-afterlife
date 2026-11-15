@@ -8,6 +8,8 @@ if "%TEAM%"=="" goto usage
 set "ROOT=%~dp0.."
 set "PROJECT=%ROOT%\TakeTwoAfterlife.uproject"
 
+python "%ROOT%\Scripts\release_checks.py" || exit /b 1
+
 "%UE%\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" "%PROJECT%" -run=pythonscript -script="%ROOT%\Scripts\create_title_map.py" -unattended -nop4 || exit /b 1
 
 call "%UE%\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun -project="%PROJECT%" -platform=Win64 -clientconfig=Shipping -build -cook -stage -pak -iostore -compressed -prereqs -archive -archivedirectory="%ROOT%\Dist" -unattended -utf8output || exit /b 1

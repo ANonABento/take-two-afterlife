@@ -33,6 +33,8 @@ class TAKETWOAFTERLIFE_API UTTAMenuWidget : public UUserWidget
 
 public:
 	FTTAMenuAction OnHost;
+	// Play Solo: host the Backyard offline with bots.
+	FTTAMenuAction OnPlaySolo;
 	FTTAMenuAction OnStart;
 	FTTAMenuAction OnQuit;
 	FTTAMenuCode OnJoinCode;
@@ -45,6 +47,7 @@ public:
 	bool Back();
 
 	void Host();
+	void PlaySolo();
 	// Normalizes the typed code; on success fires OnJoinCode and opens the Lobby.
 	// On failure the card turns Red, shows why, and the screen stays on Join.
 	bool SubmitJoinCode(const FString& Typed);
@@ -120,6 +123,7 @@ private:
 	void RefreshSettings();
 
 	UFUNCTION() void OnHostClicked() { Host(); }
+	UFUNCTION() void OnPlaySoloClicked() { PlaySolo(); }
 	UFUNCTION() void OnJoinClicked() { Open(tta::MenuScreen::Join); }
 	UFUNCTION() void OnReelsClicked() { Open(tta::MenuScreen::Reels); }
 	UFUNCTION() void OnSettingsClicked() { Open(tta::MenuScreen::Settings); }
