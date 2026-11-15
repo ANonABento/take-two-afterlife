@@ -18,13 +18,18 @@ TODO: confirm the KayKit/Kenney mesh names and pack versions once `fetch_assets.
 | Course kit: `SM_Course_GateFinish` (Backyard finish arch) | Take Two: Afterlife team, scripted in Blender | own work | models/build_course_kit.py |
 
 ## Audio
-TODO: fill in track titles/artists, Freesound ids/authors and the ElevenLabs voice/model once the audio files are imported.
+Music and SFX WAVs in `Content/Audio/` are built by `Scripts/build_audio.py`. Narrator VO WAVs ship separately (`VO_wavs.zip`, unzip into `Content/Audio/VO/`).
 | Asset | Author | License | Source |
 |---|---|---|---|
-| Narrator voice, 60 lines `VO_*` (script exported by `Core/tools/vo_script.cpp` → `build/tta_vo_script`; voice/model: TODO) | ElevenLabs text-to-speech, script by Kevin | ElevenLabs Free tier: attribution required ("Voice generated with ElevenLabs, elevenlabs.io") | https://elevenlabs.io |
+| Narrator voice, 60 lines `VO_*` (script exported by `Core/tools/vo_script.cpp` → `build/tta_vo_script`; voice: George `JBFqnCBsd6RMkjVDRZzb`, model `eleven_multilingual_v2`) | ElevenLabs text-to-speech, script by Kevin | ElevenLabs Free tier: attribution required ("Voice generated with ElevenLabs, elevenlabs.io") | https://elevenlabs.io |
 | SFX pack `Audio/SFX/*.wav`: trap_place, countdown_beep, clock_tick, bonk, thunder, gate_chime, projector_start, rating_ding, applause, fanfare (synthesised by `Scripts/make_sfx.py`, numpy + wave) | generated in-house | CC0 1.0 | `Scripts/make_sfx.py` |
-| Music `MUS_Lobby`, `MUS_Build`, `MUS_Run`, `MUS_Edit`, `MUS_Premiere`, `MUS_Podium` (one track per phase; fill in track titles/artists) | WeLoveIndies artists | WeLoveIndies licence (check terms on download) | https://www.weloveindies.com |
-| SFX `SFX_TrapPlace`, `SFX_CountdownBeep`, `SFX_ClockTick`, `SFX_ImpactBonk`, `SFX_Thunder`, `SFX_GateChime`, `SFX_ProjectorStart`, `SFX_RatingDing`, `SFX_Applause`, `SFX_Fanfare` (fill in each Freesound sound id/author; CC0 preferred, CC-BY credited here) | Freesound / Kenney audio packs | CC0 1.0 / CC-BY 4.0 per sound | https://freesound.org, https://kenney.nl/assets/category:Audio |
+| Music `MUS_Lobby`: "In the Lobby" (cut to 32 s, mono, -16 LUFS) | Umplix | CC0 1.0 | https://opengameart.org/content/in-the-lobby |
+| Music `MUS_Build`: "Happy Adventure (Loop)" (cut to 32 s, mono, -16 LUFS) | TinyWorlds | CC0 1.0 | https://opengameart.org/content/happy-adventure-loop |
+| Music `MUS_Run`: "Lasso Lady (seamless loop)" (cut to 32 s, mono, -16 LUFS) | congusbongus | CC0 1.0 | https://opengameart.org/content/lasso-lady-seamless-loop |
+| Music `MUS_Edit`: "Menu Music" (cut to 32 s, mono, -16 LUFS) | mrpoly | CC0 1.0 | https://opengameart.org/content/menu-music |
+| Music `MUS_Premiere`: "Heavenly Loop" (cut to 32 s, mono, -16 LUFS) | isaiah658 | CC0 1.0 | https://opengameart.org/content/heavenly-loop |
+| Music `MUS_Podium`: "Funky Victory Loop" (cut to 32 s, mono, -16 LUFS) | Archonic | CC0 1.0 | https://opengameart.org/content/funky-victory-loop |
+| SFX `SFX_TrapPlace`, `SFX_CountdownBeep`, `SFX_ClockTick`, `SFX_ImpactBonk`, `SFX_Thunder`, `SFX_GateChime`, `SFX_ProjectorStart`, `SFX_RatingDing`, `SFX_Applause`, `SFX_Fanfare` (make_sfx.py pack renamed to cue ids, -12 LUFS) | generated in-house | CC0 1.0 | `Scripts/make_sfx.py`, `Scripts/build_audio.py` |
 
 ## Tools
 | Tool | Use |
