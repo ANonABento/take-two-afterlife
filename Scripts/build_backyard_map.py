@@ -115,8 +115,10 @@ def fit_component(comp, mesh, prop):
     """Child component (the gate Arch): scale + relative offset, bottom-centre on the actor origin."""
     box = mesh.get_bounding_box()
     lo, hi = (box.min.x, box.min.y, box.min.z), (box.max.x, box.max.y, box.max.z)
-    scale = S.fit_scale([h - l for h, l in zip(hi, lo)], target_fit(prop))
-    off = S.placement((0.0, 0.0, 0.0), 0.0, lo, hi, scale)
+    scale, rot, _ = S.fit_mesh([h - l for h, l in zip(hi, lo)], target_fit(prop))
+    rlo, rhi = S.rotated_box(lo, hi, scale, rot)
+    off = S.placement((0.0, 0.0, 0.0), 0.0, rlo, rhi, (1.0, 1.0, 1.0))
+    comp.set_relative_rotation(unreal.Rotator(float(rot[0]), float(rot[1]), 0.0), False, False)
     comp.set_relative_scale3d(unreal.Vector(*scale))
     comp.set_relative_location(unreal.Vector(*off), False, False)
 
@@ -124,8 +126,10 @@ def fit_component(comp, mesh, prop):
 def place(actors, prop, toon, paths):
     mesh = prop_mesh(prop, paths)
     extra = (L.ROUTE_TAG,) if prop.role == "marker" else ()
-    actor, _ = S.spawn_fitted(unreal, actors, f"{prop.role}_{prop.mesh}", mesh, target_fit(prop),
-                              (prop.x * CM, prop.y * CM, prop.z * CM), prop.yaw, extra)
+    actor, _ = S.spawn_or_skip(unreal, actors, f"{prop.role}_{prop.mesh}", mesh, target_fit(prop),
+                               (prop.x * CM, prop.y * CM, prop.z * CM), prop.yaw, extra)
+    if actor is None:   # logged by spawn_or_skip; one bad mesh must not abort the map
+        return None
     comp = actor.static_mesh_component
     for slot in range(comp.get_num_materials()):
         comp.set_material(slot, palette_instance(prop.palette, toon))

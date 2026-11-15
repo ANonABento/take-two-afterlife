@@ -72,10 +72,11 @@ def by_label(actors, label):
 def spawn_mesh(subsystem, piece, toon):
     """piece: one S.heaven_pieces() entry. Fitted once from the mesh bounds, tagged TTA_Layout."""
     mesh = load_mesh(piece["mesh"])
-    actor, scale = S.spawn_fitted(unreal, subsystem, piece["label"], mesh, piece["fit"], piece["at"], piece["yaw"])
+    actor, size = S.spawn_or_skip(unreal, subsystem, piece["label"], mesh, piece["fit"], piece["at"], piece["yaw"])
+    if actor is None:   # logged by spawn_or_skip
+        return None, 0.0, 0.0
     paint(actor.static_mesh_component, piece["colour"], toon)
-    box = mesh.get_bounding_box()
-    return actor, (box.max.z - box.min.z) * scale[2], (box.max.y - box.min.y) * scale[1]
+    return actor, size[2], size[1]
 
 
 def main():
