@@ -1,9 +1,10 @@
 # Run inside the UE editor (PythonScriptPlugin), after Scripts/create_toon_assets.py:
 #   py Scripts/build_backyard_map.py [downloads folder]   (default: <repo>/Downloads, see Scripts/fetch_assets.ps1)
 # The downloads folder holds the unzipped packs from Scripts/backyard_layout.KITS, one sub-folder each named by
-# its kit key (KayKitPrototypeBits, KenneyCitySuburban, KenneyNature). Imports the FBX meshes the layout uses
-# into /Game/Imported/<kit> without their materials (a missing pack or mesh becomes a toon-coloured
-# /Engine/BasicShapes/Cube placeholder, fitted to the same size), then (re)builds /Game/Maps/Backyard: floor, route markers,
+# its kit key (KayKitPrototypeBits, KenneyCitySuburban, KenneyNature). Each layout mesh comes from
+# /Game/ThirdParty/<kit> first (names matched lowercase, "-" == "_"); only meshes not found there are imported
+# from FBX into /Game/Imported/<kit> without materials; a mesh found nowhere becomes a toon-coloured
+# /Engine/BasicShapes/Cube placeholder, fitted to the same size, and is listed in Saved/backyard_miss_report.txt. Then (re)builds /Game/Maps/Backyard: floor, route markers,
 # dressing, PlayerStart, TTAFinishGate, TTAKillPlane and KillZ. Every slot gets an MI_TTA_Toon_Pal_<colour>.
 import os
 import sys
@@ -21,11 +22,17 @@ CM = 100.0
 PLACEHOLDER = "/Engine/BasicShapes/Cube"
 
 
-def import_meshes(downloads):
+def thirdparty_assets(kit):
+    """{asset name: asset path} under /Game/ThirdParty/<kit>."""
+    paths = EAL.list_assets(f"{L.THIRDPARTY_ROOT}/{kit}", recursive=True, include_folder=False)
+    return {str(p).rsplit("/", 1)[1].split(".", 1)[0]: str(p).split(".", 1)[0] for p in paths}
+
+
+def import_meshes(downloads, found):
     tasks = []
     for kit, names in L.meshes_by_kit().items():
         for name in names:
-            if EAL.does_asset_exist(f"{L.IMPORT_ROOT}/{kit}/{name}"):
+            if (kit, name) in found or EAL.does_asset_exist(f"{L.IMPORT_ROOT}/{kit}/{name}"):
                 continue
             fbx = L.find_fbx(downloads, kit, name)
             if fbx is None:
@@ -48,13 +55,27 @@ def import_meshes(downloads):
         unreal.AssetToolsHelpers.get_asset_tools().import_asset_tasks(tasks)
 
 
-def prop_mesh(prop):
-    """Imported kit mesh, or the engine cube (fitted + toon-coloured like the real one) when it is missing."""
-    path = f"{L.IMPORT_ROOT}/{prop.kit}/{prop.mesh}"
-    if EAL.does_asset_exist(path):
-        return EAL.load_asset(path)
-    unreal.log_warning(f"{path} missing: placeholder block")
-    return EAL.load_asset(PLACEHOLDER)
+def resolve_meshes(found, assets):
+    """{(kit, mesh): asset path}: ThirdParty first, then the FBX import, else the cube; plus the miss list."""
+    paths, misses = {}, []
+    for kit, names in L.meshes_by_kit().items():
+        for name in names:
+            imported = f"{L.IMPORT_ROOT}/{kit}/{name}"
+            if (kit, name) in found:
+                paths[(kit, name)] = assets[kit][found[(kit, name)]]
+            elif EAL.does_asset_exist(imported):
+                paths[(kit, name)] = imported
+                misses.append((kit, name, f"not in {L.THIRDPARTY_ROOT}, used FBX import {imported}"))
+            else:
+                paths[(kit, name)] = PLACEHOLDER
+                misses.append((kit, name, "not in ThirdParty or FBX: placeholder cube"))
+                unreal.log_warning(f"{kit}/{name} missing everywhere: placeholder block")
+    return paths, misses
+
+
+def prop_mesh(prop, paths):
+    """ThirdParty mesh, else FBX import, else the engine cube (fitted + toon-coloured like the real one)."""
+    return EAL.load_asset(paths[(prop.kit, prop.mesh)])
 
 
 def palette_instance(colour, toon):
@@ -97,8 +118,8 @@ def fit(component, mesh, prop):
     component.set_relative_location(unreal.Vector(-centre.x, -centre.y, -centre.z), False, False)
 
 
-def place(actors, prop, toon):
-    mesh = prop_mesh(prop)
+def place(actors, prop, toon, paths):
+    mesh = prop_mesh(prop, paths)
     actor = actors.spawn_actor_from_class(unreal.StaticMeshActor, unreal.Vector(prop.x * CM, prop.y * CM, prop.z * CM),
                                           unreal.Rotator(0.0, 0.0, float(prop.yaw)))
     actor.set_actor_label(f"{prop.role}_{prop.mesh}")
@@ -117,7 +138,13 @@ def build(downloads):
     toon = EAL.load_asset(toon_spec.TOON_MATERIAL)
     if toon is None:
         raise RuntimeError(f"{toon_spec.TOON_MATERIAL} missing: run Scripts/create_toon_assets.py first")
-    import_meshes(downloads)
+    assets = {kit: thirdparty_assets(kit) for kit in L.KITS}
+    found, _ = L.resolve_all({kit: list(a) for kit, a in assets.items()})
+    import_meshes(downloads, found)
+    paths, misses = resolve_meshes(found, assets)
+    L.MISS_REPORT.parent.mkdir(parents=True, exist_ok=True)
+    L.MISS_REPORT.write_text(L.miss_report(misses), encoding="utf-8")
+    unreal.log(f"{len(misses)} mesh misses, see {L.MISS_REPORT}")
     level = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
     if EAL.does_asset_exist(L.MAP_PATH):
         level.load_level(L.MAP_PATH)
@@ -132,7 +159,7 @@ def build(downloads):
         if prop.role == "gate":
             gate = actors.spawn_actor_from_class(unreal.TTAFinishGate, unreal.Vector(L.GATE.x * CM, L.GATE.y * CM,
                                                                                      L.GATE.z * CM))
-            mesh = prop_mesh(prop)
+            mesh = prop_mesh(prop, paths)
             arch = component(gate, "Arch")
             arch.set_static_mesh(mesh)
             fit(arch, mesh, prop)
@@ -141,7 +168,7 @@ def build(downloads):
             hx, hy, hz = L.GATE_TRIGGER_HALF
             component(gate, "Trigger").set_box_extent(unreal.Vector(hx * CM, hy * CM, hz * CM))
         else:
-            place(actors, prop, toon)
+            place(actors, prop, toon, paths)
 
     actors.spawn_actor_from_class(unreal.PlayerStart, unreal.Vector(L.START.x * CM, L.START.y * CM, L.START.z * CM + 100.0))
     k = L.KILL_PLANE
