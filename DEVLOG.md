@@ -368,3 +368,7 @@ Added `tta::Punch` (wind-up/active/recovery + 1.5 s cooldown) and a PawnLife stu
 
 - 2026-11-15: Narrator VO generated with ElevenLabs (voice George, eleven_multilingual_v2): 60 `VO_*` WAVs, 44.1 kHz mono, -16 LUFS. Unzip into `Content/Audio/VO/` and import over the silent placeholders. `Scripts/tests/test_vo_audio.py` checks names match `AudioCues.cpp`.
 - 2026-11-15: Imported all 76 real sounds over the placeholders with `Scripts/import_audio.py` (headless; sets Looping on `MUS_*`). `ImpactSound` left unset: there is no runner pawn Blueprint and `SFX_ImpactBonk` already plays through the Wipeout cue. `SFX_PunchWhoosh`/`SFX_PunchHit` are still silent placeholders. PIE listen-through pending.
+
+
+## Get up where you landed
+StopStun ran on every machine with its own pelvis read and a sweep from the pre-ragdoll capsule, so the sweep got blocked and replication pulled runners back to where they stood. Now the server traces the pelvis to the floor and sends the spot through MulticastGetUp; everyone restores the mesh and teleports the capsule there. Trap path untouched. Static test: Scripts/tests/test_get_up_landing.py. Needs an editor compile and a host+client check.

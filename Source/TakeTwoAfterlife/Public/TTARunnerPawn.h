@@ -83,6 +83,8 @@ public:
 	UPROPERTY(EditAnywhere, Category = "TTA") float WindUpScale = 1.15f;
 	// Bone the capsule is snapped to when a stunned runner gets up.
 	UPROPERTY(EditAnywhere, Category = "TTA") FName PelvisBone = TEXT("pelvis");
+	// How far below the pelvis StopStun looks for floor.
+	UPROPERTY(EditAnywhere, Category = "TTA") float GetUpTraceDepth = 500.f;
 
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> Wings;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> Halo;
@@ -124,8 +126,10 @@ private:
 	void Respawn();
 	// Ragdoll off, mesh back on the capsule, collision and walking restored.
 	void RestoreBody();
-	// Get up in place after a punch stun: sweep the capsule to the pelvis, no teleport to start.
+	// Get up in place after a punch stun. Server only: trace the ragdoll pelvis down to the floor
+	// and send that landing spot to everyone through MulticastGetUp. Never the start or an old spot.
 	void StopStun();
+	UFUNCTION(NetMulticast, Reliable) void MulticastGetUp(FVector_NetQuantize Landing);
 	void PunchHitCheck();
 
 	UFUNCTION(Server, Reliable) void ServerPunch();

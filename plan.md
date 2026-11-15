@@ -521,3 +521,9 @@ Scored 1-5 by judges on: ambition/innovation, theme, fun, gameplay, visuals, lev
 - Done: `PunchWindUp`/`PunchHit` audio events (`SFX_PunchWhoosh`, `SFX_PunchHit`, test in `AudioCuesTests.cpp`). `MulticastWindUp` from `ServerPunch` on a successful start -> local `WindUpLeft` timer; `UpdateWindUpPose` (every Tick) scales the whole runner mesh 1 -> `WindUpScale` over `kPunchWindUpSeconds`, back to `MeshRelative` scale at the end or if the puncher leaves Alive. `MulticastPunched` plays the hit cue and `ImpactShake` on the locally controlled victim. Static checks in `test_punch_net.py`.
 - Left: editor compile; make the two SFX assets (`create_placeholder_audio.py` or real sounds); PIE host/client: does the swell read at gameplay distance, is 1.15 too much, is the shake too strong (it reuses the trap `ImpactShake`). A real arm pull-back anim montage can replace the swell later.
 - Surprises: no arm/fist mesh exists (single skeletal mesh), so the placeholder scales the whole body. Audio goes through `PlayEvent`, which is 2D: every player hears every whoosh/hit at full volume. Wind-up multicast is Unreliable, so a dropped packet only loses the visual, never the hit.
+
+
+### Handoff: get up where you landed
+- Done: server-only StopStun traces pelvis to floor, MulticastGetUp(Landing) restores body and teleports capsule on all machines; static test added; test_punch_net updated (it asserted the old sweep).
+- Left: UE compile; host+client check on PC that a punched runner stands where the ragdoll landed.
+- Surprises: the old sweep from the pre-ragdoll capsule was itself the snap.
