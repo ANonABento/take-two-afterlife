@@ -18,7 +18,7 @@ def validate(props, kits, length, width, start, gate, kill, ditch, outer_width, 
             # nothing inside the corridor: traps own it, the route stays clear
             if p.x + hx > 0 and p.x - hx < length and abs(p.y) - hy < half + ditch:
                 raise ValueError(f"dressing {p.mesh} at ({p.x}, {p.y}) intrudes on the corridor or ditch")
-        elif p.role == "marker":
+        elif p.role in ("marker", "shortcut"):
             if not in_corridor(p.x, p.y, length, half) or p.fit[1][2] > 0.05:
                 raise ValueError(f"marker {p.mesh} at ({p.x}, {p.y}) must be flat and inside the corridor")
     floors = [p for p in props if p.role == "floor" and in_corridor(p.x, p.y, length, half)]
