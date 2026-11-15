@@ -130,6 +130,7 @@ def place(actors, prop, toon, paths):
         comp.set_material(slot, palette_instance(prop.palette, toon))
     if prop.role == "marker":
         comp.set_collision_enabled(unreal.CollisionEnabled.NO_COLLISION)
+        actor.set_editor_property("tags", [unreal.Name(L.ROUTE_TAG)])
     return actor
 
 

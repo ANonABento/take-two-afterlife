@@ -13,6 +13,7 @@
 #include <vector>
 #include "TTAGameMode.generated.h"
 
+class ATTABotController;
 class ATTABuildPawn;
 class ATTARunDirector;
 class ATTARunnerPawn;
@@ -86,6 +87,12 @@ public:
 	ATTARunDirector* GetRunDirector() const { return Director; }
 
 	virtual void Tick(float DeltaSeconds) override;
+	// Play Solo: `?bots=N` on the map URL (0-MaxBots) adds that many bots at StartPlay.
+	virtual void StartPlay() override;
+	static constexpr int32 MaxBots = 3;
+	// Spawns bots with fixed ids (ATTABotController::FirstBotId + n) and lobby runners.
+	void AddBots(int32 Count);
+	int32 GetBotCount() const { return BotCount; }
 
 	UPROPERTY(EditDefaultsOnly, Category = "TTA") TSubclassOf<ATTABuildPawn> BuildPawnClass;
 	UPROPERTY(EditDefaultsOnly, Category = "TTA") TSubclassOf<ATTARunnerPawn> RunnerPawnClass;
@@ -120,5 +127,6 @@ private:
 	// Replay id (index) -> PlayerState id, this Run: runners, then absent trap owners (tta::runPlayers).
 	std::vector<int> RunPlayerIds;
 	int32 RunnerCount = 0;
+	int32 BotCount = 0;
 	float TimedOutFor = 0.f;
 };

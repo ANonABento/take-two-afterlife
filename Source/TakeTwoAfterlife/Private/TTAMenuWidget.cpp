@@ -201,6 +201,7 @@ void UTTAMenuWidget::NativeOnInitialized()
 		Box->AddChild(TitleRow);
 		GapAfter(TitleRow->Slot);
 		MenuButton(Box, TEXT("HOST"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnHostClicked);
+		MenuButton(Box, TEXT("PLAY SOLO"), tta::kOrange)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnPlaySoloClicked);
 		MenuButton(Box, TEXT("JOIN"), tta::kGrass)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnJoinClicked);
 		MenuButton(Box, TEXT("REELS"), tta::kTeal)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnReelsClicked);
 		MenuButton(Box, TEXT("SETTINGS"), tta::kPurple)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnSettingsClicked);
@@ -346,6 +347,13 @@ void UTTAMenuWidget::Host()
 	if (!Open(tta::MenuScreen::Lobby)) return;
 	bHost = true;
 	OnHost.ExecuteIfBound();
+}
+
+void UTTAMenuWidget::PlaySolo()
+{
+	if (!Open(tta::MenuScreen::Lobby)) return;
+	bHost = true;
+	OnPlaySolo.ExecuteIfBound();
 }
 
 bool UTTAMenuWidget::SubmitJoinCode(const FString& Typed)
