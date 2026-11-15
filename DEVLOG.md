@@ -276,3 +276,11 @@ It should end with `Result: Succeeded`. If not, paste the first `error C` lines.
 ```powershell
 & "C:\Program Files\Epic Games\UE_5.5\Engine\Build\BatchFiles\Build.bat" TakeTwoAfterlifeEditor Win64 Development -Project="$PWD\TakeTwoAfterlife.uproject" -WaitMutex -NoHotReload
 ```
+
+## apply_world_look.py on UE 5.5
+- Cause: `Scripts/apply_world_look.py` `main()` set MPC values through `unreal.KismetMaterialLibrary` on `unreal.EditorLevelLibrary.get_editor_world()`; neither is exposed in UE 5.5 Python, and a runtime world value would not be kept in packaged builds anyway.
+- Fix: `write_mpc_defaults()` writes the Course preset from `[/Script/TakeTwoAfterlife.TTAWorldLookSettings]` into the `MPC_TTA_World` asset's `scalar_parameters` (and `vector_parameters` if a preset ever has them) default values and saves it with `EditorAssetLibrary.save_asset`. Heaven still switches at runtime via `UTTAWorldLookLibrary::ApplyWorldLook`. Editor world comes from `UnrealEditorSubsystem`. Outline volume still goes into Title, Backyard and Heaven. `Scripts/tests/test_world_look_ue55.py` bans `unreal.Kismet*` / `EditorLevelLibrary` in Scripts/.
+- Confirm on your PC:
+  1. Open the project in UE 5.5, Output Log -> Python: `py Scripts/apply_world_look.py`. It should log one "look volume" line per map and `MPC_TTA_World: Course defaults saved`, with no errors.
+  2. Close and restart the editor.
+  3. Open `/Game/Art/Toon/MPC_TTA_World`: Saturation, Contrast, ShadowFloor, Bands, RimStrength, Warmth must still show the Course values from `Config/DefaultGame.ini`. Open Title, Backyard and Heaven: each has one `TTAWorldLook_*` PostProcessVolume.
