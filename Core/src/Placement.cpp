@@ -76,7 +76,8 @@ PlaceResult Layout::canPlace(int owner, bool isCamera, TrapType trap, double xMe
                              CameraType camera) const {
     if (!inCorridor(snapToCell(xMeters), snapToCell(yMeters))) return PlaceResult::OutOfBounds;
     if (isCamera) {
-        if (cameraCount(owner, camera) >= kCameraCap) return PlaceResult::CameraCapReached;
+        if (camera != kPlaceableCamera) return PlaceResult::BadItem;
+        if (cameraCount(owner) >= kCameraCap) return PlaceResult::CameraCapReached;
     } else if (trapSpec(trap).cost > remaining(owner)) {
         return PlaceResult::OverBudget;
     }

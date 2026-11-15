@@ -368,3 +368,5 @@ Added `tta::Punch` (wind-up/active/recovery + 1.5 s cooldown) and a PawnLife stu
 
 - 2026-11-15: Narrator VO generated with ElevenLabs (voice George, eleven_multilingual_v2): 60 `VO_*` WAVs, 44.1 kHz mono, -16 LUFS. Unzip into `Content/Audio/VO/` and import over the silent placeholders. `Scripts/tests/test_vo_audio.py` checks names match `AudioCues.cpp`.
 - 2026-11-15: Imported all 76 real sounds over the placeholders with `Scripts/import_audio.py` (headless; sets Looping on `MUS_*`). `ImpactSound` left unset: there is no runner pawn Blueprint and `SFX_ImpactBonk` already plays through the Wipeout cue. `SFX_PunchWhoosh`/`SFX_PunchHit` are still silent placeholders. PIE listen-through pending.
+## Single fixed camera
+Cut placeable cameras to Fixed only, cap 8 per player. Other camera types stay in code/assets but can't be placed.

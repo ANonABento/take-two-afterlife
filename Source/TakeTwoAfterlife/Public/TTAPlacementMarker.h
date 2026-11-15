@@ -10,7 +10,7 @@ class UStaticMeshComponent;
 
 // Server answer to a build request. The first five mirror tta::PlaceResult.
 UENUM(BlueprintType)
-enum class ETTAPlaceOutcome : uint8 { Ok, OutOfBounds, OverBudget, CameraCapReached, BadSetting, WrongPhase, NotOwner, BadItem };
+enum class ETTAPlaceOutcome : uint8 { Ok, OutOfBounds, OverBudget, CameraCapReached, BadSetting, BadItem, WrongPhase, NotOwner };
 
 inline ETTAPlaceOutcome ToUE(tta::PlaceResult Result) { return static_cast<ETTAPlaceOutcome>(Result); }
 
