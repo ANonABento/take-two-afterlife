@@ -1,7 +1,8 @@
 # Take Two: Afterlife
 
 ## Build
-- `make test` — Core C++ doctests + Python script tests.
+- `make test` — Core C++ doctests + Python script tests. On Windows without make: `powershell -File Scripts/test.ps1`.
+- Test deps: `python -m pip install -r Scripts/requirements.txt` (cmake, numpy).
 - Content: `Scripts/fetch_assets.ps1`, then `Scripts/setup_content.ps1` (builds toon assets, Backyard, toon swap, Title into `Content/Maps`).
 - Package: `Scripts/package_win64.bat`.
 

@@ -36,7 +36,7 @@ Keyboard + mouse (from the project's input mappings; gamepad: TODO).
 - Cursor + Grok (Windows compile, link fixes, packaging, Automation)
 - Other AI coding agents: Choomfie / Waymond (Claude) for code, scripts, tests and docs
 - KayKit and Kenney asset packs (see CREDITS.md)
-- Meshy assets: TODO — confirm none are used (plan says human-made assets only)
+- AI 3D generation: Tripo (TODO: list which models), Meshy (TODO: list which models, or remove if unused)
 - ElevenLabs (narrator TTS), WeLoveIndies music, Freesound SFX, Blender, CMake + doctest, Python 3, OBS Studio
 Full list and attributions: CREDITS.md.
 

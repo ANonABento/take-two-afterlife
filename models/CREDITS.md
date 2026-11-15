@@ -118,5 +118,6 @@ Every third-party asset, library and tool used in Take Two Afterlife. Human-made
 | Blender | angel, hats and faces (scripted builds in `models/`) |
 | ElevenLabs | narrator text-to-speech |
 | OBS Studio | gameplay video capture |
-| Choomfie / Waymond (Claude) coding agents | code, scripts and research per DEVLOG.md; no AI-generated art, music or SFX |
+| Choomfie / Waymond (Claude) coding agents | code, scripts and research per DEVLOG.md |
+| Tripo | AI-generated 3D models (TODO: list which assets) |
 | Git / GitHub | version control |
