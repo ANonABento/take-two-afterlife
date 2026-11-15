@@ -35,6 +35,9 @@ bool trapPointsVoided(const RoundInput& round);
 // absent owner is also in `players`. A player wiped out by their own trap scores nothing.
 std::map<int, double> scoreRound(const RoundInput& round);
 
+// Players by points, highest first; ties by lower player id. MatchScore::podium and
+// the score board both rank with this.
+std::vector<int> rankOrder(const std::map<int, double>& points);
 class MatchScore {
 public:
     // Scores the round, adds it to the totals and returns the round's points.

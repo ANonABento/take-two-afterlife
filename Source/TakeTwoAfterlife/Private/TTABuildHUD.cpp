@@ -8,7 +8,13 @@
 #include "TTACinema.h"
 #include "TTAGameState.h"
 #include "TTAPlayerState.h"
+#include "TTACinema.h"
 #include "TTAPodiumWidget.h"
+#include "EngineUtils.h"
+#include "tta/MenuFlow.h"
+#include "tta/ScoreBoard.h"
+#include "GameFramework/PlayerState.h"
+#include "TTAPlayerState.h"
 #include "TTAResultsWidget.h"
 #include "TTAUIStyle.h"
 #include "tta/MenuFlow.h"
@@ -101,6 +107,7 @@ void ATTABuildHUD::DrawHUD()
 		ShowResults();
 		return;
 	}
+	if (Phase == ETTAPhase::Premiere) DrawScoreBoard();
 
 	// Phase + round, top left.
 	const FString PhaseName = UEnum::GetDisplayValueAsText(Phase).ToString().ToUpper();
@@ -181,5 +188,39 @@ void ATTABuildHUD::DrawHUD()
 	{
 		DrawStyledText(Line.Key, Line.Value, Left + kPad, Y, UTTAUIStyle::kSmall, false);
 		Y += kLineH;
+	}
+}
+
+void ATTABuildHUD::DrawScoreBoard()
+{
+	const ATTACinema* Cinema = nullptr;
+	for (TActorIterator<ATTACinema> It(GetWorld()); It; ++It)
+	{
+		Cinema = *It;
+		break;
+	}
+	if (!Cinema || Cinema->GetScoreBoard().empty()) return;
+	const std::vector<tta::ScoreRow>& Rows = Cinema->GetScoreBoard();
+	const ATTAGameState* State = GetWorld()->GetGameState<ATTAGameState>();
+	constexpr float BoardW = 900.f, RowH = 90.f, LabelW = 220.f;
+	const float BoardX = (kDesignW - BoardW) * 0.5f;
+	const float BoardY = 260.f;
+	double MaxTotal = 1.0;
+	for (const tta::ScoreRow& Row : Rows) MaxTotal = FMath::Max(MaxTotal, FMath::Max(Row.from, Row.to));
+	DrawCard(BoardX - kPad, BoardY - kPad, BoardW + 2 * kPad, Rows.size() * RowH + kPad, tta::kInk);
+	for (const tta::ScoreRow& Row : Rows)
+	{
+		const tta::ScoreBar Bar = tta::scoreBarAt(Row, Cinema->GetScoreBoardAlpha());
+		const float Y = BoardY + static_cast<float>(Bar.slot) * RowH;
+		int32 Fill = tta::kBone;
+		for (const APlayerState* PS : State ? State->PlayerArray : TArray<TObjectPtr<APlayerState>>())
+		{
+			const ATTAPlayerState* TTA = Cast<ATTAPlayerState>(PS);
+			if (TTA && TTA->GetPlayerId() == Row.player) Fill = tta::kPlayerColours[TTA->GetLook().colour];
+		}
+		DrawStyledText(FString::Printf(TEXT("P%d"), Row.player), tta::kBone, BoardX, Y + kPad * 0.5f, UTTAUIStyle::kH2, true);
+		const float BarW = FMath::Max(8.f, static_cast<float>(Bar.value / MaxTotal) * (BoardW - LabelW - 120.f));
+		DrawCard(BoardX + LabelW, Y + 10.f, BarW, RowH - 20.f, Fill);
+		DrawStyledText(FString::Printf(TEXT("%.1f"), Bar.value), tta::kBone, BoardX + LabelW + BarW + kPad, Y + kPad * 0.5f, UTTAUIStyle::kH2, true);
 	}
 }

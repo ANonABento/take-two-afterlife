@@ -25,6 +25,8 @@ add_library(tta_core
   src/BotBrain.cpp
   src/BotRoute.cpp
   src/HeavenGate.cpp
+  src/ScoreBoard.cpp
+  src/PodiumShow.cpp
 )
 target_include_directories(tta_core PUBLIC include)
 if(MSVC)
@@ -55,6 +57,8 @@ add_executable(tta_core_tests
   tests/BotBrainTests.cpp
   tests/BotRouteTests.cpp
   tests/HeavenGateTests.cpp
+  tests/ScoreBoardTests.cpp
+  tests/PodiumShowTests.cpp
 )
 target_include_directories(tta_core_tests PRIVATE third_party)
 target_link_libraries(tta_core_tests PRIVATE tta_core)

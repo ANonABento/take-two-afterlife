@@ -8,10 +8,12 @@
 #include "tta/HeavenGate.h"
 #include "tta/MatchFlow.h"
 #include "tta/MatchStateMachine.h"
+#include "tta/PodiumShow.h"
 #include "tta/Premiere.h"
 #include "tta/Scoring.h"
 
 #include <map>
+#include <optional>
 #include <vector>
 #include "TTAGameMode.generated.h"
 
@@ -116,6 +118,8 @@ public:
 	// Maps from DefaultGame.ini [/Script/TakeTwoAfterlife.TTAGameMode].
 	UPROPERTY(Config) FString BackyardMap;
 	UPROPERTY(Config) FString HeavenMap;
+	// Seconds on the podium statues before everyone goes back to the Heaven lobby.
+	UPROPERTY(EditDefaultsOnly, Category = "TTA") float PodiumHoldSeconds = 8.f;
 	UPROPERTY(EditDefaultsOnly, Category = "TTA") FTransform BuildCameraStart = FTransform(FRotator(-30.f, 0.f, 0.f), FVector(-500.f, 0.f, 800.f));
 
 private:
@@ -142,6 +146,11 @@ private:
 	void OnCinemaStep(tta::PremiereStep Step);
 	// Hands the cinema's rating points to EndPremiere once (cinema finish or timeout).
 	void FinishPremiere();
+	// Runs tta::PodiumShow: travel to Heaven if needed, statues, hold, then Lobby.
+	void StartPodium(bool bInHeaven);
+	// Top 3 as frozen angels at the TargetPoints tagged 1st / 2nd / 3rd (dress_heaven.py).
+	void SpawnStatues();
+	void ClearStatues();
 
 	tta::Layout Layout; // persists across rounds, like the map
 	UPROPERTY() TMap<int32, TObjectPtr<ATTAPlacementMarker>> Markers;
@@ -160,4 +169,5 @@ private:
 	bool bPremiereLive = false;
 	float PremiereElapsed = 0.f;
 	float PremiereDeadline = 0.f;
+	std::optional<tta::PodiumShow> Podium;
 };

@@ -1,4 +1,4 @@
-﻿#include "TTACinema.h"
+#include "TTACinema.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 
@@ -95,6 +95,8 @@ void ATTACinema::StartPremiere(const TArray<FTTACinemaCut>& Cuts, uint32 Seed, b
 	const tta::MatchSettings Timings = Mode ? Mode->GetSettings() : ATTAGameMode::IniSettings();
 	Premiere = std::make_unique<tta::Premiere>(std::move(Core), Seed, bFinalRound, Timings);
 	FinalPodium = Podium;
+	ShownTotals = BaseTotals;
+	Board.clear();
 	ShownPodium.Reset();
 	StepRemainder = 0.f;
 	if (!Player) Player = NewObject<UTTACutPlayer>(this);
@@ -155,11 +157,22 @@ void ATTACinema::EnterStep()
 		bMicLoaded = !C.MicPath.IsEmpty() && Mic->Load(C.MicPath);
 		break;
 	}
+	case tta::PremiereStep::Reveal:
+	{
+		Player->Stop();
+		std::map<int, double> After = BaseTotals;
+		for (const auto& [Id, Points] : Premiere->ratings().ratingPoints()) After[Id] += Points;
+		Board = tta::scoreBoard(ShownTotals, After);
+		ShownTotals = After;
+		break;
+	}
 	case tta::PremiereStep::Podium:
 		ShownPodium = FinalPodium;
+		Board.clear();
 		break;
 	default:
 		Player->Stop();
+		Board.clear();
 		break;
 	}
 	OnStep.Broadcast(Premiere->step());
@@ -176,4 +189,10 @@ FText ATTACinema::GetIntroLine() const
 	if (!Premiere || Premiere->step() == tta::PremiereStep::Podium || Premiere->step() == tta::PremiereStep::Done) return FText::GetEmpty();
 	const tta::PremiereCut& C = Premiere->current();
 	return FText::Format(NSLOCTEXT("TTA", "CinemaIntro", "Directed by Player {0}. Starring Player {1}!"), C.cut.editor, C.victim);
+}
+
+float ATTACinema::GetScoreBoardAlpha() const
+{
+	if (!Premiere || Premiere->step() != tta::PremiereStep::Reveal || Premiere->stepLengthMs() == 0) return 0.f;
+	return FMath::Clamp(static_cast<float>(Premiere->stepElapsedMs()) / Premiere->stepLengthMs(), 0.f, 1.f);
 }

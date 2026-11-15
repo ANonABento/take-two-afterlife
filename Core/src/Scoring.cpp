@@ -59,13 +59,15 @@ double MatchScore::total(int player) const {
     return it == totals_.end() ? 0.0 : it->second;
 }
 
-std::vector<int> MatchScore::podium() const {
+std::vector<int> rankOrder(const std::map<int, double>& points) {
     std::vector<int> order;
-    for (const auto& [p, v] : totals_) order.push_back(p);
+    for (const auto& [p, v] : points) order.push_back(p);
     std::stable_sort(order.begin(), order.end(),
-                     [this](int a, int b) { return totals_.at(a) > totals_.at(b); });
+                     [&points](int a, int b) { return points.at(a) > points.at(b); });
     return order;
 }
+
+std::vector<int> MatchScore::podium() const { return rankOrder(totals_); }
 
 void MatchScore::reset(const std::vector<int>& players) {
     totals_.clear();
