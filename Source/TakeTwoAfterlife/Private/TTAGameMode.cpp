@@ -26,6 +26,14 @@
 #include "TTARunnerPawn.h"
 #include "TTATrapActor.h"
 #include "Engine/TargetPoint.h"
+#include "Engine/World.h"
+#include "Engine/HitResult.h"
+#include "EngineUtils.h"
+#include "CollisionQueryParams.h"
+#include "CollisionShape.h"
+#include "Components/CapsuleComponent.h"
+#include "GameFramework/PlayerStart.h"
+#include "tta/SpawnPlacement.h"
 
 #include <algorithm>
 #include <stdexcept>
@@ -146,9 +154,60 @@ UClass* ATTAGameMode::GetDefaultPawnClassForController_Implementation(AControlle
 	return RunnerPawnClass ? RunnerPawnClass.Get() : Super::GetDefaultPawnClassForController_Implementation(InController);
 }
 
+bool ATTAGameMode::FindSafeSpawn(AController* Controller, FTransform& Out)
+{
+	UWorld* World = GetWorld();
+	if (!World) return false;
+	TArray<AActor*> Starts;
+	if (AActor* Chosen = FindPlayerStart(Controller)) Starts.Add(Chosen);
+	for (TActorIterator<APlayerStart> It(World); It; ++It) Starts.AddUnique(*It);
+	if (Starts.IsEmpty()) return false;
+
+	UClass* PawnClass = RunnerPawnClass ? RunnerPawnClass.Get() : ATTARunnerPawn::StaticClass();
+	const ATTARunnerPawn* Cdo = PawnClass->GetDefaultObject<ATTARunnerPawn>();
+	const UCapsuleComponent* Capsule = Cdo ? Cdo->GetCapsuleComponent() : nullptr;
+	const FCollisionShape Shape = FCollisionShape::MakeCapsule(
+		Capsule ? Capsule->GetUnscaledCapsuleRadius() : 34.f, Capsule ? Capsule->GetUnscaledCapsuleHalfHeight() : 88.f);
+
+	std::vector<tta::SpawnFloor> Floors;
+	for (AActor* Start : Starts)
+	{
+		const FVector At = Start->GetActorLocation();
+		FHitResult Hit;
+		FCollisionQueryParams Params(SCENE_QUERY_STAT(TTASpawnFloor), false, Start);
+		// Static geometry only, so a runner already standing on the start is not taken as the floor.
+		const bool bHit = World->LineTraceSingleByObjectType(Hit, At + FVector(0.f, 0.f, 200.f), At - FVector(0.f, 0.f, 20000.f),
+			FCollisionObjectQueryParams(ECC_WorldStatic), Params);
+		Floors.push_back(tta::SpawnFloor{bHit, bHit ? Hit.ImpactPoint.Z : 0.0, At.Z});
+	}
+	const tta::SpawnPick Pick = tta::pickSpawn(Floors, [&](int Index, double Z)
+	{
+		const FVector At = Starts[Index]->GetActorLocation();
+		FCollisionQueryParams Params(SCENE_QUERY_STAT(TTASpawnOverlap), false, Starts[Index]);
+		return World->OverlapBlockingTestByChannel(FVector(At.X, At.Y, Z), FQuat::Identity, ECC_Pawn, Shape, Params);
+	});
+	if (!Pick.found)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ATTAGameMode: every PlayerStart is blocked; using the default spawn"));
+		return false;
+	}
+	const AActor* Start = Starts[Pick.start];
+	const FVector At = Start->GetActorLocation();
+	Out = FTransform(FRotator(0.f, Start->GetActorRotation().Yaw, 0.f), FVector(At.X, At.Y, Pick.z));
+	return true;
+}
+
 void ATTAGameMode::RestartPlayer(AController* NewPlayer)
 {
-	Super::RestartPlayer(NewPlayer); // spawns DefaultPawn at FindPlayerStart and possesses it
+	FTransform Safe;
+	if (NewPlayer && FindSafeSpawn(NewPlayer, Safe))
+	{
+		RestartPlayerAtTransform(NewPlayer, Safe); // drops onto the floor from 300 cm up
+	}
+	else
+	{
+		Super::RestartPlayer(NewPlayer); // spawns DefaultPawn at FindPlayerStart and possesses it
+	}
 	if (ATTARunnerPawn* Runner = NewPlayer ? Cast<ATTARunnerPawn>(NewPlayer->GetPawn()) : nullptr)
 	{
 		Runner->SetStartLocation(Runner->GetActorLocation());
@@ -417,7 +476,8 @@ void ATTAGameMode::EnterRun()
 		ATTABotController* Bot = Cast<ATTABotController>(PC);
 		if (!PC || !PC->PlayerState || (!Cast<APlayerController>(PC) && !Bot)) continue;
 		const AActor* Start = FindPlayerStart(PC);
-		const FTransform StartTransform = Start ? Start->GetActorTransform() : FTransform::Identity;
+		FTransform StartTransform = Start ? Start->GetActorTransform() : FTransform::Identity;
+		FindSafeSpawn(PC, StartTransform); // keeps the PlayerStart transform when every spot is blocked
 		FActorSpawnParameters Params;
 		Params.Owner = PC;
 		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;

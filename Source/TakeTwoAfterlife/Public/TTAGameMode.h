@@ -135,6 +135,8 @@ private:
 	void EnterBuild();
 	void EnterRun();
 	void SpawnTraps();
+	// Floor trace + capsule test under the chosen PlayerStart, then the others (tta::pickSpawn).
+	bool FindSafeSpawn(AController* Controller, FTransform& Out);
 	void EndRun();
 	void RevealPlacements();
 	// Ok when By owns placement Id; fills OutPlacement.

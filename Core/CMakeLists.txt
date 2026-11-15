@@ -27,6 +27,7 @@ add_library(tta_core
   src/HeavenGate.cpp
   src/ScoreBoard.cpp
   src/PodiumShow.cpp
+  src/SpawnPlacement.cpp
 )
 target_include_directories(tta_core PUBLIC include)
 if(MSVC)
@@ -59,6 +60,7 @@ add_executable(tta_core_tests
   tests/HeavenGateTests.cpp
   tests/ScoreBoardTests.cpp
   tests/PodiumShowTests.cpp
+  tests/SpawnPlacementTests.cpp
 )
 target_include_directories(tta_core_tests PRIVATE third_party)
 target_link_libraries(tta_core_tests PRIVATE tta_core)
