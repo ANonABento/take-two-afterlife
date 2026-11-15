@@ -1,10 +1,8 @@
 # Run inside the UE editor (PythonScriptPlugin):
 #   UnrealEditor-Cmd.exe TakeTwoAfterlife.uproject -run=pythonscript -script=Scripts/dress_heaven.py -unattended -nosplash
-# Dresses /Game/Maps/Heaven from Scripts/heaven_layout.json: soft pastel sky and fog, the sun feeds the
-# atmosphere, four player starts behind the couch, the pearly lobby gate and its carpet on the +Y side, the
-# podium set on the -Y side (nothing between the couch and the screen). ATTACinema does not look up podium
-# spots, so 1st/2nd/3rd are TargetPoints tagged 1st, 2nd and 3rd. Reruns replace everything it spawned,
-# including untagged leftovers of runs from before the TTA_Layout tag.
+# Dresses /Game/Maps/Heaven: soft pastel sky and fog, the sun feeds the atmosphere, four
+# player starts in a row facing the screen, toon clouds, and the podium set. ATTACinema
+# does not look up podium spots, so 1st/2nd/3rd are TargetPoints tagged 1st, 2nd and 3rd.
 import json
 import os
 import sys
@@ -23,8 +21,19 @@ SCREEN = unreal.Vector(1200.0, 0.0, 350.0)
 SEAT = unreal.Vector(0.0, 0.0, 45.0)
 START_X = -300.0
 START_YS = (-135.0, -45.0, 45.0, 135.0)
+PODIUM_X = 780.0
 LAYOUT_JSON = os.path.join(os.path.dirname(os.path.abspath(__file__)), "heaven_layout.json")
-GATE_COLOUR = "Bone"
+COLOUR = {
+    "SM_Heaven_Cloud_A": "Bone",
+    "SM_Heaven_Cloud_B": "Sky",
+    "SM_Heaven_Cloud_C": "Bone",
+    "SM_Heaven_Podium": "Wood",
+    "SM_Heaven_FilmReelTrophy": "Yellow",
+    "SM_Heaven_Halo": "Yellow",
+    "SM_Heaven_RedCarpet": "Red",
+    "SM_Heaven_PearlyGate": "Bone",
+    "SM_Heaven_VelvetRopeStanchions": "Yellow",
+}
 
 
 def palette_instance(colour, toon):
@@ -63,44 +72,22 @@ def by_label(actors, label):
 def spawn_mesh(subsystem, piece, toon):
     """piece: one S.heaven_pieces() entry. Fitted once from the mesh bounds, tagged TTA_Layout."""
     mesh = load_mesh(piece["mesh"])
-    actor, _ = S.spawn_fitted(unreal, subsystem, piece["label"], mesh, piece["fit"], piece["at"], piece["yaw"],
-                              collide=piece["collide"])
+    actor, scale = S.spawn_fitted(unreal, subsystem, piece["label"], mesh, piece["fit"], piece["at"], piece["yaw"])
     paint(actor.static_mesh_component, piece["colour"], toon)
-    return actor
-
-
-def walkable_floor(mesh):
-    """The cloud floor is one convex hull by default: a lid over the rim puffs, above the visible disc.
-    Collide with the triangles instead, so runners stand on the cloud they see."""
-    body = mesh.get_editor_property("body_setup")
-    flag = unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE
-    if body.get_editor_property("collision_trace_flag") != flag:
-        body.set_editor_property("collision_trace_flag", flag)
-        EAL.save_loaded_asset(mesh)
-
-
-def rot(yaw=0.0, pitch=0.0):
-    return unreal.Rotator(roll=0.0, pitch=pitch, yaw=yaw)
+    box = mesh.get_bounding_box()
+    return actor, (box.max.z - box.min.z) * scale[2], (box.max.y - box.min.y) * scale[1]
 
 
 def main():
     toon = EAL.load_asset(toon_spec.TOON_MATERIAL)
     if toon is None:
         raise RuntimeError(f"{toon_spec.TOON_MATERIAL} missing")
-    with open(LAYOUT_JSON, encoding="utf-8") as f:
-        layout = json.load(f)
-    pieces = S.heaven_pieces(layout)
-    if S.mesh_bounds(load_mesh("SM_Heaven_Podium"))[1][2] != S.PODIUM_SIZE[2]:
-        raise RuntimeError("SM_Heaven_Podium changed: update layout_spawn.PODIUM_STEPS")
     level = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
     if not level.load_level(MAP_PATH):
         raise RuntimeError(f"could not load {MAP_PATH}")
     subsystem = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
-    # Reruns: delete what earlier runs spawned. PlayerStarts, cinema, gate, sky, fog, sun stay.
-    labels = S.heaven_labels(layout)
-    gone = S.delete_previous(subsystem, lambda cls, label: cls in ("StaticMeshActor", "TargetPoint")
-                             and label in labels)
-    unreal.log(f"removed {gone} old {S.LAYOUT_TAG} actors")
+    # Reruns: delete what the last run spawned (TTA_Layout). PlayerStarts, cinema, sky, fog, sun stay.
+    unreal.log(f"removed {S.delete_previous(subsystem)} old {S.LAYOUT_TAG} actors")
     actors = subsystem.get_all_level_actors()
 
     if by_label(actors, "Sky") is None or not any(isinstance(a, unreal.SkyAtmosphere) for a in actors):
@@ -126,24 +113,24 @@ def main():
 
     sun = next((a for a in actors if isinstance(a, unreal.DirectionalLight)), None)
     if sun is None:
-        sun = subsystem.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 2000))
+        sun = subsystem.spawn_actor_from_class(
+            unreal.DirectionalLight, unreal.Vector(0, 0, 2000), unreal.Rotator(-40.0, 30.0, 0.0))
         sun.set_actor_label("Sun")
-    # From behind the couch on the gate side: lights the screen, the podium plates and the gate front.
-    sun.set_actor_rotation(rot(yaw=-40.0, pitch=-45.0), False)
     light = sun.get_component_by_class(unreal.DirectionalLightComponent)
     light.set_editor_property("atmosphere_sun_light", True)
     light.set_editor_property("atmosphere_sun_light_index", 0)
 
     starts = [a for a in actors if isinstance(a, unreal.PlayerStart)]
+    facing = unreal.Rotator(0.0, 0.0, 0.0)
     for index, y in enumerate(START_YS):
         loc = unreal.Vector(START_X, y, 100.0)
         if index < len(starts):
             start = starts[index]
         else:
-            start = subsystem.spawn_actor_from_class(unreal.PlayerStart, loc, rot())
+            start = subsystem.spawn_actor_from_class(unreal.PlayerStart, loc, facing)
         start.set_actor_label(f"PlayerStart_{index + 1}")
         start.set_actor_location(loc, False, False)
-        start.set_actor_rotation(rot(), False)
+        start.set_actor_rotation(facing, False)
 
     cinema = next((a for a in actors if isinstance(a, unreal.TTACinema)), None)
     if cinema is None:
@@ -152,11 +139,9 @@ def main():
     couch = cinema.get_editor_property("couch")
     screen = cinema.get_editor_property("screen")
     cloud = cinema.get_editor_property("cloud")
-    floor = load_mesh("SM_Heaven_Cloud")
-    walkable_floor(floor)
     couch.set_static_mesh(load_mesh("SM_Heaven_Couch"))
     screen.set_static_mesh(load_mesh("SM_Heaven_Screen"))
-    cloud.set_static_mesh(floor)
+    cloud.set_static_mesh(load_mesh("SM_Heaven_Cloud"))
     # The cinema C++ defaults scale the engine cube/cylinder. The imported meshes are already in centimetres.
     for comp in (cloud, couch, screen):
         comp.set_relative_scale3d(unreal.Vector(1.0, 1.0, 1.0))
@@ -165,35 +150,35 @@ def main():
     for comp, colour in ((cloud, "Bone"), (couch, "Pink"), (screen, "Ink")):
         paint(comp, colour, toon)
 
-    for piece in pieces:
-        spawn_mesh(subsystem, piece, toon)
+    with open(LAYOUT_JSON, encoding="utf-8") as f:
+        layout = json.load(f)
+    pieces = {p["label"]: p for p in S.heaven_pieces(layout)}
+    for piece in pieces.values():
+        if piece["label"] not in ("Podium", "Trophy", "Halo"):
+            spawn_mesh(subsystem, piece, toon)
 
-    # Lobby gate: the pearly arch at the end of the red carpet. In Lobby, going through it marks a player
-    # ready. The trigger is thin along the gate actor's X, so the actor is turned to face down the carpet.
-    spot = S.heaven_protected(layout)["Gate"]
+    # Lobby gate trigger on the red carpet: in Lobby, going through it marks a player ready.
+    gate_at = unreal.Vector(*next(p for p in pieces.values() if p["mesh"] == "SM_Heaven_RedCarpet")["at"])
     gate = next((a for a in actors if isinstance(a, unreal.TTAFinishGate)), None)
     if gate is None:
-        gate = subsystem.spawn_actor_from_class(unreal.TTAFinishGate, unreal.Vector(spot["x"], spot["y"], 0.0))
+        gate = subsystem.spawn_actor_from_class(unreal.TTAFinishGate, gate_at)
     gate.set_actor_label("HeavenGate")
-    gate.set_actor_location(unreal.Vector(spot["x"], spot["y"], 0.0), False, False)
-    gate.set_actor_rotation(rot(yaw=spot["yaw"] + 90.0), False)
-    arch_mesh = load_mesh("SM_Heaven_PearlyGate")
-    arch = gate.get_editor_property("arch")
-    arch.set_static_mesh(arch_mesh)
-    lo, hi = S.mesh_bounds(arch_mesh)
-    scale = S.fit_scale([h - l for h, l in zip(hi, lo)], S.HEAVEN_FIT["SM_Heaven_PearlyGate"])
-    arch.set_relative_scale3d(unreal.Vector(*scale))
-    arch.set_relative_rotation(rot(yaw=-90.0), False, False)
-    arch.set_relative_location(unreal.Vector(*S.placement((0.0, 0.0, 0.0), -90.0, lo, hi, scale)), False, False)
-    paint(arch, GATE_COLOUR, toon)
-    trigger = gate.get_editor_property("trigger")
-    trigger.set_box_extent(unreal.Vector(*S.GATE_TRIGGER_HALF))
-    trigger.set_relative_location(unreal.Vector(0.0, 0.0, S.GATE_TRIGGER_HALF[2]), False, False)
+    gate.set_actor_location(gate_at, False, False)
 
-    # No ATTACinema lookup for podium marks. Tags 1st/2nd/3rd are the spots (statue centre, facing the lobby).
-    for tag, (x, y, z, yaw) in S.podium_spots(layout).items():
-        point = subsystem.spawn_actor_from_class(unreal.TargetPoint, unreal.Vector(x, y, z), rot(yaw=yaw))
-        point.set_actor_label(f"Podium_{tag}")
+    podium, podium_h, width = spawn_mesh(subsystem, pieces["Podium"], toon)
+    top_z = pieces["Podium"]["at"][2] + podium_h
+    trophy = dict(pieces["Trophy"], at=(PODIUM_X, 0.0, top_z))
+    _, trophy_h, _ = spawn_mesh(subsystem, trophy, toon)
+    spawn_mesh(subsystem, dict(pieces["Halo"], at=(PODIUM_X, 0.0, top_z + trophy_h + 25.0)), toon)
+
+    # No ATTACinema lookup for podium marks. Tags 1st/2nd/3rd are the spots.
+    spots = (("Podium_1st", "1st", 0.0, 12.0),
+             ("Podium_2nd", "2nd", -width * 0.28, 0.0),
+             ("Podium_3rd", "3rd", width * 0.28, 0.0))
+    for label, tag, y, lift in spots:
+        point = subsystem.spawn_actor_from_class(unreal.TargetPoint, unreal.Vector(PODIUM_X, y, top_z + lift),
+                                                 unreal.Rotator(0, 180.0, 0))
+        point.set_actor_label(label)
         S.tag(unreal, point, tag)
 
     if not level.save_current_level():

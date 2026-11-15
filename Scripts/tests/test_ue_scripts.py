@@ -71,8 +71,7 @@ class DefaultsTest(unittest.TestCase):
         import backyard_layout as L
         text = (SCRIPTS / "fetch_assets.ps1").read_text()
         for kit in L.KITS:
-            if kit not in L.KIT_ROOTS:          # our own models are in the repo, not downloaded
-                self.assertIn(kit, text)
+            self.assertIn(kit, text)
 
 
 if __name__ == "__main__":

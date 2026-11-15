@@ -10,9 +10,7 @@ LAYOUT_TAG = "TTA_Layout"     # every actor a layout script spawns; a rerun dele
 # Never deleted by a layout rerun, even if someone tagged them.
 PROTECTED_CLASSES = ("PlayerStart", "TTAFinishGate", "TTAKillPlane", "NavMeshBoundsVolume", "WorldSettings",
                      "RecastNavMesh")
-# Guard against unit mistakes (a metres mesh read as centimetres is 100x out). 0.02 still lets a 1 m tall
-# kit piece be pressed into a 5 cm route marker.
-MIN_SCALE, MAX_SCALE = 0.02, 10.0
+MIN_SCALE, MAX_SCALE = 0.05, 10.0
 
 
 def fit_scale(size, fit):
@@ -55,19 +53,11 @@ def is_stale(class_name, tags):
     return LAYOUT_TAG in [str(t) for t in tags] and class_name not in PROTECTED_CLASSES
 
 
-def delete_previous(subsystem, legacy=None):
-    """Destroy every TTA_Layout actor in the open level. Returns how many went.
-
-    legacy(class name, label) -> bool also removes untagged leftovers of runs from before the tag existed
-    (those piled up as duplicates: two podiums, three suns). Protected classes never go.
-    """
+def delete_previous(subsystem):
+    """Destroy every TTA_Layout actor in the open level. Returns how many went."""
     gone = 0
     for actor in subsystem.get_all_level_actors():
-        cls = actor.get_class().get_name()
-        stale = is_stale(cls, actor.get_editor_property("tags"))
-        if not stale and legacy is not None and cls not in PROTECTED_CLASSES:
-            stale = bool(legacy(cls, str(actor.get_actor_label())))
-        if stale:
+        if is_stale(actor.get_class().get_name(), actor.get_editor_property("tags")):
             subsystem.destroy_actor(actor)
             gone += 1
     return gone
@@ -77,92 +67,53 @@ def tag(unreal, actor, *extra):
     actor.set_editor_property("tags", [unreal.Name(LAYOUT_TAG)] + [unreal.Name(t) for t in extra])
 
 
-def mesh_bounds(mesh):
+def spawn_fitted(unreal, subsystem, label, mesh, fit, target, yaw, extra_tags=()):
+    """StaticMeshActor of `mesh` fitted to `fit` with its bottom-centre at `target` (cm), tagged TTA_Layout."""
     box = mesh.get_bounding_box()
-    return (box.min.x, box.min.y, box.min.z), (box.max.x, box.max.y, box.max.z)
-
-
-def spawn_fitted(unreal, subsystem, label, mesh, fit, target, yaw, extra_tags=(), collide=True):
-    """StaticMeshActor of `mesh` fitted to `fit` with its bottom-centre at `target` (cm), tagged TTA_Layout.
-
-    `fit` is in mesh axes: a piece yawed 90 that must span the world Y axis is fitted along its own X.
-    """
-    lo, hi = mesh_bounds(mesh)
+    lo, hi = (box.min.x, box.min.y, box.min.z), (box.max.x, box.max.y, box.max.z)
     scale = fit_scale([h - l for h, l in zip(hi, lo)], fit)
     loc = placement(target, yaw, lo, hi, scale)
     actor = subsystem.spawn_actor_from_object(mesh, unreal.Vector(*loc), unreal.Rotator(0.0, 0.0, float(yaw)))
     actor.set_actor_label(label)
     actor.set_actor_scale3d(unreal.Vector(*scale))
     actor.set_actor_location(unreal.Vector(*loc), False, False)
-    if not collide:
-        actor.static_mesh_component.set_collision_enabled(unreal.CollisionEnabled.NO_COLLISION)
     tag(unreal, actor, *extra_tags)
     return actor, scale
 
 
-def rotate(x, y, yaw):
-    r = math.radians(yaw)
-    return x * math.cos(r) - y * math.sin(r), x * math.sin(r) + y * math.cos(r)
-
-
-# ---- Heaven (cm, ATTACinema space: couch at the origin facing +X, screen at x = 1200) ----------------------
-# Sizes are bounds-fitted, so a metres or centimetres import both land at this size.
+# Heaven target sizes (cm). Bounds-fitted, so a metres or centimetres import both land at this size.
 HEAVEN_FIT = {
     "SM_Heaven_Cloud_A": ("width", 600.0),
     "SM_Heaven_Cloud_B": ("width", 600.0),
     "SM_Heaven_Cloud_C": ("width", 600.0),
-    "SM_Heaven_Podium": ("width", 450.0),
+    "SM_Heaven_Podium": ("footprint", (300.0, 300.0)),
     "SM_Heaven_FilmReelTrophy": ("height", 80.0),
-    "SM_Heaven_Halo": ("width", 90.0),
+    "SM_Heaven_Halo": ("width", 60.0),
     "SM_Heaven_VelvetRopeStanchions": ("height", 100.0),
-    "SM_Heaven_PearlyGate": ("height", 700.0),
 }
-# SM_Heaven_Podium as modelled (models/SM_Heaven_Podium.glb): three blocks along X, number plates on -Y.
-PODIUM_SIZE = (450.0, 152.0, 100.0)
-PODIUM_STEPS = {"1st": (0.0, 100.0), "2nd": (-150.0, 70.0), "3rd": (150.0, 40.0)}   # tag -> (mesh x, top z)
-STATUE_HALF_HEIGHT = 90.0   # runner capsule half height + 2: a statue is spawned by its centre
-STATUE_HEIGHT = 180.0
-GATE_TRIGGER_HALF = (50.0, 250.0, 250.0)   # ATTAFinishGate trigger, gate space: thin along the walk direction
-
-
-def heaven_protected(layout):
-    return {p["label"]: p for p in layout["protected"]}
-
-
-def podium_spots(layout):
-    """{tag: (x, y, z, yaw)}: where each statue's centre goes, facing the way the podium's plates face."""
-    podium = heaven_protected(layout)["Podium"]
-    facing = podium["yaw"] - 90.0   # plates are on the mesh's -Y side
-    out = {}
-    for name, (mx, top) in PODIUM_STEPS.items():
-        dx, dy = rotate(mx, 0.0, podium["yaw"])
-        out[name] = (podium["x"] + dx, podium["y"] + dy, top + STATUE_HALF_HEIGHT, facing % 360.0)
-    return out
+HEAVEN_PODIUM_X = 780.0
 
 
 def heaven_pieces(layout):
-    """Every mesh dress_heaven.py spawns: dicts label, mesh, fit (cm, mesh axes), at (x, y, z cm), yaw, colour,
-    collide. Podium, carpet and gate spots come from the layout's protected boxes."""
-    prot = heaven_protected(layout)
-    carpet, podium = prot["RedCarpet"], prot["Podium"]
-    first = podium_spots(layout)["1st"]
+    """Every mesh dress_heaven.py spawns: dicts label, mesh, fit (cm), at (x, y, z cm), yaw, colour.
+
+    The carpet's spot and size come from the layout's protected RedCarpet box, the dressing's from each
+    entry's `half` (clouds) or HEAVEN_FIT. Trophy and Halo `at` are filled in from the podium's real height.
+    """
+    prot = {p["label"]: p for p in layout["protected"]}
+    carpet = prot["RedCarpet"]
     out = [
-        dict(label="SM_Heaven_Cloud_A", mesh="SM_Heaven_Cloud_A", at=(-600.0, -1700.0, 280.0), colour="Bone"),
-        dict(label="SM_Heaven_Cloud_B", mesh="SM_Heaven_Cloud_B", at=(2100.0, 1300.0, 420.0), colour="Sky"),
-        dict(label="SM_Heaven_Cloud_C", mesh="SM_Heaven_Cloud_C", at=(2000.0, -1700.0, 180.0), colour="Bone"),
-        dict(label="Podium", mesh="SM_Heaven_Podium", at=(podium["x"], podium["y"], 0.0), yaw=podium["yaw"],
-             colour="Wood"),
-        # The halo hangs over the winner's head; the trophy stands on the floor in front of the plates.
-        dict(label="Halo", mesh="SM_Heaven_Halo", at=(first[0], first[1], PODIUM_STEPS["1st"][1] + STATUE_HEIGHT + 45.0),
-             colour="Yellow", collide=False),
-        dict(label="Trophy", mesh="SM_Heaven_FilmReelTrophy", colour="Yellow", collide=False,
-             at=tuple(a + b for a, b in zip((podium["x"], podium["y"], 0.0),
-                                            rotate(0.0, -(PODIUM_SIZE[1] / 2 + 45.0), podium["yaw"]) + (0.0,))),
-             yaw=podium["yaw"]),
-        # The carpet mesh is long along its own Y.
+        dict(label="SM_Heaven_Cloud_A", mesh="SM_Heaven_Cloud_A", at=(-600.0, -1400.0, 280.0)),
+        dict(label="SM_Heaven_Cloud_B", mesh="SM_Heaven_Cloud_B", at=(1800.0, 1100.0, 420.0)),
+        dict(label="SM_Heaven_Cloud_C", mesh="SM_Heaven_Cloud_C", at=(1600.0, -1600.0, 180.0)),
+        dict(label="Podium", mesh="SM_Heaven_Podium", at=(HEAVEN_PODIUM_X, 0.0, 0.0), yaw=180.0, colour="Wood"),
+        dict(label="Trophy", mesh="SM_Heaven_FilmReelTrophy", at=None, yaw=180.0, colour="Yellow"),
+        dict(label="Halo", mesh="SM_Heaven_Halo", at=None, colour="Yellow"),
         dict(label="RedCarpet", mesh="SM_Heaven_RedCarpet", at=(carpet["x"], carpet["y"], 0.0), colour="Red",
-             fit=("footprint", (carpet["half"][0] * 2, carpet["half"][1] * 2)), collide=False),
+             fit=("footprint", (carpet["half"][0] * 2, carpet["half"][1] * 2))),
     ]
+    for p in out[:3]:
+        p.update(yaw=0.0, colour="Sky" if p["mesh"].endswith("_B") else "Bone")
     for piece in layout["podium_dressing"] + layout["spectator_ring"]:
         fit = HEAVEN_FIT[piece["mesh"]]
         if fit[0] == "width":
@@ -171,11 +122,5 @@ def heaven_pieces(layout):
                         yaw=float(piece["yaw"]), colour=piece["colour"]))
     for p in out:
         p.setdefault("yaw", 0.0)
-        p.setdefault("collide", True)
         p.setdefault("fit", HEAVEN_FIT.get(p["mesh"]))
     return out
-
-
-def heaven_labels(layout):
-    """Labels of everything dress_heaven.py spawns (meshes and podium TargetPoints): the legacy purge list."""
-    return {p["label"] for p in heaven_pieces(layout)} | {f"Podium_{t}" for t in PODIUM_STEPS}

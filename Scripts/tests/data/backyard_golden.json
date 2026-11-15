@@ -6,7 +6,7 @@
    "floor",
    3.0,
    0.0,
-   -4.5,
+   -0.2,
    0,
    "Wood",
    [
@@ -14,7 +14,7 @@
     [
      6.0,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
@@ -24,7 +24,7 @@
    "floor",
    9.0,
    0.0,
-   -4.5,
+   -0.2,
    0,
    "Grass",
    [
@@ -32,7 +32,7 @@
     [
      6.0,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
@@ -42,7 +42,7 @@
    "floor",
    15.0,
    0.0,
-   -4.5,
+   -0.2,
    0,
    "Grass",
    [
@@ -50,7 +50,7 @@
     [
      6.0,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
@@ -60,7 +60,7 @@
    "floor",
    21.0,
    0.0,
-   -4.5,
+   -0.2,
    0,
    "Grass",
    [
@@ -68,7 +68,7 @@
     [
      6.0,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
@@ -78,7 +78,7 @@
    "floor",
    27.0,
    0.0,
-   -4.5,
+   -0.2,
    0,
    "Yellow",
    [
@@ -86,7 +86,7 @@
     [
      6.0,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
@@ -96,7 +96,7 @@
    "floor",
    33.0,
    0.0,
-   -4.5,
+   -0.2,
    0,
    "Yellow",
    [
@@ -104,7 +104,7 @@
     [
      6.0,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
@@ -114,7 +114,7 @@
    "floor",
    39.0,
    0.0,
-   -4.5,
+   -0.2,
    0,
    "Grass",
    [
@@ -122,7 +122,7 @@
     [
      6.0,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
@@ -132,7 +132,7 @@
    "floor",
    45.0,
    0.0,
-   -4.5,
+   -0.2,
    0,
    "Grass",
    [
@@ -140,7 +140,7 @@
     [
      6.0,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
@@ -150,7 +150,7 @@
    "floor",
    51.0,
    0.0,
-   -4.5,
+   -0.2,
    0,
    "Bone",
    [
@@ -158,7 +158,7 @@
     [
      6.0,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
@@ -168,7 +168,7 @@
    "floor",
    57.0,
    0.0,
-   -4.5,
+   -0.2,
    0,
    "Bone",
    [
@@ -176,2166 +176,366 @@
     [
      6.0,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
   [
    "KayKitPrototypeBits",
-   "Primitive_Floor",
+   "Floor_Dirt",
    "floor",
-   -12.0,
-   -3.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     8.0,
-     6.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   -12.0,
-   3.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     8.0,
-     6.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   -4.0,
-   -3.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     8.0,
-     6.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   -4.0,
-   3.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     8.0,
-     6.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   64.0,
-   -3.0,
-   -4.5,
-   0,
-   "Bone",
-   [
-    "box",
-    [
-     8.0,
-     6.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   64.0,
-   3.0,
-   -4.5,
-   0,
-   "Bone",
-   [
-    "box",
-    [
-     8.0,
-     6.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   72.0,
-   -3.0,
-   -4.5,
-   0,
-   "Bone",
-   [
-    "box",
-    [
-     8.0,
-     6.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   72.0,
-   3.0,
-   -4.5,
-   0,
-   "Bone",
-   [
-    "box",
-    [
-     8.0,
-     6.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   -12.166666666666666,
+   -4.2,
    -10.0,
-   -4.5,
+   -0.2,
    0,
    "Grass",
    [
     "box",
     [
-     7.666666666666667,
+     7.6,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
   [
    "KayKitPrototypeBits",
-   "Primitive_Floor",
+   "Floor_Dirt",
    "floor",
-   -4.5,
+   3.3999999999999986,
    -10.0,
-   -4.5,
+   -0.2,
    0,
    "Grass",
    [
     "box",
     [
-     7.666666666666667,
+     7.6,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
   [
    "KayKitPrototypeBits",
-   "Primitive_Floor",
+   "Floor_Dirt",
    "floor",
-   3.166666666666668,
+   11.0,
    -10.0,
-   -4.5,
+   -0.2,
    0,
    "Grass",
    [
     "box",
     [
-     7.666666666666667,
+     7.6,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
   [
    "KayKitPrototypeBits",
-   "Primitive_Floor",
+   "Floor_Dirt",
    "floor",
-   10.833333333333336,
+   18.599999999999998,
    -10.0,
-   -4.5,
+   -0.2,
    0,
    "Grass",
    [
     "box",
     [
-     7.666666666666667,
+     7.6,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
   [
    "KayKitPrototypeBits",
-   "Primitive_Floor",
+   "Floor_Dirt",
    "floor",
-   18.5,
+   26.199999999999996,
    -10.0,
-   -4.5,
+   -0.2,
    0,
    "Grass",
    [
     "box",
     [
-     7.666666666666667,
+     7.6,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
   [
    "KayKitPrototypeBits",
-   "Primitive_Floor",
+   "Floor_Dirt",
    "floor",
-   26.16666666666667,
+   33.8,
    -10.0,
-   -4.5,
+   -0.2,
    0,
    "Grass",
    [
     "box",
     [
-     7.666666666666667,
+     7.6,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
   [
    "KayKitPrototypeBits",
-   "Primitive_Floor",
+   "Floor_Dirt",
    "floor",
-   33.833333333333336,
+   41.4,
    -10.0,
-   -4.5,
+   -0.2,
    0,
    "Grass",
    [
     "box",
     [
-     7.666666666666667,
+     7.6,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
   [
    "KayKitPrototypeBits",
-   "Primitive_Floor",
+   "Floor_Dirt",
    "floor",
-   41.5,
+   49.0,
    -10.0,
-   -4.5,
+   -0.2,
    0,
    "Grass",
    [
     "box",
     [
-     7.666666666666667,
+     7.6,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
   [
    "KayKitPrototypeBits",
-   "Primitive_Floor",
+   "Floor_Dirt",
    "floor",
-   49.16666666666667,
+   56.599999999999994,
    -10.0,
-   -4.5,
+   -0.2,
    0,
    "Grass",
    [
     "box",
     [
-     7.666666666666667,
+     7.6,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
   [
    "KayKitPrototypeBits",
-   "Primitive_Floor",
+   "Floor_Dirt",
    "floor",
-   56.83333333333334,
+   64.2,
    -10.0,
-   -4.5,
+   -0.2,
    0,
    "Grass",
    [
     "box",
     [
-     7.666666666666667,
+     7.6,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
   [
    "KayKitPrototypeBits",
-   "Primitive_Floor",
+   "Floor_Dirt",
    "floor",
-   64.5,
-   -10.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   72.16666666666667,
-   -10.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   -12.166666666666666,
+   -4.2,
    10.0,
-   -4.5,
+   -0.2,
    0,
    "Grass",
    [
     "box",
     [
-     7.666666666666667,
+     7.6,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
   [
    "KayKitPrototypeBits",
-   "Primitive_Floor",
+   "Floor_Dirt",
    "floor",
-   -4.5,
+   3.3999999999999986,
    10.0,
-   -4.5,
+   -0.2,
    0,
    "Grass",
    [
     "box",
     [
-     7.666666666666667,
+     7.6,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
   [
    "KayKitPrototypeBits",
-   "Primitive_Floor",
+   "Floor_Dirt",
    "floor",
-   3.166666666666668,
+   11.0,
    10.0,
-   -4.5,
+   -0.2,
    0,
    "Grass",
    [
     "box",
     [
-     7.666666666666667,
+     7.6,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
   [
    "KayKitPrototypeBits",
-   "Primitive_Floor",
+   "Floor_Dirt",
    "floor",
-   10.833333333333336,
+   18.599999999999998,
    10.0,
-   -4.5,
+   -0.2,
    0,
    "Grass",
    [
     "box",
     [
-     7.666666666666667,
+     7.6,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
   [
    "KayKitPrototypeBits",
-   "Primitive_Floor",
+   "Floor_Dirt",
    "floor",
-   18.5,
+   26.199999999999996,
    10.0,
-   -4.5,
+   -0.2,
    0,
    "Grass",
    [
     "box",
     [
-     7.666666666666667,
+     7.6,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
   [
    "KayKitPrototypeBits",
-   "Primitive_Floor",
+   "Floor_Dirt",
    "floor",
-   26.16666666666667,
+   33.8,
    10.0,
-   -4.5,
+   -0.2,
    0,
    "Grass",
    [
     "box",
     [
-     7.666666666666667,
+     7.6,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
   [
    "KayKitPrototypeBits",
-   "Primitive_Floor",
+   "Floor_Dirt",
    "floor",
-   33.833333333333336,
+   41.4,
    10.0,
-   -4.5,
+   -0.2,
    0,
    "Grass",
    [
     "box",
     [
-     7.666666666666667,
+     7.6,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
   [
    "KayKitPrototypeBits",
-   "Primitive_Floor",
+   "Floor_Dirt",
    "floor",
-   41.5,
+   49.0,
    10.0,
-   -4.5,
+   -0.2,
    0,
    "Grass",
    [
     "box",
     [
-     7.666666666666667,
+     7.6,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
   [
    "KayKitPrototypeBits",
-   "Primitive_Floor",
+   "Floor_Dirt",
    "floor",
-   49.16666666666667,
+   56.599999999999994,
    10.0,
-   -4.5,
+   -0.2,
    0,
    "Grass",
    [
     "box",
     [
-     7.666666666666667,
+     7.6,
      8.0,
-     4.5
+     0.2
     ]
    ]
   ],
   [
    "KayKitPrototypeBits",
-   "Primitive_Floor",
+   "Floor_Dirt",
    "floor",
-   56.83333333333334,
+   64.2,
    10.0,
-   -4.5,
+   -0.2,
    0,
    "Grass",
    [
     "box",
     [
-     7.666666666666667,
+     7.6,
      8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   64.5,
-   10.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   72.16666666666667,
-   10.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   -12.166666666666666,
-   18.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   -12.166666666666666,
-   26.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   -4.5,
-   18.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   -4.5,
-   26.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   3.166666666666668,
-   18.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   3.166666666666668,
-   26.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   10.833333333333336,
-   18.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   10.833333333333336,
-   26.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   18.5,
-   18.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   18.5,
-   26.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   26.16666666666667,
-   18.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   26.16666666666667,
-   26.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   33.833333333333336,
-   18.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   33.833333333333336,
-   26.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   41.5,
-   18.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   41.5,
-   26.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   49.16666666666667,
-   18.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   49.16666666666667,
-   26.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   56.83333333333334,
-   18.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   56.83333333333334,
-   26.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   64.5,
-   18.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   64.5,
-   26.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   72.16666666666667,
-   18.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   72.16666666666667,
-   26.0,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   -12.166666666666666,
-   -15.5,
-   -4.5,
-   0,
-   "Bone",
-   [
-    "box",
-    [
-     7.666666666666667,
-     3.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   -4.5,
-   -15.5,
-   -4.5,
-   0,
-   "Bone",
-   [
-    "box",
-    [
-     7.666666666666667,
-     3.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   3.166666666666668,
-   -15.5,
-   -4.5,
-   0,
-   "Bone",
-   [
-    "box",
-    [
-     7.666666666666667,
-     3.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   10.833333333333336,
-   -15.5,
-   -4.5,
-   0,
-   "Bone",
-   [
-    "box",
-    [
-     7.666666666666667,
-     3.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   18.5,
-   -15.5,
-   -4.5,
-   0,
-   "Bone",
-   [
-    "box",
-    [
-     7.666666666666667,
-     3.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   26.16666666666667,
-   -15.5,
-   -4.5,
-   0,
-   "Bone",
-   [
-    "box",
-    [
-     7.666666666666667,
-     3.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   33.833333333333336,
-   -15.5,
-   -4.5,
-   0,
-   "Bone",
-   [
-    "box",
-    [
-     7.666666666666667,
-     3.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   41.5,
-   -15.5,
-   -4.5,
-   0,
-   "Bone",
-   [
-    "box",
-    [
-     7.666666666666667,
-     3.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   49.16666666666667,
-   -15.5,
-   -4.5,
-   0,
-   "Bone",
-   [
-    "box",
-    [
-     7.666666666666667,
-     3.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   56.83333333333334,
-   -15.5,
-   -4.5,
-   0,
-   "Bone",
-   [
-    "box",
-    [
-     7.666666666666667,
-     3.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   64.5,
-   -15.5,
-   -4.5,
-   0,
-   "Bone",
-   [
-    "box",
-    [
-     7.666666666666667,
-     3.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   72.16666666666667,
-   -15.5,
-   -4.5,
-   0,
-   "Bone",
-   [
-    "box",
-    [
-     7.666666666666667,
-     3.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   -12.166666666666666,
-   -21.0,
-   -4.5,
-   0,
-   "Ink",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   -4.5,
-   -21.0,
-   -4.5,
-   0,
-   "Ink",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   3.166666666666668,
-   -21.0,
-   -4.5,
-   0,
-   "Ink",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   10.833333333333336,
-   -21.0,
-   -4.5,
-   0,
-   "Ink",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   18.5,
-   -21.0,
-   -4.5,
-   0,
-   "Ink",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   26.16666666666667,
-   -21.0,
-   -4.5,
-   0,
-   "Ink",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   33.833333333333336,
-   -21.0,
-   -4.5,
-   0,
-   "Ink",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   41.5,
-   -21.0,
-   -4.5,
-   0,
-   "Ink",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   49.16666666666667,
-   -21.0,
-   -4.5,
-   0,
-   "Ink",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   56.83333333333334,
-   -21.0,
-   -4.5,
-   0,
-   "Ink",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   64.5,
-   -21.0,
-   -4.5,
-   0,
-   "Ink",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   72.16666666666667,
-   -21.0,
-   -4.5,
-   0,
-   "Ink",
-   [
-    "box",
-    [
-     7.666666666666667,
-     8.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   -12.166666666666666,
-   -32.5,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     5.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   -12.166666666666666,
-   -27.5,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     5.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   -4.5,
-   -32.5,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     5.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   -4.5,
-   -27.5,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     5.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   3.166666666666668,
-   -32.5,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     5.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   3.166666666666668,
-   -27.5,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     5.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   10.833333333333336,
-   -32.5,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     5.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   10.833333333333336,
-   -27.5,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     5.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   18.5,
-   -32.5,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     5.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   18.5,
-   -27.5,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     5.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   26.16666666666667,
-   -32.5,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     5.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   26.16666666666667,
-   -27.5,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     5.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   33.833333333333336,
-   -32.5,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     5.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   33.833333333333336,
-   -27.5,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     5.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   41.5,
-   -32.5,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     5.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   41.5,
-   -27.5,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     5.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   49.16666666666667,
-   -32.5,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     5.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   49.16666666666667,
-   -27.5,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     5.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   56.83333333333334,
-   -32.5,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     5.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   56.83333333333334,
-   -27.5,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     5.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   64.5,
-   -32.5,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     5.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   64.5,
-   -27.5,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     5.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   72.16666666666667,
-   -32.5,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     5.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "floor",
-   72.16666666666667,
-   -27.5,
-   -4.5,
-   0,
-   "Grass",
-   [
-    "box",
-    [
-     7.666666666666667,
-     5.0,
-     4.5
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "backdrop",
-   3.75,
-   -5.0,
-   -4.4,
-   0,
-   "Sky",
-   [
-    "box",
-    [
-     7.5,
-     2.0,
-     0.2
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "backdrop",
-   11.25,
-   -5.0,
-   -4.4,
-   0,
-   "Sky",
-   [
-    "box",
-    [
-     7.5,
-     2.0,
-     0.2
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "backdrop",
-   18.75,
-   -5.0,
-   -4.4,
-   0,
-   "Sky",
-   [
-    "box",
-    [
-     7.5,
-     2.0,
-     0.2
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "backdrop",
-   26.25,
-   -5.0,
-   -4.4,
-   0,
-   "Sky",
-   [
-    "box",
-    [
-     7.5,
-     2.0,
-     0.2
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "backdrop",
-   33.75,
-   -5.0,
-   -4.4,
-   0,
-   "Sky",
-   [
-    "box",
-    [
-     7.5,
-     2.0,
-     0.2
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "backdrop",
-   41.25,
-   -5.0,
-   -4.4,
-   0,
-   "Sky",
-   [
-    "box",
-    [
-     7.5,
-     2.0,
-     0.2
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "backdrop",
-   48.75,
-   -5.0,
-   -4.4,
-   0,
-   "Sky",
-   [
-    "box",
-    [
-     7.5,
-     2.0,
-     0.2
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "backdrop",
-   56.25,
-   -5.0,
-   -4.4,
-   0,
-   "Sky",
-   [
-    "box",
-    [
-     7.5,
-     2.0,
-     0.2
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "backdrop",
-   3.75,
-   5.0,
-   -4.4,
-   0,
-   "Sky",
-   [
-    "box",
-    [
-     7.5,
-     2.0,
-     0.2
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "backdrop",
-   11.25,
-   5.0,
-   -4.4,
-   0,
-   "Sky",
-   [
-    "box",
-    [
-     7.5,
-     2.0,
-     0.2
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "backdrop",
-   18.75,
-   5.0,
-   -4.4,
-   0,
-   "Sky",
-   [
-    "box",
-    [
-     7.5,
-     2.0,
-     0.2
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "backdrop",
-   26.25,
-   5.0,
-   -4.4,
-   0,
-   "Sky",
-   [
-    "box",
-    [
-     7.5,
-     2.0,
-     0.2
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "backdrop",
-   33.75,
-   5.0,
-   -4.4,
-   0,
-   "Sky",
-   [
-    "box",
-    [
-     7.5,
-     2.0,
-     0.2
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "backdrop",
-   41.25,
-   5.0,
-   -4.4,
-   0,
-   "Sky",
-   [
-    "box",
-    [
-     7.5,
-     2.0,
-     0.2
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "backdrop",
-   48.75,
-   5.0,
-   -4.4,
-   0,
-   "Sky",
-   [
-    "box",
-    [
-     7.5,
-     2.0,
-     0.2
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Primitive_Floor",
-   "backdrop",
-   56.25,
-   5.0,
-   -4.4,
-   0,
-   "Sky",
-   [
-    "box",
-    [
-     7.5,
-     2.0,
      0.2
     ]
    ]
@@ -2740,7 +940,7 @@
    "KenneyCitySuburban",
    "fence",
    "dressing",
-   -14.954545454545455,
+   0,
    -13.7,
    0.0,
    0,
@@ -2754,7 +954,7 @@
    "KenneyCitySuburban",
    "fence",
    "dressing",
-   -14.954545454545455,
+   0,
    13.7,
    0.0,
    0,
@@ -2768,7 +968,7 @@
    "KenneyCitySuburban",
    "fence",
    "dressing",
-   -12.863636363636363,
+   4,
    -13.7,
    0.0,
    0,
@@ -2782,7 +982,7 @@
    "KenneyCitySuburban",
    "fence",
    "dressing",
-   -12.863636363636363,
+   4,
    13.7,
    0.0,
    0,
@@ -2796,7 +996,7 @@
    "KenneyCitySuburban",
    "fence",
    "dressing",
-   -10.772727272727273,
+   8,
    -13.7,
    0.0,
    0,
@@ -2810,7 +1010,7 @@
    "KenneyCitySuburban",
    "fence",
    "dressing",
-   -10.772727272727273,
+   8,
    13.7,
    0.0,
    0,
@@ -2824,7 +1024,7 @@
    "KenneyCitySuburban",
    "fence",
    "dressing",
-   -8.681818181818182,
+   12,
    -13.7,
    0.0,
    0,
@@ -2838,7 +1038,7 @@
    "KenneyCitySuburban",
    "fence",
    "dressing",
-   -8.681818181818182,
+   12,
    13.7,
    0.0,
    0,
@@ -2852,7 +1052,7 @@
    "KenneyCitySuburban",
    "fence",
    "dressing",
-   -6.590909090909092,
+   16,
    -13.7,
    0.0,
    0,
@@ -2866,7 +1066,7 @@
    "KenneyCitySuburban",
    "fence",
    "dressing",
-   -6.590909090909092,
+   16,
    13.7,
    0.0,
    0,
@@ -2880,1704 +1080,330 @@
    "KenneyCitySuburban",
    "fence",
    "dressing",
-   -4.5,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   -4.5,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   -2.4090909090909083,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   -2.4090909090909083,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   -0.31818181818181834,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   -0.31818181818181834,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   1.7727272727272734,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   1.7727272727272734,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   3.8636363636363633,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   3.8636363636363633,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   5.954545454545453,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   5.954545454545453,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   8.045454545454547,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   8.045454545454547,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   10.136363636363637,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   10.136363636363637,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   12.227272727272727,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   12.227272727272727,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   14.318181818181817,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   14.318181818181817,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   16.409090909090907,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   16.409090909090907,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   18.5,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   18.5,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   20.590909090909093,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   20.590909090909093,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   22.68181818181818,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   22.68181818181818,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   24.772727272727273,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   24.772727272727273,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   26.863636363636367,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   26.863636363636367,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   28.954545454545453,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   28.954545454545453,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   31.045454545454547,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   31.045454545454547,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   33.13636363636363,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   33.13636363636363,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   35.22727272727273,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   35.22727272727273,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   37.31818181818182,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   37.31818181818182,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   39.40909090909091,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   39.40909090909091,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   41.5,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   41.5,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   43.59090909090909,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   43.59090909090909,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   45.68181818181818,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   45.68181818181818,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   47.77272727272727,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   47.77272727272727,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   49.86363636363636,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   49.86363636363636,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   51.95454545454545,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   51.95454545454545,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   54.04545454545455,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   54.04545454545455,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   56.13636363636364,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   56.13636363636364,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   58.227272727272734,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   58.227272727272734,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   60.31818181818181,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   60.31818181818181,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   62.40909090909091,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   62.40909090909091,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   64.5,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   64.5,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   66.5909090909091,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   66.5909090909091,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   68.68181818181819,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   68.68181818181819,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   70.77272727272727,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   70.77272727272727,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   72.86363636363636,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   72.86363636363636,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   74.95454545454545,
-   -13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   74.95454545454545,
-   13.7,
-   0.0,
-   0,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   -15.7,
-   -12.721428571428572,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   75.7,
-   -12.721428571428572,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   -15.7,
-   -10.764285714285714,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   75.7,
-   -10.764285714285714,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   -15.7,
-   -8.807142857142857,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   75.7,
-   -8.807142857142857,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   -15.7,
-   -6.85,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   75.7,
-   -6.85,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   -15.7,
-   -4.892857142857142,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   75.7,
-   -4.892857142857142,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   -15.7,
-   -2.935714285714285,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   75.7,
-   -2.935714285714285,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   -15.7,
-   -0.9785714285714278,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   75.7,
-   -0.9785714285714278,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   -15.7,
-   0.9785714285714295,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   75.7,
-   0.9785714285714295,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   -15.7,
-   2.9357142857142833,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   75.7,
-   2.9357142857142833,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   -15.7,
-   4.892857142857146,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   75.7,
-   4.892857142857146,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   -15.7,
-   6.850000000000001,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   75.7,
-   6.850000000000001,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   -15.7,
-   8.807142857142857,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   75.7,
-   8.807142857142857,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   -15.7,
-   10.764285714285716,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   75.7,
-   10.764285714285716,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   -15.7,
-   12.721428571428572,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "fence",
-   "dressing",
-   75.7,
-   12.721428571428572,
-   0.0,
-   90,
-   "Bone",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "TTAProps",
-   "SM_Backyard_PicnicTable",
-   "dressing",
-   3.0,
-   9.5,
-   0.0,
-   0,
-   "Wood",
-   [
-    "box",
-    [
-     1.8,
-     1.5,
-     0.773
-    ]
-   ]
-  ],
-  [
-   "TTAProps",
-   "SM_Backyard_Grill",
-   "dressing",
-   6.5,
-   8.0,
-   0.0,
-   90,
-   "Ink",
-   [
-    "box",
-    [
-     0.97,
-     0.64,
-     0.997
-    ]
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "planter",
-   "dressing",
-   1.0,
-   12.2,
-   0.0,
-   0,
-   "Wood",
-   [
-    "height",
-    0.8
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "tree-small",
-   "dressing",
-   9.5,
-   12.0,
-   0.0,
-   0,
-   "Grass",
-   [
-    "height",
-    4.0
-   ]
-  ],
-  [
-   "KenneyNature",
-   "plant_bushLarge",
-   "dressing",
-   12.5,
-   7.2,
-   0.0,
-   0,
-   "Teal",
-   [
-    "height",
-    1.0
-   ]
-  ],
-  [
-   "KenneyNature",
-   "flower_redA",
-   "dressing",
-   14.0,
-   7.0,
-   0.0,
-   0,
-   "Red",
-   [
-    "height",
-    0.5
-   ]
-  ],
-  [
-   "TTAProps",
-   "SM_Backyard_Trampoline",
-   "dressing",
-   18.0,
-   10.0,
-   0.0,
-   0,
-   "Blue",
-   [
-    "box",
-    [
-     3.0,
-     3.0,
-     0.889
-    ]
-   ]
-  ],
-  [
-   "TTAProps",
-   "SM_Backyard_Gnome",
-   "dressing",
-   22.5,
-   7.0,
-   0.0,
-   180,
-   "Red",
-   [
-    "height",
-    0.7
-   ]
-  ],
-  [
-   "KenneyNature",
-   "plant_bushLarge",
-   "dressing",
-   23.5,
-   12.5,
-   0.0,
-   0,
-   "Teal",
-   [
-    "height",
-    1.2
-   ]
-  ],
-  [
-   "TTAProps",
-   "SM_Backyard_KiddiePool",
-   "dressing",
-   29.0,
-   9.0,
-   0.0,
-   0,
-   "Sky",
-   [
-    "box",
-    [
-     1.8,
-     1.8,
-     0.36
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Barrel_A",
-   "dressing",
-   26.5,
-   11.5,
-   0.0,
-   0,
-   "Blue",
-   [
-    "height",
-    0.8
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Box_A",
-   "dressing",
-   31.8,
-   11.2,
-   0.0,
-   0,
-   "Red",
-   [
-    "height",
-    0.8
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Box_B",
-   "dressing",
-   32.8,
-   12.2,
-   0.0,
    20,
-   "Purple",
+   -13.7,
+   0.0,
+   0,
+   "Bone",
    [
     "height",
-    0.8
+    1.2
    ]
   ],
   [
-   "KenneyNature",
-   "flower_yellowA",
+   "KenneyCitySuburban",
+   "fence",
    "dressing",
-   33.5,
-   7.0,
+   20,
+   13.7,
    0.0,
    0,
-   "Yellow",
+   "Bone",
    [
     "height",
-    0.5
+    1.2
+   ]
+  ],
+  [
+   "KenneyCitySuburban",
+   "fence",
+   "dressing",
+   24,
+   -13.7,
+   0.0,
+   0,
+   "Bone",
+   [
+    "height",
+    1.2
+   ]
+  ],
+  [
+   "KenneyCitySuburban",
+   "fence",
+   "dressing",
+   24,
+   13.7,
+   0.0,
+   0,
+   "Bone",
+   [
+    "height",
+    1.2
+   ]
+  ],
+  [
+   "KenneyCitySuburban",
+   "fence",
+   "dressing",
+   28,
+   -13.7,
+   0.0,
+   0,
+   "Bone",
+   [
+    "height",
+    1.2
+   ]
+  ],
+  [
+   "KenneyCitySuburban",
+   "fence",
+   "dressing",
+   28,
+   13.7,
+   0.0,
+   0,
+   "Bone",
+   [
+    "height",
+    1.2
+   ]
+  ],
+  [
+   "KenneyCitySuburban",
+   "fence",
+   "dressing",
+   32,
+   -13.7,
+   0.0,
+   0,
+   "Bone",
+   [
+    "height",
+    1.2
+   ]
+  ],
+  [
+   "KenneyCitySuburban",
+   "fence",
+   "dressing",
+   32,
+   13.7,
+   0.0,
+   0,
+   "Bone",
+   [
+    "height",
+    1.2
+   ]
+  ],
+  [
+   "KenneyCitySuburban",
+   "fence",
+   "dressing",
+   36,
+   -13.7,
+   0.0,
+   0,
+   "Bone",
+   [
+    "height",
+    1.2
+   ]
+  ],
+  [
+   "KenneyCitySuburban",
+   "fence",
+   "dressing",
+   36,
+   13.7,
+   0.0,
+   0,
+   "Bone",
+   [
+    "height",
+    1.2
+   ]
+  ],
+  [
+   "KenneyCitySuburban",
+   "fence",
+   "dressing",
+   40,
+   -13.7,
+   0.0,
+   0,
+   "Bone",
+   [
+    "height",
+    1.2
+   ]
+  ],
+  [
+   "KenneyCitySuburban",
+   "fence",
+   "dressing",
+   40,
+   13.7,
+   0.0,
+   0,
+   "Bone",
+   [
+    "height",
+    1.2
+   ]
+  ],
+  [
+   "KenneyCitySuburban",
+   "fence",
+   "dressing",
+   44,
+   -13.7,
+   0.0,
+   0,
+   "Bone",
+   [
+    "height",
+    1.2
+   ]
+  ],
+  [
+   "KenneyCitySuburban",
+   "fence",
+   "dressing",
+   44,
+   13.7,
+   0.0,
+   0,
+   "Bone",
+   [
+    "height",
+    1.2
+   ]
+  ],
+  [
+   "KenneyCitySuburban",
+   "fence",
+   "dressing",
+   48,
+   -13.7,
+   0.0,
+   0,
+   "Bone",
+   [
+    "height",
+    1.2
+   ]
+  ],
+  [
+   "KenneyCitySuburban",
+   "fence",
+   "dressing",
+   48,
+   13.7,
+   0.0,
+   0,
+   "Bone",
+   [
+    "height",
+    1.2
+   ]
+  ],
+  [
+   "KenneyCitySuburban",
+   "fence",
+   "dressing",
+   52,
+   -13.7,
+   0.0,
+   0,
+   "Bone",
+   [
+    "height",
+    1.2
+   ]
+  ],
+  [
+   "KenneyCitySuburban",
+   "fence",
+   "dressing",
+   52,
+   13.7,
+   0.0,
+   0,
+   "Bone",
+   [
+    "height",
+    1.2
+   ]
+  ],
+  [
+   "KenneyCitySuburban",
+   "fence",
+   "dressing",
+   56,
+   -13.7,
+   0.0,
+   0,
+   "Bone",
+   [
+    "height",
+    1.2
+   ]
+  ],
+  [
+   "KenneyCitySuburban",
+   "fence",
+   "dressing",
+   56,
+   13.7,
+   0.0,
+   0,
+   "Bone",
+   [
+    "height",
+    1.2
+   ]
+  ],
+  [
+   "KenneyCitySuburban",
+   "fence",
+   "dressing",
+   60,
+   -13.7,
+   0.0,
+   0,
+   "Bone",
+   [
+    "height",
+    1.2
+   ]
+  ],
+  [
+   "KenneyCitySuburban",
+   "fence",
+   "dressing",
+   60,
+   13.7,
+   0.0,
+   0,
+   "Bone",
+   [
+    "height",
+    1.2
    ]
   ],
   [
    "KenneyCitySuburban",
    "tree-large",
    "dressing",
-   36.0,
-   11.8,
+   10,
+   -11.0,
+   0.0,
+   0,
+   "Grass",
+   [
+    "height",
+    6.0
+   ]
+  ],
+  [
+   "KenneyCitySuburban",
+   "tree-large",
+   "dressing",
+   30,
+   11.0,
    0.0,
    0,
    "Grass",
@@ -4587,11 +1413,53 @@
    ]
   ],
   [
+   "KenneyCitySuburban",
+   "tree-small",
+   "dressing",
+   44,
+   -11.0,
+   0.0,
+   0,
+   "Grass",
+   [
+    "height",
+    4.0
+   ]
+  ],
+  [
+   "KenneyCitySuburban",
+   "tree-small",
+   "dressing",
+   18,
+   11.0,
+   0.0,
+   0,
+   "Grass",
+   [
+    "height",
+    3.5
+   ]
+  ],
+  [
+   "KenneyCitySuburban",
+   "tree-large",
+   "dressing",
+   52,
+   11.0,
+   0.0,
+   0,
+   "Grass",
+   [
+    "height",
+    6.0
+   ]
+  ],
+  [
    "KenneyNature",
    "plant_bushLarge",
    "dressing",
-   39.0,
-   7.2,
+   7,
+   7.0,
    0.0,
    0,
    "Teal",
@@ -4604,8 +1472,8 @@
    "KenneyNature",
    "plant_bushLarge",
    "dressing",
-   41.0,
-   7.2,
+   15,
+   -7.0,
    0.0,
    0,
    "Teal",
@@ -4618,8 +1486,50 @@
    "KenneyNature",
    "plant_bushLarge",
    "dressing",
-   43.0,
-   7.2,
+   26,
+   -7.0,
+   0.0,
+   0,
+   "Teal",
+   [
+    "height",
+    1.0
+   ]
+  ],
+  [
+   "KenneyNature",
+   "plant_bushLarge",
+   "dressing",
+   38,
+   7.0,
+   0.0,
+   0,
+   "Teal",
+   [
+    "height",
+    1.0
+   ]
+  ],
+  [
+   "KenneyNature",
+   "plant_bushLarge",
+   "dressing",
+   47,
+   7.0,
+   0.0,
+   0,
+   "Teal",
+   [
+    "height",
+    1.0
+   ]
+  ],
+  [
+   "KenneyNature",
+   "plant_bushLarge",
+   "dressing",
+   56,
+   -7.0,
    0.0,
    0,
    "Teal",
@@ -4632,8 +1542,36 @@
    "KenneyNature",
    "flower_redA",
    "dressing",
-   45.5,
-   7.0,
+   12,
+   6.8,
+   0.0,
+   0,
+   "Red",
+   [
+    "height",
+    0.5
+   ]
+  ],
+  [
+   "KenneyNature",
+   "flower_yellowA",
+   "dressing",
+   21,
+   -6.8,
+   0.0,
+   0,
+   "Yellow",
+   [
+    "height",
+    0.5
+   ]
+  ],
+  [
+   "KenneyNature",
+   "flower_redA",
+   "dressing",
+   33,
+   6.8,
    0.0,
    0,
    "Pink",
@@ -4643,25 +1581,53 @@
    ]
   ],
   [
-   "KayKitPrototypeBits",
-   "table_medium",
+   "KenneyNature",
+   "flower_yellowA",
    "dressing",
-   51.0,
-   9.0,
+   41,
+   -6.8,
    0.0,
    0,
-   "Wood",
+   "Orange",
    [
     "height",
-    0.75
+    0.5
+   ]
+  ],
+  [
+   "KenneyNature",
+   "rock_smallA",
+   "dressing",
+   23,
+   7.5,
+   0.0,
+   0,
+   "Ink",
+   [
+    "height",
+    0.4
+   ]
+  ],
+  [
+   "KenneyNature",
+   "rock_smallA",
+   "dressing",
+   36,
+   -7.5,
+   0.0,
+   0,
+   "Ink",
+   [
+    "height",
+    0.4
    ]
   ],
   [
    "KenneyCitySuburban",
    "planter",
    "dressing",
-   47.5,
-   12.0,
+   5,
+   -8.0,
    0.0,
    45,
    "Wood",
@@ -4674,52 +1640,10 @@
    "KenneyCitySuburban",
    "planter",
    "dressing",
-   54.5,
-   7.5,
+   50,
+   -8.0,
    0.0,
-   0,
-   "Wood",
-   [
-    "height",
-    0.8
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "planter",
-   "dressing",
-   57.5,
-   7.5,
-   0.0,
-   0,
-   "Wood",
-   [
-    "height",
-    0.8
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "tree-small",
-   "dressing",
-   56.0,
-   11.5,
-   0.0,
-   0,
-   "Grass",
-   [
-    "height",
-    3.5
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Pallet_Small",
-   "dressing",
-   2.0,
-   -9.0,
-   0.0,
-   0,
+   45,
    "Wood",
    [
     "height",
@@ -4730,11 +1654,11 @@
    "KayKitPrototypeBits",
    "Barrel_A",
    "dressing",
-   3.6,
-   -8.2,
+   27,
+   9.0,
    0.0,
    0,
-   "Orange",
+   "Blue",
    [
     "height",
     0.8
@@ -4744,239 +1668,11 @@
    "KayKitPrototypeBits",
    "Box_A",
    "dressing",
-   0.8,
-   -11.5,
-   0.0,
-   15,
-   "Wood",
-   [
-    "height",
-    0.8
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "tree-large",
-   "dressing",
-   9.0,
-   -11.5,
-   0.0,
-   0,
-   "Grass",
-   [
-    "height",
-    6.0
-   ]
-  ],
-  [
-   "TTAProps",
-   "SM_Backyard_Gnome",
-   "dressing",
-   12.0,
-   -7.0,
-   0.0,
-   0,
-   "Blue",
-   [
-    "height",
-    0.7
-   ]
-  ],
-  [
-   "KenneyNature",
-   "flower_yellowA",
-   "dressing",
-   13.5,
-   -7.0,
-   0.0,
-   0,
-   "Yellow",
-   [
-    "height",
-    0.5
-   ]
-  ],
-  [
-   "KenneyNature",
-   "flower_redA",
-   "dressing",
-   15.0,
-   -7.0,
-   0.0,
-   0,
-   "Red",
-   [
-    "height",
-    0.5
-   ]
-  ],
-  [
-   "KenneyNature",
-   "flower_yellowA",
-   "dressing",
-   16.5,
-   -7.0,
-   0.0,
-   0,
-   "Orange",
-   [
-    "height",
-    0.5
-   ]
-  ],
-  [
-   "KenneyNature",
-   "flower_redA",
-   "dressing",
-   18.0,
-   -7.0,
-   0.0,
-   0,
-   "Pink",
-   [
-    "height",
-    0.5
-   ]
-  ],
-  [
-   "KenneyNature",
-   "rock_smallA",
-   "dressing",
-   20.5,
-   -7.4,
-   0.0,
-   0,
-   "Ink",
-   [
-    "height",
-    0.4
-   ]
-  ],
-  [
-   "KenneyNature",
-   "plant_bushLarge",
-   "dressing",
-   22.0,
-   -11.0,
-   0.0,
-   0,
-   "Teal",
-   [
-    "height",
-    1.4
-   ]
-  ],
-  [
-   "KenneyNature",
-   "rock_smallA",
-   "dressing",
-   26.0,
-   -7.5,
-   0.0,
-   0,
-   "Ink",
-   [
-    "height",
-    0.5
-   ]
-  ],
-  [
-   "KenneyNature",
-   "rock_smallA",
-   "dressing",
-   27.5,
-   -8.6,
-   0.0,
-   40,
-   "Ink",
-   [
-    "height",
-    0.8
-   ]
-  ],
-  [
-   "KenneyNature",
-   "plant_bushLarge",
-   "dressing",
-   29.5,
-   -7.3,
-   0.0,
-   0,
-   "Teal",
-   [
-    "height",
-    0.9
-   ]
-  ],
-  [
-   "KenneyNature",
-   "flower_yellowA",
-   "dressing",
-   31.5,
-   -7.0,
-   0.0,
-   0,
-   "Yellow",
-   [
-    "height",
-    0.5
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "tree-small",
-   "dressing",
-   33.0,
-   -11.5,
-   0.0,
-   0,
-   "Grass",
-   [
-    "height",
-    4.0
-   ]
-  ],
-  [
-   "TTAProps",
-   "SM_Backyard_Shed",
-   "dressing",
-   41.5,
-   -10.5,
-   0.0,
-   0,
-   "Red",
-   [
-    "box",
-    [
-     2.5,
-     2.0,
-     2.3
-    ]
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Pallet_Small",
-   "dressing",
-   38.5,
-   -9.5,
-   0.0,
-   30,
-   "Wood",
-   [
-    "height",
-    0.8
-   ]
-  ],
-  [
-   "KayKitPrototypeBits",
-   "Barrel_A",
-   "dressing",
-   44.5,
+   29,
    -9.0,
    0.0,
    0,
-   "Blue",
+   "Red",
    [
     "height",
     0.8
@@ -4986,105 +1682,49 @@
    "KayKitPrototypeBits",
    "Box_B",
    "dressing",
-   45.5,
-   -10.2,
+   34,
+   9.0,
    0.0,
    0,
-   "Wood",
+   "Purple",
    [
     "height",
     0.8
    ]
   ],
   [
-   "TTAProps",
-   "SM_Backyard_Gnome",
+   "KayKitPrototypeBits",
+   "table_medium",
    "dressing",
-   37.0,
-   -7.0,
-   0.0,
-   90,
-   "Yellow",
-   [
-    "height",
-    0.7
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "tree-small",
-   "dressing",
-   49.0,
-   -11.5,
+   4,
+   9.0,
    0.0,
    0,
-   "Grass",
+   "Wood",
    [
     "height",
-    3.5
+    0.75
    ]
   ],
   [
-   "KenneyCitySuburban",
-   "planter",
+   "KayKitPrototypeBits",
+   "Pallet_Small",
    "dressing",
-   52.0,
-   -7.5,
+   2,
+   -9.0,
    0.0,
    0,
    "Wood",
    [
     "height",
     0.8
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "planter",
-   "dressing",
-   55.0,
-   -7.5,
-   0.0,
-   0,
-   "Wood",
-   [
-    "height",
-    0.8
-   ]
-  ],
-  [
-   "KenneyNature",
-   "plant_bushLarge",
-   "dressing",
-   58.0,
-   -7.2,
-   0.0,
-   0,
-   "Teal",
-   [
-    "height",
-    1.0
-   ]
-  ],
-  [
-   "KenneyNature",
-   "rock_smallA",
-   "dressing",
-   53.5,
-   -11.0,
-   0.0,
-   0,
-   "Ink",
-   [
-    "height",
-    0.5
    ]
   ],
   [
    "KenneyCitySuburban",
    "building-type-a",
    "dressing",
-   67.0,
+   66.0,
    0.0,
    0.0,
    180,
@@ -5098,7 +1738,7 @@
    "KenneyCitySuburban",
    "building-type-c",
    "dressing",
-   -8.5,
+   -7.0,
    0.0,
    0.0,
    0,
@@ -5109,325 +1749,161 @@
    ]
   ],
   [
-   "KenneyCitySuburban",
-   "building-type-b",
+   "KenneyNature",
+   "rock_smallA",
    "dressing",
-   -6.0,
-   23.5,
-   0.0,
-   270,
-   "Yellow",
-   [
-    "height",
-    7.0
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "tree-small",
-   "dressing",
-   3.0,
-   19.0,
+   9,
+   8.5,
    0.0,
    0,
-   "Grass",
+   "Ink",
    [
     "height",
-    4.0
+    0.4
    ]
   ],
   [
-   "KenneyCitySuburban",
-   "building-type-d",
+   "KayKitPrototypeBits",
+   "Barrel_A",
    "dressing",
-   12.0,
-   23.5,
+   13,
+   -8.5,
    0.0,
-   270,
+   0,
+   "Blue",
+   [
+    "height",
+    0.8
+   ]
+  ],
+  [
+   "KayKitPrototypeBits",
+   "Box_A",
+   "dressing",
+   20,
+   8.5,
+   0.0,
+   0,
+   "Red",
+   [
+    "height",
+    0.8
+   ]
+  ],
+  [
+   "KenneyNature",
+   "flower_redA",
+   "dressing",
+   25,
+   -8.5,
+   0.0,
+   0,
    "Pink",
    [
     "height",
-    7.0
+    0.5
    ]
   ],
   [
-   "KenneyCitySuburban",
-   "tree-large",
+   "KenneyNature",
+   "plant_bushLarge",
    "dressing",
-   21.0,
-   19.0,
+   31,
+   -8.5,
    0.0,
    0,
-   "Grass",
-   [
-    "height",
-    5.5
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "building-type-e",
-   "dressing",
-   30.0,
-   23.5,
-   0.0,
-   270,
    "Teal",
    [
     "height",
-    7.0
+    1.0
    ]
   ],
   [
-   "KenneyCitySuburban",
-   "tree-small",
+   "KayKitPrototypeBits",
+   "Box_B",
    "dressing",
-   39.0,
-   19.0,
+   37,
+   8.5,
    0.0,
    0,
-   "Grass",
-   [
-    "height",
-    4.0
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "building-type-f",
-   "dressing",
-   48.0,
-   23.5,
-   0.0,
-   270,
    "Purple",
    [
     "height",
-    7.0
+    0.8
    ]
   ],
   [
-   "KenneyCitySuburban",
-   "tree-large",
+   "KenneyNature",
+   "flower_yellowA",
    "dressing",
-   57.0,
-   19.0,
+   42,
+   8.5,
    0.0,
    0,
-   "Grass",
-   [
-    "height",
-    5.5
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "building-type-b",
-   "dressing",
-   66.0,
-   23.5,
-   0.0,
-   270,
-   "Orange",
-   [
-    "height",
-    7.0
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "tree-small",
-   "dressing",
-   75.0,
-   19.0,
-   0.0,
-   0,
-   "Grass",
-   [
-    "height",
-    4.0
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "building-type-d",
-   "dressing",
-   2.0,
-   -31.0,
-   0.0,
-   90,
-   "Sky",
-   [
-    "height",
-    7.0
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "building-type-f",
-   "dressing",
-   19.0,
-   -31.0,
-   0.0,
-   90,
    "Yellow",
    [
     "height",
-    7.0
+    0.5
    ]
   ],
   [
-   "KenneyCitySuburban",
-   "building-type-a",
+   "KenneyNature",
+   "rock_smallA",
    "dressing",
-   36.0,
-   -31.0,
+   46,
+   -8.5,
    0.0,
-   90,
-   "Pink",
+   0,
+   "Ink",
    [
     "height",
-    7.0
+    0.4
    ]
   ],
   [
-   "KenneyCitySuburban",
-   "building-type-e",
+   "KayKitPrototypeBits",
+   "Pallet_Small",
    "dressing",
-   53.0,
-   -31.0,
+   54,
+   8.5,
    0.0,
-   90,
+   0,
+   "Wood",
+   [
+    "height",
+    0.8
+   ]
+  ],
+  [
+   "KayKitPrototypeBits",
+   "Barrel_A",
+   "dressing",
+   57,
+   -8.5,
+   0.0,
+   0,
    "Orange",
    [
     "height",
-    7.0
+    0.8
    ]
   ],
   [
-   "KenneyCitySuburban",
-   "building-type-c",
-   "dressing",
-   70.0,
-   -31.0,
-   0.0,
-   90,
-   "Teal",
-   [
-    "height",
-    7.0
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "tree-small",
-   "dressing",
-   -10.0,
-   -15.5,
-   0.0,
-   0,
-   "Grass",
-   [
-    "height",
-    4.5
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "tree-small",
-   "dressing",
-   2.0,
-   -15.5,
-   0.0,
-   0,
-   "Grass",
-   [
-    "height",
-    4.5
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "tree-small",
-   "dressing",
-   14.0,
-   -15.5,
-   0.0,
-   0,
-   "Grass",
-   [
-    "height",
-    4.5
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "tree-small",
-   "dressing",
-   26.0,
-   -15.5,
-   0.0,
-   0,
-   "Grass",
-   [
-    "height",
-    4.5
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "tree-small",
-   "dressing",
-   38.0,
-   -15.5,
-   0.0,
-   0,
-   "Grass",
-   [
-    "height",
-    4.5
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "tree-small",
-   "dressing",
-   50.0,
-   -15.5,
-   0.0,
-   0,
-   "Grass",
-   [
-    "height",
-    4.5
-   ]
-  ],
-  [
-   "KenneyCitySuburban",
-   "tree-small",
-   "dressing",
-   62.0,
-   -15.5,
-   0.0,
-   0,
-   "Grass",
-   [
-    "height",
-    4.5
-   ]
-  ],
-  [
-   "TTACourse",
-   "SM_Course_GateFinish",
+   "KayKitPrototypeBits",
+   "Primitive_Doorway",
    "gate",
    59.0,
    0.0,
    0.0,
-   90,
+   0,
    "Red",
    [
-    "width",
-    8.0
+    "box",
+    [
+     1.0,
+     8.0,
+     4.0
+    ]
    ]
   ]
  ],
@@ -5442,23 +1918,14 @@
   0.0
  ],
  "kill_plane": [
-  -24.0,
-  84.0,
-  -44.0,
-  44.0,
+  -10.0,
+  70.0,
+  -20.0,
+  20.0,
   -12.0,
   -8.0
  ],
  "world_kill_z": -500.0,
- "gate_trigger_half": [
-  0.5,
-  4.0,
-  2.0
- ],
- "corridor": [
-  60.0,
-  8.0
- ],
  "zones": [
   [
    0.0,
@@ -5491,6 +1958,15 @@
    "stone patio to the gate"
   ]
  ],
+ "gate_trigger_half": [
+  0.5,
+  4.0,
+  2.0
+ ],
+ "corridor": [
+  60.0,
+  8.0
+ ],
  "kits": {
   "KayKitPrototypeBits": [
    "KayKit Prototype Bits 1.0",
@@ -5512,20 +1988,6 @@
    "https://kenney.nl/assets/nature-kit",
    "CC0 1.0",
    false
-  ],
-  "TTAProps": [
-   "Backyard props",
-   "Take Two: Afterlife team",
-   "models/build_backyard_props.py",
-   "own work",
-   true
-  ],
-  "TTACourse": [
-   "Course kit",
-   "Take Two: Afterlife team",
-   "models/build_course_kit.py",
-   "own work",
-   true
   ]
  },
  "meshes": {
@@ -5534,38 +1996,25 @@
    "Box_A",
    "Box_B",
    "Coin_A",
+   "Floor_Dirt",
    "Pallet_Small",
+   "Primitive_Doorway",
    "Primitive_Floor",
    "table_medium"
   ],
   "KenneyCitySuburban": [
    "building-type-a",
-   "building-type-b",
    "building-type-c",
-   "building-type-d",
-   "building-type-e",
-   "building-type-f",
    "fence",
    "planter",
    "tree-large",
    "tree-small"
-  ],
-  "TTAProps": [
-   "SM_Backyard_Gnome",
-   "SM_Backyard_Grill",
-   "SM_Backyard_KiddiePool",
-   "SM_Backyard_PicnicTable",
-   "SM_Backyard_Shed",
-   "SM_Backyard_Trampoline"
   ],
   "KenneyNature": [
    "flower_redA",
    "flower_yellowA",
    "plant_bushLarge",
    "rock_smallA"
-  ],
-  "TTACourse": [
-   "SM_Course_GateFinish"
   ]
  }
 }

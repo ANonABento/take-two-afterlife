@@ -5,21 +5,19 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import backyard_layout as L  # noqa: E402
 
+THIRDPARTY = L.REPO / "Content" / "ThirdParty"
+
+
 def listing():
-    return {kit: [p.stem for p in L.kit_content_dir(kit).rglob("*.uasset")] for kit in L.KITS}
+    return {kit: [p.stem for p in (THIRDPARTY / kit).rglob("*.uasset")] for kit in L.KITS}
 
 
 class KitResolveTests(unittest.TestCase):
     def test_every_layout_mesh_is_in_thirdparty(self):
         found, misses = L.resolve_all(listing())
         report = "\n".join(f"{k}/{m} -> closest {c}" for k, m, c in misses)
-        self.assertEqual(misses, [], f"layout meshes missing from their kit folder under Content/:\n{report}")
+        self.assertEqual(misses, [], f"layout meshes missing from Content/ThirdParty:\n{report}")
         self.assertEqual(len(found), sum(len(v) for v in L.meshes_by_kit().values()))
-
-    def test_own_kits_resolve_outside_thirdparty(self):
-        self.assertEqual(L.kit_root("KenneyNature"), "/Game/ThirdParty/KenneyNature")
-        self.assertEqual(L.kit_root("TTAProps"), "/Game/Art/Props")
-        self.assertTrue((L.kit_content_dir("TTACourse") / "SM_Course_GateFinish.uasset").is_file())
 
     def test_dash_and_case_match(self):
         self.assertEqual(L.resolve("building-type-a", ["Building_Type_A", "fence"]), "Building_Type_A")

@@ -71,22 +71,15 @@ def swap(folders):
                 continue
             slots = asset.get_editor_property(prop)
             changed = 0
-            for index, slot in enumerate(slots):
+            for slot in slots:
                 old = slot.get_editor_property("material_interface")
                 if old is None or is_toon(old):
                     continue
-                new = toon_instance(old, toon)
-                if prop == "static_materials":
-                    # Writing the static_materials array back did not stick (every run "swapped" the same
-                    # slots again and the meshes on disk kept their kit materials). set_material does.
-                    asset.set_material(index, new)
-                else:
-                    slot.set_editor_property("material_interface", new)
+                slot.set_editor_property("material_interface", toon_instance(old, toon))
                 changed += 1
             if changed:
-                if prop != "static_materials":
-                    asset.set_editor_property(prop, slots)
-                EAL.save_loaded_asset(asset, only_if_is_dirty=False)
+                asset.set_editor_property(prop, slots)
+                EAL.save_loaded_asset(asset)
                 swapped += changed
     unreal.log(f"swapped {swapped} material slots to M_TTA_Toon instances")
 
