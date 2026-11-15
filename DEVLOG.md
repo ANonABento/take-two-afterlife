@@ -267,3 +267,12 @@ Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prom
 & "C:\Program Files\Epic Games\UE_5.5\Engine\Build\BatchFiles\Build.bat" TakeTwoAfterlifeEditor Win64 Development -Project="$PWD\TakeTwoAfterlife.uproject" -WaitMutex -NoHotReload
 ```
 It should end with `Result: Succeeded`. If not, paste the first `error C` lines.
+
+## C2487 in TTAUIStyle.h (UE 5.5)
+- Cause: `static constexpr int32 kH1 = 120, kH2 = 64, ...;` declared several static members in one statement inside the exported `UTTAUIStyle`; MSVC reports C2487 on every name after the first (kH2, kTimer, kBody, kSmall, kOutline, kCardPadding). No member had its own API macro and there were no .cpp definitions to delete.
+- Fix: one `static constexpr` per line, values unchanged. `Scripts/tests/test_exported_members.py` checks every `TAKETWOAFTERLIFE_API` class/struct in Source/ for per-member API macros and comma-listed static members.
+- Confirm on your PC (PowerShell, repo root):
+
+```powershell
+& "C:\Program Files\Epic Games\UE_5.5\Engine\Build\BatchFiles\Build.bat" TakeTwoAfterlifeEditor Win64 Development -Project="$PWD\TakeTwoAfterlife.uproject" -WaitMutex -NoHotReload
+```
