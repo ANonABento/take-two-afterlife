@@ -13,7 +13,7 @@ public class TakeTwoAfterlife : ModuleRules
         PublicIncludePaths.Add(Path.Combine(Root, "Core", "include"));
         PrivateIncludePaths.Add(Root);
 
-        PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "DeveloperSettings", "AIModule" });
-        PrivateDependencyModuleNames.AddRange(new string[] { "OnlineSubsystem", "OnlineSubsystemUtils", "NetCore", "Voice", "UMG", "Slate", "SlateCore" });
+        PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "DeveloperSettings", "AIModule", "NavigationSystem", "GameplayTasks", "UMG", "Slate", "SlateCore", "EnhancedInput" });
+        PrivateDependencyModuleNames.AddRange(new string[] { "OnlineSubsystem", "OnlineSubsystemUtils", "NetCore", "Voice" });
     }
 }

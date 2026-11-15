@@ -4,9 +4,10 @@ from collections import namedtuple
 import toon_spec
 
 # role: floor (walkable, blocks), marker (flat route sign on the floor, no collision), dressing (outside the
-# corridor), gate (finish arch, no collision). fit: ("box", (x, y, z)) scales each axis to that size;
+# corridor), shortcut (flat stepping stone of an alternate branch, inside the corridor, no collision), gate
+# (finish arch, no collision). fit: ("box", (x, y, z)) scales each axis to that size;
 # ("height", h) scales uniformly to that height. Position = bottom-centre of the fitted mesh.
-ROLES = ("floor", "marker", "dressing", "gate")
+ROLES = ("floor", "marker", "shortcut", "dressing", "gate")
 Prop = namedtuple("Prop", "kit mesh role x y z yaw palette fit")
 Point = namedtuple("Point", "x y z")
 Box = namedtuple("Box", "min_x max_x min_y max_y min_z max_z")

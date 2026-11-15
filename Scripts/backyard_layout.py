@@ -66,6 +66,33 @@ def _markers():
             for x in range(4, int(CORRIDOR_LENGTH) - 3, 4)]
 
 
+# Alternate branches: (leave marker x, rejoin marker x, side). Each bows out to |y| = 2.5 and back.
+SHORTCUTS = ((16, 24, 1), (40, 48, -1))
+
+
+def _shortcuts():
+    """Flat stones (no TTARoute tag) for two optional side branches between route markers."""
+    props = []
+    for x0, x1, side in SHORTCUTS:
+        for dx, y in ((1.5, 1.5), (3.0, 2.5), (5.0, 2.5), (6.5, 1.5)):
+            props.append(Prop("KayKitPrototypeBits", "Coin_A", "shortcut", x0 + dx, side * y, 0.0, 0, "Sky",
+                              ("box", (0.6, 0.6, 0.03))))
+        assert x0 + 6.5 < x1
+    return props
+
+
+def _route_dressing(edge):
+    """Garden clutter lining the route on the inner lawn strip, using meshes the layout already resolves."""
+    pieces = ((9, 1, "KenneyNature", "rock_smallA", "Ink", 0.4), (13, -1, "KayKitPrototypeBits", "Barrel_A", "Blue", 0.8),
+              (20, 1, "KayKitPrototypeBits", "Box_A", "Red", 0.8), (25, -1, "KenneyNature", "flower_redA", "Pink", 0.5),
+              (31, -1, "KenneyNature", "plant_bushLarge", "Teal", 1.0), (37, 1, "KayKitPrototypeBits", "Box_B", "Purple", 0.8),
+              (42, 1, "KenneyNature", "flower_yellowA", "Yellow", 0.5), (46, -1, "KenneyNature", "rock_smallA", "Ink", 0.4),
+              (54, 1, "KayKitPrototypeBits", "Pallet_Small", "Wood", 0.8),
+              (57, -1, "KayKitPrototypeBits", "Barrel_A", "Orange", 0.8))
+    return [Prop(kit, mesh, "dressing", x, side * (edge + 2.5), 0.0, 0, colour, ("height", h))
+            for x, side, kit, mesh, colour, h in pieces]
+
+
 def _dressing():
     edge = HALF_WIDTH + DITCH                     # inner edge of each side lawn
     far = edge + LAWN_WIDTH
@@ -101,7 +128,7 @@ def _dressing():
                       "Sky", ("height", 7.0)))
     props.append(Prop("KenneyCitySuburban", "building-type-c", "dressing", -7.0, 0.0, 0.0, 0, "Orange",
                       ("height", 7.0)))
-    return props
+    return props + _route_dressing(edge)
 
 
 def _gate():
@@ -110,7 +137,7 @@ def _gate():
 
 
 def props():
-    return _floor() + _markers() + _dressing() + _gate()
+    return _floor() + _markers() + _shortcuts() + _dressing() + _gate()
 
 
 def downloads_dir(args):

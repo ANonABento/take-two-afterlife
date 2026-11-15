@@ -4,6 +4,7 @@
 #include "GameFramework/Actor.h"
 #include "tta/Placement.h"
 #include "tta/TrapTimeline.h"
+#include "Engine/HitResult.h"
 #include "TTATrapActor.generated.h"
 
 class ATTARunnerPawn;

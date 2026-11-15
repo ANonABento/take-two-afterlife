@@ -1,36 +1,153 @@
 #include "TTABuildHUD.h"
 
-#include "Engine/Engine.h"
+#include "Engine/Canvas.h"
+#include "Engine/Font.h"
+#include "Engine/Texture2D.h"
+#include "EngineUtils.h"
 #include "TTABuildPawn.h"
+#include "TTACinema.h"
 #include "TTAGameState.h"
+#include "TTAPlayerState.h"
+#include "TTAPodiumWidget.h"
+#include "TTAResultsWidget.h"
+#include "TTAUIStyle.h"
+#include "tta/MenuFlow.h"
+#include "GameFramework/PlayerController.h"
+
+namespace
+{
+constexpr float kDesignW = 1920.f, kBarH = 120.f, kLineH = 40.f, kPad = 20.f, kPanelOpacity = 0.85f;
+constexpr int32 kTimerWarnSeconds = 10;
+}
+
+float ATTABuildHUD::UiScale() const
+{
+	return Canvas->ClipY / UTTAUIStyle::kDesignHeight;
+}
+
+void ATTABuildHUD::DrawCard(float X, float Y, float W, float H, int32 Fill)
+{
+	const float S = UiScale();
+	const float O = UTTAUIStyle::kOutline;
+	DrawRect(UTTAUIStyle::Colour(tta::kInk), X * S, Y * S, W * S, H * S);
+	if (UTexture2D* Image = UTTAUIStyle::Get().LoadBackground(ETTAUIScreen::HUD))
+	{
+		DrawTexture(Image, (X + O) * S, (Y + O) * S, (W - 2 * O) * S, (H - 2 * O) * S, 0.f, 0.f, 1.f, 1.f);
+		return;
+	}
+	DrawRect(UTTAUIStyle::Colour(Fill).CopyWithNewOpacity(kPanelOpacity), (X + O) * S, (Y + O) * S, (W - 2 * O) * S, (H - 2 * O) * S);
+}
+
+float ATTABuildHUD::MeasureText(const FString& Text, int32 Size, bool bDisplay)
+{
+	UFont* Font = bDisplay ? DisplayFont : BodyFont;
+	float W = 0.f, H = 0.f;
+	GetTextSize(Text, W, H, Font, static_cast<float>(Size) / Font->GetMaxCharHeight());
+	return W;
+}
+
+float ATTABuildHUD::DrawStyledText(const FString& Text, int32 Colour, float X, float Y, int32 Size, bool bDisplay)
+{
+	UFont* Font = bDisplay ? DisplayFont : BodyFont;
+	const float S = UiScale();
+	DrawText(Text, UTTAUIStyle::Colour(Colour), X * S, Y * S, Font, S * Size / Font->GetMaxCharHeight());
+	return MeasureText(Text, Size, bDisplay);
+}
+
+void ATTABuildHUD::ShowResults()
+{
+	APlayerController* PC = GetOwningPlayerController();
+	const ATTAGameState* State = GetWorld()->GetGameState<ATTAGameState>();
+	if (!PC || !State) return;
+	if (!Results)
+	{
+		TArray<FTTAResultRow> Rows;
+		for (const APlayerState* PS : State->PlayerArray)
+		{
+			const ATTAPlayerState* TTA = Cast<ATTAPlayerState>(PS);
+			Rows.Add({PS->GetPlayerName(), FMath::RoundToInt(PS->GetScore()),
+				TTA ? tta::kPlayerColours[TTA->GetLook().colour] : static_cast<int32>(tta::kBone)});
+		}
+		Results = CreateWidget<UTTAResultsWidget>(PC, UTTAResultsWidget::StaticClass());
+		Results->SetRows(MoveTemp(Rows));
+		Results->AddToViewport();
+	}
+	if (!PodiumWidget)
+	{
+		for (TActorIterator<ATTACinema> It(GetWorld()); It; ++It)
+		{
+			if (It->GetPodium().IsEmpty()) continue;
+			PodiumWidget = CreateWidget<UTTAPodiumWidget>(PC, UTTAPodiumWidget::StaticClass());
+			PodiumWidget->SetPodium(It->GetPodium());
+			PodiumWidget->AddToViewport(1);
+			break;
+		}
+	}
+}
 
 void ATTABuildHUD::DrawHUD()
 {
 	Super::DrawHUD();
-	if (const ATTAGameState* State = GetWorld()->GetGameState<ATTAGameState>(); State && State->GetPhase() == ETTAPhase::Run)
+	if (!DisplayFont) DisplayFont = UTTAUIStyle::Get().LoadCanvasFont(true);
+	if (!BodyFont) BodyFont = UTTAUIStyle::Get().LoadCanvasFont(false);
+	const FMargin& Safe = UTTAUIStyle::Get().SafeArea;
+	const float Left = Safe.Left, Right = kDesignW - Safe.Right, Top = Safe.Top;
+
+	const ATTAGameState* State = GetWorld()->GetGameState<ATTAGameState>();
+	if (!State) return;
+	const ETTAPhase Phase = State->GetPhase();
+	if (Phase == ETTAPhase::Podium)
 	{
-		const int32 Left = State->GetSecondsLeft();
-		DrawText(FString::Printf(TEXT("%d:%02d"), Left / 60, Left % 60), Left <= 10 ? FLinearColor::Red : FLinearColor::White, 40.f, 40.f, GEngine->GetLargeFont(), 2.f);
-		DrawText(TEXT("[RMB] hold to film"), FLinearColor::White, 40.f, 100.f, GEngine->GetLargeFont());
+		ShowResults();
+		return;
 	}
+
+	// Phase + round, top left.
+	const FString PhaseName = UEnum::GetDisplayValueAsText(Phase).ToString().ToUpper();
+	const FString RoundText = FString::Printf(TEXT("ROUND %d"), State->GetRound());
+	const float PhaseW = FMath::Max(MeasureText(PhaseName, UTTAUIStyle::kH2, true), MeasureText(RoundText, UTTAUIStyle::kSmall, false));
+	DrawCard(Left, Top, PhaseW + 2 * kPad, kBarH, tta::kPurple);
+	DrawStyledText(PhaseName, tta::kBone, Left + kPad, Top + kPad * 0.5f, UTTAUIStyle::kH2, true);
+	DrawStyledText(RoundText, tta::kBone, Left + kPad, Top + kBarH - kPad - UTTAUIStyle::kSmall, UTTAUIStyle::kSmall, false);
+
+	// Timer, top centre.
+	const int32 SecondsLeft = State->GetSecondsLeft();
+	const FString Timer = FString::Printf(TEXT("%d:%02d"), SecondsLeft / 60, SecondsLeft % 60);
+	const float TimerW = MeasureText(Timer, UTTAUIStyle::kTimer, true) + 2 * kPad;
+	const float TimerX = (kDesignW - TimerW) * 0.5f;
+	DrawCard(TimerX, Top, TimerW, kBarH, SecondsLeft <= kTimerWarnSeconds ? tta::kRed : tta::kInk);
+	DrawStyledText(Timer, tta::kBone, TimerX + kPad, Top, UTTAUIStyle::kTimer, true);
+
+	float Y = Top + kBarH + kPad;
+	if (Phase == ETTAPhase::Run)
+	{
+		DrawStyledText(TEXT("[RMB] hold to film"), tta::kBone, Left, Y, UTTAUIStyle::kSmall, false);
+	}
+
 	const ATTABuildPawn* Pawn = Cast<ATTABuildPawn>(GetOwningPawn());
 	if (!Pawn) return;
-
 	const int32 Me = ATTAPlacementMarker::PlayerIdOf(Pawn);
 	const tta::Layout Own = Pawn->OwnLayout();
-	TArray<TPair<FString, FLinearColor>> Lines;
-	Lines.Emplace(FString::Printf(TEXT("BUDGET %d / %d"), Own.remaining(Me), tta::kBudget), FLinearColor::White);
+
+	// Budget, top right.
+	const FString Budget = FString::Printf(TEXT("$%d / %d"), Own.remaining(Me), tta::kBudget);
+	const float BudgetW = MeasureText(Budget, UTTAUIStyle::kH2, true) + 2 * kPad;
+	DrawCard(Right - BudgetW, Top, BudgetW, kBarH, Own.remaining(Me) > 0 ? tta::kGrass : tta::kRed);
+	DrawStyledText(TEXT("BUDGET"), tta::kBone, Right - BudgetW + kPad, Top + kBarH - kPad - UTTAUIStyle::kSmall, UTTAUIStyle::kSmall, false);
+	DrawStyledText(Budget, tta::kBone, Right - BudgetW + kPad, Top + kPad * 0.5f, UTTAUIStyle::kH2, true);
+
+	TArray<TPair<FString, int32>> Lines;
 	Lines.Emplace(FString::Printf(TEXT("CAMERAS %d / %d   fixed %d  pan %d  follow %d  trap-cam %d"), Own.cameraCount(Me), tta::kCameraCap,
 		Own.cameraCount(Me, tta::CameraType::Fixed), Own.cameraCount(Me, tta::CameraType::Pan),
-		Own.cameraCount(Me, tta::CameraType::Follow), Own.cameraCount(Me, tta::CameraType::TrapCam)), FLinearColor::White);
+		Own.cameraCount(Me, tta::CameraType::Follow), Own.cameraCount(Me, tta::CameraType::TrapCam)), tta::kBone);
 	const bool bGhostOk = Pawn->GetGhostOutcome() == ETTAPlaceOutcome::Ok;
 	Lines.Emplace(FString::Printf(TEXT("%s   [wheel] item  [R] rotate  [LMB] place  [RMB] remove  [F] select"),
-		*TTABuildItem::Label(Pawn->GetSelectedItem())), FLinearColor::White);
+		*TTABuildItem::Label(Pawn->GetSelectedItem())), tta::kBone);
 	Lines.Emplace(bGhostOk ? FString(TEXT("Can place here")) : UEnum::GetDisplayValueAsText(Pawn->GetGhostOutcome()).ToString(),
-		bGhostOk ? FLinearColor::Green : FLinearColor::Red);
+		bGhostOk ? tta::kGrass : tta::kRed);
 	if (Pawn->GetLastServerOutcome() != ETTAPlaceOutcome::Ok)
 	{
-		Lines.Emplace(FString::Printf(TEXT("Rejected: %s"), *UEnum::GetDisplayValueAsText(Pawn->GetLastServerOutcome()).ToString()), FLinearColor::Red);
+		Lines.Emplace(FString::Printf(TEXT("Rejected: %s"), *UEnum::GetDisplayValueAsText(Pawn->GetLastServerOutcome()).ToString()), tta::kRed);
 	}
 	if (const ATTAPlacementMarker* Selected = Pawn->FindMarker(Pawn->GetSelectedPlacement()))
 	{
@@ -39,20 +156,23 @@ void ATTABuildHUD::DrawHUD()
 		{
 			const tta::TrapSpec& Spec = tta::trapSpec(P.trap);
 			const TCHAR* Keys[] = {TEXT("[1]-  [2]+"), TEXT("[3]-  [4]+")};
-			Lines.Emplace(FString::Printf(TEXT("SELECTED %s #%d"), UTF8_TO_TCHAR(Spec.name), P.id), FLinearColor::Yellow);
+			Lines.Emplace(FString::Printf(TEXT("SELECTED %s #%d"), UTF8_TO_TCHAR(Spec.name), P.id), tta::kYellow);
 			for (int32 i = 0; i < 2; ++i)
 			{
-				const tta::SettingSpec& S = Spec.settings[static_cast<size_t>(i)];
-				Lines.Emplace(FString::Printf(TEXT("%s  %s: %d  (%d-%d)"), Keys[i], UTF8_TO_TCHAR(S.name),
-					P.settings[static_cast<size_t>(i)], S.min, S.max), FLinearColor::Yellow);
+				const tta::SettingSpec& Setting = Spec.settings[static_cast<size_t>(i)];
+				Lines.Emplace(FString::Printf(TEXT("%s  %s: %d  (%d-%d)"), Keys[i], UTF8_TO_TCHAR(Setting.name),
+					P.settings[static_cast<size_t>(i)], Setting.min, Setting.max), tta::kYellow);
 			}
 		}
 	}
 
-	float Y = 40.f;
-	for (const TPair<FString, FLinearColor>& Line : Lines)
+	float PanelW = 0.f;
+	for (const TPair<FString, int32>& Line : Lines) PanelW = FMath::Max(PanelW, MeasureText(Line.Key, UTTAUIStyle::kSmall, false));
+	DrawCard(Left, Y, PanelW + 2 * kPad, Lines.Num() * kLineH + 2 * kPad - (kLineH - UTTAUIStyle::kSmall), tta::kInk);
+	Y += kPad;
+	for (const TPair<FString, int32>& Line : Lines)
 	{
-		DrawText(Line.Key, Line.Value, 40.f, Y, GEngine->GetLargeFont());
-		Y += 30.f;
+		DrawStyledText(Line.Key, Line.Value, Left + kPad, Y, UTTAUIStyle::kSmall, false);
+		Y += kLineH;
 	}
 }

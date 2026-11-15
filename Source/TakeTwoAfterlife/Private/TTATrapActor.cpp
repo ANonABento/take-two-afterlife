@@ -9,6 +9,7 @@
 #include "TTARunnerPawn.h"
 
 #include <stdexcept>
+#include "Engine/HitResult.h"
 
 namespace
 {
