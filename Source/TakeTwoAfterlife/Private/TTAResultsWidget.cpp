@@ -7,7 +7,9 @@
 #include "Components/Overlay.h"
 #include "Components/OverlaySlot.h"
 #include "Components/SizeBox.h"
+#include "Components/TextBlock.h"
 #include "Components/VerticalBox.h"
+#include "Components/VerticalBoxSlot.h"
 #include "TTAUIStyle.h"
 #include "tta/MenuFlow.h"
 
@@ -24,7 +26,7 @@ void UTTAResultsWidget::NativeOnInitialized()
 	UOverlay* Root = WidgetTree->ConstructWidget<UOverlay>();
 	WidgetTree->RootWidget = Root;
 	UBorder* Background = WidgetTree->ConstructWidget<UBorder>();
-	Style.ApplyBackground(Background, ETTAUIScreen::Results, tta::kPurple, kBackgroundOpacity);
+	Style.ApplyBackground(Background, ETTAUIScreen::Results, tta::kSky, kBackgroundOpacity);
 	UOverlaySlot* BackgroundSlot = Root->AddChildToOverlay(Background);
 	BackgroundSlot->SetHorizontalAlignment(HAlign_Fill);
 	BackgroundSlot->SetVerticalAlignment(VAlign_Fill);
@@ -35,9 +37,12 @@ void UTTAResultsWidget::NativeOnInitialized()
 	ColumnSlot->SetPadding(Style.SafeArea);
 	ColumnSlot->SetHorizontalAlignment(HAlign_Center);
 	ColumnSlot->SetVerticalAlignment(VAlign_Center);
+	UBorder* Panel = UTTAUIStyle::MakePanel(WidgetTree, ETTAPanelKind::Panel);
+	Column->SetContent(Panel);
 	UVerticalBox* Box = WidgetTree->ConstructWidget<UVerticalBox>();
-	Column->SetContent(Box);
-	UTTAUIStyle::AddLabel(WidgetTree, Box, TEXT("RESULTS"), UTTAUIStyle::kH1, true, tta::kBone);
+	Panel->SetContent(Box);
+	Box->AddChildToVerticalBox(UTTAUIStyle::MakeLabel(WidgetTree, NSLOCTEXT("TTA", "ResultsTitle", "RESULTS"), ETTAFont::H1))
+		->SetPadding(UTTAUIStyle::PadAfter(Orient_Vertical, UTTAUIStyle::Space(3)));
 	List = WidgetTree->ConstructWidget<UVerticalBox>();
 	Box->AddChild(List);
 }
@@ -49,17 +54,19 @@ void UTTAResultsWidget::SetRows(TArray<FTTAResultRow> Rows)
 	List->ClearChildren();
 	for (int32 i = 0; i < Rows.Num(); ++i)
 	{
-		UBorder* Card = UTTAUIStyle::AddCard(WidgetTree, List, tta::kBone);
 		UHorizontalBox* Line = WidgetTree->ConstructWidget<UHorizontalBox>();
-		Card->SetContent(Line);
-		UTTAUIStyle::AddLabel(WidgetTree, Line, FString::Printf(TEXT("%d."), i + 1), UTTAUIStyle::kH2, true, Rows[i].Colour);
-		UTTAUIStyle::AddLabel(WidgetTree, Line, Rows[i].Name, UTTAUIStyle::kBody, false, tta::kInk);
-		UTTAUIStyle::AddLabel(WidgetTree, Line, FString::Printf(TEXT("%d pts"), Rows[i].Points), UTTAUIStyle::kH2, true, tta::kInk);
+		List->AddChildToVerticalBox(Line)->SetPadding(UTTAUIStyle::PadAfter(Orient_Vertical, UTTAUIStyle::Space(2)));
+		// FTTAResultRow::Colour is a palette index, which is also the ETTAColor value.
+		Line->AddChild(UTTAUIStyle::MakeLabel(WidgetTree, FText::Format(NSLOCTEXT("TTA", "ResultsRank", "{0}."), FText::AsNumber(i + 1)),
+			ETTAFont::H2, static_cast<ETTAColor>(Rows[i].Colour)));
+		Line->AddChild(UTTAUIStyle::MakeLabel(WidgetTree, FText::FromString(Rows[i].Name), ETTAFont::Body));
+		Line->AddChild(UTTAUIStyle::MakeLabel(WidgetTree,
+			FText::Format(NSLOCTEXT("TTA", "ResultsPoints", "{0} pts"), FText::AsNumber(Rows[i].Points)), ETTAFont::H2));
 		for (UPanelSlot* Cell : Line->GetSlots())
 		{
 			UHorizontalBoxSlot* H = CastChecked<UHorizontalBoxSlot>(Cell);
 			H->SetVerticalAlignment(VAlign_Center);
-			H->SetPadding(UTTAUIStyle::PadAfter(Orient_Horizontal, UTTAUIStyle::kCardPadding));
+			H->SetPadding(UTTAUIStyle::PadAfter(Orient_Horizontal, UTTAUIStyle::Space(4)));
 		}
 		CastChecked<UHorizontalBoxSlot>(Line->GetSlots()[1])->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
 	}

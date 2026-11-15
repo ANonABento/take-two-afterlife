@@ -7,16 +7,17 @@
 #include "Components/Overlay.h"
 #include "Components/OverlaySlot.h"
 #include "Components/SizeBox.h"
+#include "Components/TextBlock.h"
 #include "Components/VerticalBox.h"
+#include "Components/VerticalBoxSlot.h"
 #include "TTAUIStyle.h"
 #include "tta/MenuFlow.h"
 
 namespace
 {
 constexpr float kStepW = 300.f, kBackgroundOpacity = 0.6f;
-// Place (0 = winner) -> block height and fill. Shown left to right as 2nd, 1st, 3rd.
+// Place (0 = winner) -> block height. Shown left to right as 2nd, 1st, 3rd.
 constexpr float kStepH[] = {420.f, 300.f, 220.f};
-constexpr int32 kStepFill[] = {tta::kYellow, tta::kSky, tta::kOrange};
 constexpr int32 kShowOrder[] = {1, 0, 2};
 }
 
@@ -28,19 +29,22 @@ void UTTAPodiumWidget::NativeOnInitialized()
 	UOverlay* Root = WidgetTree->ConstructWidget<UOverlay>();
 	WidgetTree->RootWidget = Root;
 	UBorder* Background = WidgetTree->ConstructWidget<UBorder>();
-	Style.ApplyBackground(Background, ETTAUIScreen::Podium, tta::kInk, kBackgroundOpacity);
+	Style.ApplyBackground(Background, ETTAUIScreen::Podium, tta::kSky, kBackgroundOpacity);
 	UOverlaySlot* BackgroundSlot = Root->AddChildToOverlay(Background);
 	BackgroundSlot->SetHorizontalAlignment(HAlign_Fill);
 	BackgroundSlot->SetVerticalAlignment(VAlign_Fill);
 
-	UVerticalBox* Box = WidgetTree->ConstructWidget<UVerticalBox>();
-	UOverlaySlot* BoxSlot = Root->AddChildToOverlay(Box);
-	BoxSlot->SetPadding(Style.SafeArea);
-	BoxSlot->SetHorizontalAlignment(HAlign_Center);
-	BoxSlot->SetVerticalAlignment(VAlign_Bottom);
-	UTTAUIStyle::AddLabel(WidgetTree, Box, TEXT("AND THE WINNER IS..."), UTTAUIStyle::kH2, true, tta::kBone);
+	UBorder* Banner = UTTAUIStyle::MakeBanner(WidgetTree, NSLOCTEXT("TTA", "PodiumBanner", "AND THE WINNER IS..."));
+	UOverlaySlot* BannerSlot = Root->AddChildToOverlay(Banner);
+	BannerSlot->SetPadding(Style.SafeArea);
+	BannerSlot->SetHorizontalAlignment(HAlign_Center);
+	BannerSlot->SetVerticalAlignment(VAlign_Top);
+
 	Steps = WidgetTree->ConstructWidget<UHorizontalBox>();
-	Box->AddChild(Steps);
+	UOverlaySlot* StepsSlot = Root->AddChildToOverlay(Steps);
+	StepsSlot->SetPadding(Style.SafeArea);
+	StepsSlot->SetHorizontalAlignment(HAlign_Center);
+	StepsSlot->SetVerticalAlignment(VAlign_Bottom);
 }
 
 void UTTAPodiumWidget::SetPodium(const TArray<int32>& PlayerIds)
@@ -53,14 +57,18 @@ void UTTAPodiumWidget::SetPodium(const TArray<int32>& PlayerIds)
 		USizeBox* Size = WidgetTree->ConstructWidget<USizeBox>();
 		Size->SetWidthOverride(kStepW);
 		Size->SetHeightOverride(kStepH[Place]);
-		UHorizontalBoxSlot* Cell = CastChecked<UHorizontalBoxSlot>(Steps->AddChild(Size));
+		UHorizontalBoxSlot* Cell = Steps->AddChildToHorizontalBox(Size);
 		Cell->SetVerticalAlignment(VAlign_Bottom);
-		UVerticalBox* Stack = WidgetTree->ConstructWidget<UVerticalBox>();
-		Size->SetContent(Stack);
-		UBorder* Card = UTTAUIStyle::AddCard(WidgetTree, Stack, kStepFill[Place]);
+		Cell->SetPadding(UTTAUIStyle::PadAfter(Orient_Horizontal, UTTAUIStyle::Space(3)));
+		UBorder* Block = UTTAUIStyle::MakePanel(WidgetTree, ETTAPanelKind::Panel);
+		Size->SetContent(Block);
 		UVerticalBox* Text = WidgetTree->ConstructWidget<UVerticalBox>();
-		Card->SetContent(Text);
-		UTTAUIStyle::AddLabel(WidgetTree, Text, FString::Printf(TEXT("%d"), Place + 1), UTTAUIStyle::kH1, true, tta::kBone);
-		UTTAUIStyle::AddLabel(WidgetTree, Text, FString::Printf(TEXT("Player %d"), PlayerIds[Place]), UTTAUIStyle::kBody, false, tta::kInk);
+		Block->SetContent(Text);
+		const ETTAColor RankColour = Place == 0 ? ETTAColor::Yellow : ETTAColor::Ink;
+		Text->AddChildToVerticalBox(UTTAUIStyle::MakeLabel(WidgetTree, FText::AsNumber(Place + 1), ETTAFont::H1, RankColour))
+			->SetHorizontalAlignment(HAlign_Center);
+		Text->AddChildToVerticalBox(UTTAUIStyle::MakeLabel(WidgetTree,
+			FText::Format(NSLOCTEXT("TTA", "PodiumPlayer", "Player {0}"), FText::AsNumber(PlayerIds[Place])), ETTAFont::Body))
+			->SetHorizontalAlignment(HAlign_Center);
 	}
 }
