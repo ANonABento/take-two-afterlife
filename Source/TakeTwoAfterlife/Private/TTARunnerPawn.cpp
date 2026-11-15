@@ -35,6 +35,7 @@ ATTARunnerPawn::ATTARunnerPawn()
 {
 	PrimaryActorTick.bCanEverTick = true;
     GetCapsuleComponent()->InitCapsuleSize(22.f, 50.f); // 1 m angel
+    GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, -51.65f));
 	Wings = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Wings"));
 	Wings->SetupAttachment(GetMesh());
 	Halo = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Halo"));
