@@ -4,6 +4,7 @@ Units are metres, +X runs from start to gate, +Z is up, the corridor floor top i
 Built on Scripts/maplib (grid, roles, kill plane, credits, validate); this file keeps only the Backyard itself.
 Scripts/build_backyard_map.py places this in UE; `make test` checks it (bounds, clear route, credits).
 """
+import difflib
 from pathlib import Path
 
 import maplib
@@ -12,6 +13,8 @@ from maplib import WORLD_KILL_Z, Box, Kit, Point, Prop, footprint, palette_index
 REPO = maplib.REPO
 MAP_PATH = "/Game/Maps/Backyard"
 IMPORT_ROOT = "/Game/Imported"
+THIRDPARTY_ROOT = "/Game/ThirdParty"         # kits imported as uassets (Content/ThirdParty/<kit>)
+MISS_REPORT = REPO / "Saved" / "backyard_miss_report.txt"
 
 CORRIDOR_LENGTH, CORRIDOR_WIDTH = maplib.corridor()
 HALF_WIDTH = CORRIDOR_WIDTH / 2
@@ -138,3 +141,44 @@ def validate():
 def credits_missing(credits_text):
     """(kit, mesh) pairs and kit URLs that CREDITS.md does not list."""
     return maplib.credits_missing(props(), KITS, credits_text)
+
+
+def norm_name(name):
+    """Asset-name key: lowercase, "-" and "_" are the same (layout `building-type-a` == asset `building_type_a`)."""
+    return name.lower().replace("-", "_")
+
+
+def resolve(mesh, asset_names):
+    """The asset name in `asset_names` matching layout mesh `mesh`, or None."""
+    by_key = {norm_name(a): a for a in asset_names}
+    return by_key.get(norm_name(mesh))
+
+
+def closest(mesh, asset_names):
+    """Nearest asset name by normalised spelling, or None when the kit folder is empty."""
+    by_key = {norm_name(a): a for a in asset_names}
+    hit = difflib.get_close_matches(norm_name(mesh), list(by_key), n=1, cutoff=0.0)
+    return by_key[hit[0]] if hit else None
+
+
+def resolve_all(listing):
+    """listing: {kit: [asset names in /Game/ThirdParty/<kit>]}.
+
+    Returns ({(kit, mesh): asset name}, [(kit, mesh, closest asset name or None)]) for every layout mesh.
+    """
+    found, misses = {}, []
+    for kit, names in meshes_by_kit().items():
+        assets = listing.get(kit, [])
+        for name in names:
+            hit = resolve(name, assets)
+            if hit is None:
+                misses.append((kit, name, closest(name, assets)))
+            else:
+                found[(kit, name)] = hit
+    return found, misses
+
+
+def miss_report(misses):
+    """Text for MISS_REPORT: one line per (kit, mesh, source) that fell back past ThirdParty."""
+    lines = [f"{kit}/{mesh}: {how}" for kit, mesh, how in misses]
+    return "\n".join(lines or ["no misses"]) + "\n"
