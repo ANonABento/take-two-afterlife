@@ -426,3 +426,8 @@ Scored 1-5 by judges on: ambition/innovation, theme, fun, gameplay, visuals, lev
 - Done: the header never had per-member `TAKETWOAFTERLIFE_API` and had no .cpp definitions; the errors were the comma-listed `static constexpr` declarators (every name after the first). Split to one per line, values unchanged. New `Scripts/tests/test_exported_members.py` (no member API macro, no comma-listed static members in any exported class/struct in Source/). DEVLOG has the Build.bat command.
 - Left: run Build.bat on the user's PC (MSVC not available here).
 - Surprises: the other non-class `TAKETWOAFTERLIFE_API` uses are free functions in namespaces (TTAReels.h, TTAPlacementMarker.h), which is valid; no other header has the pattern.
+
+### Task 7 handoff: apply_world_look.py on UE 5.5
+- Done: dropped `KismetMaterialLibrary`/`EditorLevelLibrary`; Course preset now written into `MPC_TTA_World` defaults and saved (`write_mpc_defaults`); editor world via `UnrealEditorSubsystem`; outline volume still placed in all three `LOOK_MAPS`. `Scripts/tests/test_world_look_ue55.py`. DEVLOG has the run / restart / check steps.
+- Left: run it in the UE 5.5 editor on the user's PC (no Unreal here).
+- Surprises: no other Scripts/ file used Kismet*/EditorLevelLibrary. One MPC asset can only hold one default set, so Heaven's values can't be baked into it; Heaven relies on the runtime `ApplyWorldLook` (C++ `UKismetMaterialLibrary` there is fine, it's only missing from Python).
