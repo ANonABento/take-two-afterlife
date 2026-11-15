@@ -40,9 +40,8 @@ void UTTAResultsWidget::NativeOnInitialized()
 	UBorder* Panel = UTTAUIStyle::MakePanel(WidgetTree, ETTAPanelKind::Panel);
 	Column->SetContent(Panel);
 	UVerticalBox* Box = WidgetTree->ConstructWidget<UVerticalBox>();
-	Panel->SetContent(Box);
-	Box->AddChildToVerticalBox(UTTAUIStyle::MakeLabel(WidgetTree, NSLOCTEXT("TTA", "ResultsTitle", "RESULTS"), ETTAFont::H1))
-		->SetPadding(UTTAUIStyle::PadAfter(Orient_Vertical, UTTAUIStyle::Space(3)));
+	Column->SetContent(Box);
+	Box->AddChild(UTTAUIStyle::MakeBanner(WidgetTree, FText::FromString(TEXT("RESULTS"))));
 	List = WidgetTree->ConstructWidget<UVerticalBox>();
 	Box->AddChild(List);
 }

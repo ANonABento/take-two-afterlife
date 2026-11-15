@@ -54,6 +54,18 @@ class UIStyleGuideTests(unittest.TestCase):
             const = re.search(rf"case ETTAFont::{tick(token)}: return MakeFont\([^;]*, (k\w+)\);", CPP).group(1)
             self.assertEqual(sizes[const], size, token)
 
+    def test_type_scale_equals_constants(self):
+        sizes = dict(re.findall(r"static constexpr int32 k(\w+) = (\d+);", HEADER))
+        guide = {tick(token): size for token, size, _ in section("Fonts")}
+        self.assertEqual(guide, {t: sizes[t] for t in enum("ETTAFont")})
+        self.assertEqual(guide, {"Title": "120", "H1": "96", "H2": "64", "Body": "32", "Small": "24"})
+        self.assertNotIn("kTimer", HEADER)
+
+    def test_no_second_type_table(self):
+        for doc in [*ROOT.glob("Docs/**/*.md"), *ROOT.glob("docs/**/*.md")]:
+            if doc != DOC:
+                self.assertNotRegex(doc.read_text(encoding="utf-8-sig"), r"\bH1 \d+", doc.name)
+
     def test_spacing_matches_both_ways(self):
         rows = section("Spacing")
         scale = re.search(r"kSpaceScale\[\] = \{(.*?)\};", CPP).group(1)
@@ -65,12 +77,12 @@ class UIStyleGuideTests(unittest.TestCase):
         names = [tick(r[0]) for r in rows]
         self.assertEqual(names, ["T_UI_" + n for n in enum("ETTAAsset")])
         self.assertEqual(sorted(names), sorted(p.stem for p in ART.glob("*.png")))
-        table = re.findall(r"\{ETTAAsset::(\w+), ETTAColor::(\w+), ([\d.]+)f, ([\d.]+)f\}", CPP)
-        self.assertEqual([("T_UI_" + a, c, float(x), float(y)) for a, c, x, y in table],
-                         [(tick(r[0]), r[3], float(r[1]), float(r[2])) for r in rows])
+        table = re.findall(r"\{ETTAAsset::(\w+), ETTAColor::(\w+), (true|false)\}", CPP)
+        self.assertEqual([("T_UI_" + a, c, s == "true") for a, c, s in table],
+                         [(tick(r[0]), r[2], r[1] == "yes") for r in rows])
         colours = enum("ETTAColor")
         for row in rows:
-            self.assertIn(row[3], colours, row[0])
+            self.assertIn(row[2], colours, row[0])
 
     def test_builders_and_kinds_match_both_ways(self):
         declared = re.findall(r"^\tstatic [\w*: ]+?\b(Color|Font|Space|PadAfter|Brush|Make(?!Font)\w+)\(", HEADER, re.M)

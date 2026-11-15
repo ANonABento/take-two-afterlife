@@ -65,7 +65,7 @@ class UIStyleTests(unittest.TestCase):
 
     def test_hud_shows_phase_timer_budget(self):
         hud = (SRC / "Private" / "TTABuildHUD.cpp").read_text()
-        for needle in ("GetPhase()", "GetSecondsLeft()", "Own.remaining(Me)", "kTimer", "UTTAResultsWidget", "UTTAPodiumWidget"):
+        for needle in ("GetPhase()", "GetSecondsLeft()", "Own.remaining(Me)", "UTTAUIStyle::kH1", "UTTAResultsWidget", "UTTAPodiumWidget"):
             self.assertIn(needle, hud)
 
 

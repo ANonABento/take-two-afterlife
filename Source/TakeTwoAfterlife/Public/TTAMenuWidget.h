@@ -7,6 +7,7 @@
 #include "tta/MenuFlow.h"
 #include "TTAMenuWidget.generated.h"
 
+class UImage;
 class UBorder;
 class UButton;
 class UComboBoxString;
@@ -27,6 +28,14 @@ DECLARE_DELEGATE_OneParam(FTTAMenuCode, const FString&);
 // How to play, Reels. Screen rules live in Core tta::MenuFlow; the tree is built in C++ from
 // UTTAUIStyle builders only (docs/design/ui-style.md).
 // The owner binds the delegates to UTTASessionSubsystem / the cut player.
+// One lobby card: avatar tint, name, ready tick.
+struct FTTALobbyPlayer
+{
+	FString Name;
+	FLinearColor Colour;
+	bool bReady = false;
+};
+
 UCLASS()
 class TAKETWOAFTERLIFE_API UTTAMenuWidget : public UUserWidget
 {
@@ -58,6 +67,12 @@ public:
 	// Lobby
 	void SetRoomCode(const FString& Code, bool bIsHost);
 	void SetPlayers(int32 Players, int32 Ready);
+	// Fills the card row (first kMaxLobbyCards players, rest hidden) and the Start state.
+	void SetPlayerCards(const TArray<FTTALobbyPlayer>& InPlayers);
+	int32 NumVisibleCards() const;
+	bool IsStartEnabled() const;
+	bool IsCustomizeOpen() const;
+	static constexpr int32 kMaxLobbyCards = 4;
 	bool CanStart() const { return bHost && StartBlockedReason.IsEmpty(); }
 	const FString& GetStartBlockedReason() const { return StartBlockedReason; }
 	void CycleLook(tta::LookPart Part, int32 Step);
@@ -100,21 +115,33 @@ private:
 	UPROPERTY() TObjectPtr<UTextBlock> JoinError;
 	UPROPERTY() TObjectPtr<UTextBlock> RoomCodeText;
 	UPROPERTY() TObjectPtr<UTextBlock> WaitingText;
+	// Card row, kMaxLobbyCards slots built once; SetPlayerCards fills and shows them.
+	UPROPERTY() TArray<TObjectPtr<UBorder>> PlayerCards;
+	UPROPERTY() TArray<TObjectPtr<UBorder>> CardAvatars;
+	UPROPERTY() TArray<TObjectPtr<UTextBlock>> CardNames;
+	UPROPERTY() TArray<TObjectPtr<UImage>> CardReady;
+	UPROPERTY() TObjectPtr<UVerticalBox> CustomizePanel;
 	UPROPERTY() TObjectPtr<UTextBlock> LookText;
 	UPROPERTY() TObjectPtr<UBorder> LookSwatch;
 	UPROPERTY() TObjectPtr<UButton> StartButton;
 	UPROPERTY() TObjectPtr<UProgressBar> MicMeter;
-	UPROPERTY() TObjectPtr<UTextBlock> SettingsText;
+	// One per ClientSettings field, in RefreshSettings order (master, music, vo, sfx, sensitivity).
+	UPROPERTY() TArray<TObjectPtr<USlider>> SettingSliders;
+	UPROPERTY() TArray<TObjectPtr<UTextBlock>> SettingValues;
 	UPROPERTY() TObjectPtr<UComboBoxString> WindowModeBox;
 	UPROPERTY() TObjectPtr<UComboBoxString> ResolutionBox;
 	UPROPERTY() TObjectPtr<UVerticalBox> ReelList;
 
-	// Panel tinted with Fill (Bone = untinted white panel).
-	UBorder* Card(UPanelWidget* Parent, ETTAColor Fill = ETTAColor::Bone);
-	UTextBlock* Label(UPanelWidget* Parent, const FString& Text, ETTAFont Size, ETTAColor Colour = ETTAColor::Ink);
+	UBorder* Card(UPanelWidget* Parent, int32 Fill);
+	UTextBlock* Label(UPanelWidget* Parent, const FString& Text, int32 Size, bool bDisplay = false);
+	UButton* MenuButton(UPanelWidget* Parent, const FString& Text, int32 Fill);
+	UButton* MenuButton(UPanelWidget* Parent, const FString& Text, int32 Fill, float Width);
+	// Title stack button: style-guide art by kind, fixed kButtonW x kButtonH so the stack is one width.
 	UButton* MenuButton(UPanelWidget* Parent, const FString& Text, ETTAButtonKind Kind);
-	UButton* MenuButton(UPanelWidget* Parent, const FString& Text, ETTAButtonKind Kind, float Width);
-	UVerticalBox* ScreenPanel(float Width);
+	UVerticalBox* ScreenPanel(float Width, EHorizontalAlignment HAlign = HAlign_Center, EVerticalAlignment VAlign = VAlign_Center);
+	static constexpr float kVolumeSliderMax = 100.f;      // slider 0..1 -> volume 0..100
+	static constexpr float kSensitivitySliderMax = 500.f; // slider 0..1 -> sensitivity 0..500 %
+	static constexpr float kSettingValueW = 96.f;         // number column right of each slider
 	void SettingRow(UPanelWidget* Parent, const FString& Name, UWidget* Control);
 	USlider* SettingSlider(UPanelWidget* Parent, const FString& Name, float Value01);
 	UComboBoxString* SettingCombo(UPanelWidget* Parent, const FString& Name);
@@ -132,14 +159,16 @@ private:
 	UFUNCTION() void OnBackClicked() { Back(); }
 	UFUNCTION() void OnCodeCommitted(const FText& Text, ETextCommit::Type Method);
 	UFUNCTION() void OnStartClicked();
+	UFUNCTION() void OnDirectClicked() { OnJoinDirect.ExecuteIfBound(IpBox->GetText().ToString()); }
+	UFUNCTION() void OnCustomizeClicked();
 	UFUNCTION() void OnColourNext() { CycleLook(tta::LookPart::Colour, 1); }
 	UFUNCTION() void OnHatNext() { CycleLook(tta::LookPart::Hat, 1); }
 	UFUNCTION() void OnFaceNext() { CycleLook(tta::LookPart::Face, 1); }
-	UFUNCTION() void OnMasterChanged(float V) { Settings.master = FMath::RoundToInt(V * 100.f); RefreshSettings(); }
-	UFUNCTION() void OnMusicChanged(float V) { Settings.music = FMath::RoundToInt(V * 100.f); RefreshSettings(); }
-	UFUNCTION() void OnVoChanged(float V) { Settings.vo = FMath::RoundToInt(V * 100.f); RefreshSettings(); }
-	UFUNCTION() void OnSfxChanged(float V) { Settings.sfx = FMath::RoundToInt(V * 100.f); RefreshSettings(); }
+	UFUNCTION() void OnMasterChanged(float V) { Settings.master = FMath::RoundToInt(V * kVolumeSliderMax); RefreshSettings(); }
+	UFUNCTION() void OnMusicChanged(float V) { Settings.music = FMath::RoundToInt(V * kVolumeSliderMax); RefreshSettings(); }
+	UFUNCTION() void OnVoChanged(float V) { Settings.vo = FMath::RoundToInt(V * kVolumeSliderMax); RefreshSettings(); }
+	UFUNCTION() void OnSfxChanged(float V) { Settings.sfx = FMath::RoundToInt(V * kVolumeSliderMax); RefreshSettings(); }
 	UFUNCTION() void OnWindowModeChanged(FString Item, ESelectInfo::Type Select);
 	UFUNCTION() void OnResolutionChanged(FString Item, ESelectInfo::Type Select);
-	UFUNCTION() void OnSensitivityChanged(float V) { Settings.sensitivity = FMath::RoundToInt(V * 500.f); RefreshSettings(); }
+	UFUNCTION() void OnSensitivityChanged(float V) { Settings.sensitivity = FMath::RoundToInt(V * kSensitivitySliderMax); RefreshSettings(); }
 };

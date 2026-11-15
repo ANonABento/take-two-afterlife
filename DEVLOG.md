@@ -387,3 +387,17 @@ Cut placeable cameras to Fixed only, cap 8 per player. Other camera types stay i
 
 ## Lawnmower in UE (trap swap task 6)
 Trap actor steps the Core lawnmower each tick, hits go through TryHit, blade spins while driving; build item mesh is Pallet_Small instead of the cannon barrel.
+## UI redo task 1 — drawn chrome
+Buttons, panel, pill, banner, text field and slider art are now drawn by `Scripts/build_ui_chrome.py` at fixed sizes (all buttons 512x160) with one 6 px Ink outline and 4 px shadow; 9-slice margins are written to `Art/UI/T_UI_Slices.json` and read by `UTTAUIStyle` instead of typed-in fractions. Editor compile + reimport pending.
+
+## UI redo task 2 — same-size icons
+`Scripts/normalize_ui_icons.py` trims faint alpha noise off every `T_UI_Icon*.png` and centres the glyph on a 256x256 canvas with 24 px padding, so icon buttons are all one size. Editor reimport pending.
+
+## UI redo task 3 — one type scale
+Type sizes now have one source: `Docs/design/ui-style.md` Fonts table = `UTTAUIStyle::kTitle/kH1/kH2/kBody/kSmall` (120/96/64/32/24), checked by `test_ui_style_guide`. Old `kTimer` and the menu's private size constants are gone; on-screen px are unchanged. Editor compile still needed.
+
+## UI redo task 4 — title, join, how to play
+Title now sits top-left inside the safe area: logo, then a five-button stack all `kButtonW` wide, drawn with the style-guide button art (`UTTAUIStyle::MakeButton`), Host as the one gold Primary. Join and How to Play are each one centred panel with a heading and Back inside. `test_menu_structure` checks order, equal widths, Primary and safe-area margins. Editor compile + in-game look pending.
+
+## UI redo task 5: lobby player cards
+Lobby text lines replaced by code pill, 4-slot player card row (avatar, name, ready tick) and Customize/Start bottom row; `SetPlayerCards` + structure test. Untested in editor.

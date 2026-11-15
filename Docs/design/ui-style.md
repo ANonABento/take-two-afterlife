@@ -25,6 +25,7 @@ Single reference for every screen (plan.md addendum R-S1..R-S3). Code: `UTTAUISt
 ## Fonts
 
 `UTTAUIStyle::Font(ETTAFont)`. Sizes in px at 1080p. Display face Lilita One (3 px Ink outline), body face Nunito.
+This is the only type scale: each row is `UTTAUIStyle::k<Token>` (Canvas HUD text uses the same constants). The countdown timer uses `H1`.
 
 | Token | Size | Face |
 |---|---|---|
@@ -54,28 +55,28 @@ Corner radius: baked into the generated art (no code-drawn corners). Brushes kee
 ## Assets
 
 Source PNGs (with alpha) live in `Art/UI/`; `Scripts/import_ui_assets.py` imports them to `/Game/UI/Generated/` as UserInterface2D, no mips. `UTTAUIStyle::Brush(ETTAAsset)` loads `T_UI_<Name>`; when it fails to load, the brush is the fallback palette colour and a warning is logged.
-Slice X / Y are 9-slice margins as fractions of the texture (0 = drawn whole, not sliced).
+Chrome (buttons, panel, pill, banner, text field, slider) is drawn by `Scripts/build_ui_chrome.py`: rounded rectangle, palette fill, 6 px Ink outline, 4 px Ink shadow below; all button states are 512x160. Sliced assets take their 9-slice margins from `Art/UI/T_UI_Slices.json`, written by the same script (corner radius + outline on each side, plus the shadow at the bottom). Unsliced assets are drawn whole.
 
-| Asset | Slice X | Slice Y | Fallback | Use |
-|---|---|---|---|---|
-| `T_UI_Button` | 0.12 | 0.35 | Bone | Secondary button, normal |
-| `T_UI_ButtonHover` | 0.12 | 0.35 | Sky | Secondary button, hovered |
-| `T_UI_ButtonPressed` | 0.12 | 0.35 | Blue | Any button, pressed |
-| `T_UI_ButtonPrimary` | 0.12 | 0.35 | Yellow | Primary (gold) button, normal and hovered |
-| `T_UI_Panel` | 0.15 | 0.15 | Bone | White rounded panel |
-| `T_UI_CodePill` | 0.3 | 0.45 | Yellow | Gold pill behind the lobby code |
-| `T_UI_Banner` | 0.25 | 0.4 | Bone | Timer banner |
-| `T_UI_SliderBar` | 0.1 | 0.45 | Sky | Slider track |
-| `T_UI_SliderKnob` | 0 | 0 | Yellow | Slider thumb |
-| `T_UI_TextField` | 0.1 | 0.35 | Bone | Text field frame |
-| `T_UI_IconMicOn` | 0 | 0 | Sky | Voice on |
-| `T_UI_IconMicOff` | 0 | 0 | Ink | Voice muted |
-| `T_UI_IconCamFixed` | 0 | 0 | Sky | Fixed camera |
-| `T_UI_IconCamPan` | 0 | 0 | Sky | Panning camera |
-| `T_UI_IconCamFollow` | 0 | 0 | Sky | Follow camera |
-| `T_UI_IconCamTrap` | 0 | 0 | Orange | Trap camera |
-| `T_UI_IconReady` | 0 | 0 | Grass | Ready tick |
-| `T_UI_TitleBackdrop` | 0 | 0 | Sky | Title screen backdrop |
+| Asset | Sliced | Fallback | Use |
+|---|---|---|---|
+| `T_UI_Button` | yes | Bone | Secondary button, normal |
+| `T_UI_ButtonHover` | yes | Sky | Secondary button, hovered |
+| `T_UI_ButtonPressed` | yes | Blue | Any button, pressed |
+| `T_UI_ButtonPrimary` | yes | Yellow | Primary (gold) button, normal and hovered |
+| `T_UI_Panel` | yes | Bone | White rounded panel |
+| `T_UI_CodePill` | yes | Yellow | Gold pill behind the lobby code |
+| `T_UI_Banner` | yes | Bone | Timer banner |
+| `T_UI_SliderBar` | yes | Sky | Slider track |
+| `T_UI_SliderKnob` | no | Yellow | Slider thumb |
+| `T_UI_TextField` | yes | Bone | Text field frame |
+| `T_UI_IconMicOn` | no | Sky | Voice on |
+| `T_UI_IconMicOff` | no | Ink | Voice muted |
+| `T_UI_IconCamFixed` | no | Sky | Fixed camera |
+| `T_UI_IconCamPan` | no | Sky | Panning camera |
+| `T_UI_IconCamFollow` | no | Sky | Follow camera |
+| `T_UI_IconCamTrap` | no | Orange | Trap camera |
+| `T_UI_IconReady` | no | Grass | Ready tick |
+| `T_UI_TitleBackdrop` | no | Sky | Title screen backdrop |
 
 ## Builders
 

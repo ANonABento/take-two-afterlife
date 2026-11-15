@@ -34,12 +34,12 @@ void UTTAPodiumWidget::NativeOnInitialized()
 	BackgroundSlot->SetHorizontalAlignment(HAlign_Fill);
 	BackgroundSlot->SetVerticalAlignment(VAlign_Fill);
 
-	UBorder* Banner = UTTAUIStyle::MakeBanner(WidgetTree, NSLOCTEXT("TTA", "PodiumBanner", "AND THE WINNER IS..."));
-	UOverlaySlot* BannerSlot = Root->AddChildToOverlay(Banner);
-	BannerSlot->SetPadding(Style.SafeArea);
-	BannerSlot->SetHorizontalAlignment(HAlign_Center);
-	BannerSlot->SetVerticalAlignment(VAlign_Top);
-
+	UVerticalBox* Box = WidgetTree->ConstructWidget<UVerticalBox>();
+	UOverlaySlot* BoxSlot = Root->AddChildToOverlay(Box);
+	BoxSlot->SetPadding(Style.SafeArea);
+	BoxSlot->SetHorizontalAlignment(HAlign_Center);
+	BoxSlot->SetVerticalAlignment(VAlign_Bottom);
+	Box->AddChild(UTTAUIStyle::MakeBanner(WidgetTree, FText::FromString(TEXT("AND THE WINNER IS..."))));
 	Steps = WidgetTree->ConstructWidget<UHorizontalBox>();
 	UOverlaySlot* StepsSlot = Root->AddChildToOverlay(Steps);
 	StepsSlot->SetPadding(Style.SafeArea);

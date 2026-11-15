@@ -29,9 +29,23 @@
 
 namespace
 {
-// Premiere board, 1080p design units: card top under the top bar, name column, longest bar, bar height.
-constexpr float kPremiereTop = 160.f, kScoreNameW = 120.f, kScoreBarMaxW = 560.f, kScoreBarH = 70.f;
-constexpr int32 kTimerWarnSeconds = 10;
+constexpr float kDesignW = 1920.f, kBarH = 120.f, kLineH = 40.f, kPad = 20.f, kPanelOpacity = 0.85f;
+// Build tiles: one equal square per TTABuildItem, in a row under the phase card.
+constexpr float kTileSize = 96.f, kTileGap = 12.f, kTileIconInset = 16.f;
+
+// Icon art for a camera build item; traps have none and show their number.
+ETTAAsset CameraIcon(tta::CameraType Type)
+{
+	switch (Type)
+	{
+	case tta::CameraType::Fixed: return ETTAAsset::IconCamFixed;
+	case tta::CameraType::Pan: return ETTAAsset::IconCamPan;
+	case tta::CameraType::Follow: return ETTAAsset::IconCamFollow;
+	case tta::CameraType::TrapCam: return ETTAAsset::IconCamTrap;
+	}
+	checkNoEntry();
+	return ETTAAsset::IconCamFixed;
+}
 }
 
 void ATTABuildHUD::ShowResults()
@@ -224,9 +238,24 @@ void ATTABuildHUD::DrawHUD()
 	if (Overlay) UpdatePremiere(Phase == ETTAPhase::Premiere);
 }
 
-void ATTABuildHUD::UpdateOverlay(const ATTAGameState& State)
-{
-	if (!Overlay)
+	// Phase + round, top left.
+	const FString PhaseName = UEnum::GetDisplayValueAsText(Phase).ToString().ToUpper();
+	const FString RoundText = FString::Printf(TEXT("ROUND %d"), State->GetRound());
+	const float PhaseW = FMath::Max(MeasureText(PhaseName, UTTAUIStyle::kH2, true), MeasureText(RoundText, UTTAUIStyle::kSmall, false));
+	DrawCard(Left, Top, PhaseW + 2 * kPad, kBarH, tta::kPurple);
+	DrawStyledText(PhaseName, tta::kBone, Left + kPad, Top + kPad * 0.5f, UTTAUIStyle::kH2, true);
+	DrawStyledText(RoundText, tta::kBone, Left + kPad, Top + kBarH - kPad - UTTAUIStyle::kSmall, UTTAUIStyle::kSmall, false);
+
+	// Timer, top centre.
+	const int32 SecondsLeft = State->GetSecondsLeft();
+	const FString Timer = FString::Printf(TEXT("%d:%02d"), SecondsLeft / 60, SecondsLeft % 60);
+	const float TimerW = MeasureText(Timer, UTTAUIStyle::kH1, true) + 2 * kPad;
+	const float TimerX = (kDesignW - TimerW) * 0.5f;
+	DrawCard(TimerX, Top, TimerW, kBarH, tta::hudTimerFill(SecondsLeft));
+	DrawStyledText(Timer, tta::kBone, TimerX + kPad, Top, UTTAUIStyle::kH1, true);
+
+	float Y = Top + kBarH + kPad;
+	if (Phase == ETTAPhase::Lobby && State->IsGateOpen())
 	{
 		APlayerController* PC = GetOwningPlayerController();
 		if (!PC) return;
@@ -254,12 +283,25 @@ void ATTABuildHUD::UpdateOverlay(const ATTAGameState& State)
 	const int32 Me = ATTAPlacementMarker::PlayerIdOf(Pawn);
 	const tta::Layout Own = Pawn->OwnLayout();
 
-	SetLine(Overlay->BudgetText, FString::Printf(TEXT("$%d / %d"), Own.remaining(Me), tta::kBudget),
-		Own.remaining(Me) > 0 ? ETTAColor::Grass : ETTAColor::Red);
+	// Budget, top right.
+	const FString Budget = FString::Printf(TEXT("$%d / %d"), Own.remaining(Me), tta::kBudget);
+	const float BudgetW = MeasureText(Budget, UTTAUIStyle::kH2, true) + 2 * kPad;
+	DrawCard(Right - BudgetW, Top, BudgetW, kBarH, tta::hudBudgetFill(Own.remaining(Me)));
+	DrawStyledText(TEXT("BUDGET"), tta::kBone, Right - BudgetW + kPad, Top + kBarH - kPad - UTTAUIStyle::kSmall, UTTAUIStyle::kSmall, false);
+	DrawStyledText(Budget, tta::kBone, Right - BudgetW + kPad, Top + kPad * 0.5f, UTTAUIStyle::kH2, true);
 
-	Overlay->CameraTotal->SetText(FText::FromString(FString::Printf(TEXT("CAMERAS %d / %d"), Own.cameraCount(Me), tta::kCameraCap)));
-	const tta::CameraType Types[] = {tta::CameraType::Fixed, tta::CameraType::Pan, tta::CameraType::Follow, tta::CameraType::TrapCam};
-	for (int32 i = 0; i < UE_ARRAY_COUNT(Types); ++i)
+	Y = DrawBuildTiles(Left, Y, Pawn->GetSelectedItem()) + kPad;
+
+	TArray<TPair<FString, int32>> Lines;
+	Lines.Emplace(FString::Printf(TEXT("CAMERAS %d / %d   fixed %d  pan %d  follow %d  trap-cam %d"), Own.cameraCount(Me), tta::kCameraCap,
+		Own.cameraCount(Me, tta::CameraType::Fixed), Own.cameraCount(Me, tta::CameraType::Pan),
+		Own.cameraCount(Me, tta::CameraType::Follow), Own.cameraCount(Me, tta::CameraType::TrapCam)), tta::kBone);
+	const bool bGhostOk = Pawn->GetGhostOutcome() == ETTAPlaceOutcome::Ok;
+	Lines.Emplace(FString::Printf(TEXT("%s   [wheel] item  [R] rotate  [LMB] place  [RMB] remove  [F] select"),
+		*TTABuildItem::Label(Pawn->GetSelectedItem())), tta::kBone);
+	Lines.Emplace(bGhostOk ? FString(TEXT("Can place here")) : UEnum::GetDisplayValueAsText(Pawn->GetGhostOutcome()).ToString(),
+		bGhostOk ? tta::kGrass : tta::kRed);
+	if (Pawn->GetLastServerOutcome() != ETTAPlaceOutcome::Ok)
 	{
 		Overlay->CameraCounts[i]->SetText(FText::AsNumber(Own.cameraCount(Me, Types[i])));
 	}
@@ -338,4 +380,27 @@ void ATTABuildHUD::UpdatePremiere(bool bPremiere)
 		Overlay->ScoreFills[Slot]->SetBrushColor(UTTAUIStyle::Colour(Fill));
 		Overlay->ScoreValues[Slot]->SetText(FText::FromString(FString::Printf(TEXT("%.1f"), Bar.value)));
 	}
+}
+
+float ATTABuildHUD::DrawBuildTiles(float X, float Y, int32 Selected)
+{
+	const float S = UiScale();
+	for (int32 Item = 0; Item < TTABuildItem::Count(); ++Item)
+	{
+		const float TileX = X + Item * (kTileSize + kTileGap);
+		DrawCard(TileX, Y, kTileSize, kTileSize, Item == Selected ? tta::kYellow : tta::kBone);
+		UTexture2D* Icon = TTABuildItem::IsCamera(Item)
+			? Cast<UTexture2D>(UTTAUIStyle::Brush(CameraIcon(TTABuildItem::Camera(Item))).GetResourceObject())
+			: nullptr;
+		if (Icon)
+		{
+			const float Side = kTileSize - 2 * kTileIconInset;
+			DrawTexture(Icon, (TileX + kTileIconInset) * S, (Y + kTileIconInset) * S, Side * S, Side * S, 0.f, 0.f, 1.f, 1.f);
+			continue;
+		}
+		const FString Number = FString::FromInt(Item + 1);
+		DrawStyledText(Number, tta::kInk, TileX + (kTileSize - MeasureText(Number, UTTAUIStyle::kH2, true)) * 0.5f,
+			Y + (kTileSize - UTTAUIStyle::kH2) * 0.5f, UTTAUIStyle::kH2, true);
+	}
+	return Y + kTileSize;
 }
