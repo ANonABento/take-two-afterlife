@@ -50,6 +50,8 @@ bool ATTAGameMode::RequestPhase(ETTAPhase To)
 		return false;
 	}
 	GetGameState<ATTAGameState>()->SetPhase(ToUE(Match.phase()), Match.round(), Match.phaseSeconds());
+	// Traps and cameras stay between rounds; each Build gives every player a fresh budget (before travel, so the carry keeps it).
+	if (To == ETTAPhase::Build) Layout.beginBuild(Match.round());
 	// Heaven is the lobby, so every Build travels to the Backyard; on a failed travel the round still goes on here.
 	if (To == ETTAPhase::Build && (IsOnMap(BackyardMap) || !TravelTo(BackyardMap))) EnterBuild();
 	if (To == ETTAPhase::Run) EnterRun();

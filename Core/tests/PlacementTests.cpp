@@ -1,4 +1,5 @@
 #include "doctest/doctest.h"
+#include "tta/MatchStateMachine.h"
 #include "tta/Placement.h"
 
 #include <stdexcept>
@@ -122,4 +123,62 @@ TEST_CASE("canPlace previews the place rules without placing") {
     CHECK(l.canPlace(1, true, TrapType::Hammer, 30.0, 0.0, CameraType::Pan) == PlaceResult::CameraCapReached);
     CHECK(l.canPlace(1, true, TrapType::Hammer, 30.0, 0.0, CameraType::Fixed) == PlaceResult::Ok);
     CHECK(l.all().size() == 4 + kCameraCap);
+}
+
+TEST_CASE("placements stay between rounds and the budget resets each Build") {
+    MatchStateMachine m(parseMatchSettings("{\"rounds\": 3}"));
+    Layout layout;
+    auto build = [&] { REQUIRE(m.transition(Phase::Build)); layout.beginBuild(m.round()); };
+    auto finish = [&] {
+        REQUIRE(m.transition(Phase::Run));
+        layout.revealAll();
+        REQUIRE(m.transition(Phase::Edit));
+        REQUIRE(m.transition(Phase::Premiere));
+    };
+    const int bananas = kBudget / trapSpec(TrapType::Banana).cost;
+
+    build();
+    int cannon = 0;
+    CHECK(layout.placeTrap(1, TrapType::Cannon, 10, 0, 0, &cannon) == PlaceResult::Ok);
+    CHECK(layout.placeCamera(1, CameraType::Fixed, 5, 0, 0) == PlaceResult::Ok);
+    CHECK(layout.spent(1) == trapSpec(TrapType::Cannon).cost);
+    finish();
+
+    build();
+    CHECK(m.round() == 2);
+    REQUIRE(layout.all().size() == 2);
+    CHECK(layout.all()[0].id == cannon);
+    CHECK(layout.all()[0].round == 1);
+    CHECK(layout.all()[1].isCamera);
+    CHECK(layout.remaining(1) == kBudget);
+    CHECK(layout.remaining(2) == kBudget);
+    // Round 1's cannon is paid for: a full budget of new traps still fits.
+    for (int i = 0; i < bananas; ++i)
+        CHECK(layout.placeTrap(1, TrapType::Banana, 20 + i, 1, 0) == PlaceResult::Ok);
+    CHECK(layout.remaining(1) == 0);
+    CHECK(layout.placeTrap(1, TrapType::Banana, 50, 0, 0) == PlaceResult::OverBudget);
+    finish();
+
+    build();
+    CHECK(m.round() == 3);
+    CHECK(layout.remaining(1) == kBudget);
+    CHECK(layout.all().size() == static_cast<size_t>(2 + bananas));
+    finish();
+
+    CHECK_FALSE(m.canTransition(Phase::Build));
+    CHECK(m.transition(Phase::Podium));
+}
+
+TEST_CASE("layout JSON keeps each placement's round and the current round") {
+    Layout layout;
+    layout.beginBuild(1);
+    REQUIRE(layout.placeTrap(1, TrapType::Cannon, 10, 0, 0) == PlaceResult::Ok);
+    layout.beginBuild(2);
+    REQUIRE(layout.placeTrap(1, TrapType::Hammer, 12, 0, 0) == PlaceResult::Ok);
+    const Layout back = parseLayout(toJson(layout));
+    CHECK(back.round() == 2);
+    REQUIRE(back.all().size() == 2);
+    CHECK(back.all()[0].round == 1);
+    CHECK(back.all()[1].round == 2);
+    CHECK(back.spent(1) == layout.spent(1));
 }
