@@ -115,7 +115,9 @@ private:
 	UTextBlock* Label(UPanelWidget* Parent, const FString& Text, int32 Size, bool bDisplay = false);
 	UButton* MenuButton(UPanelWidget* Parent, const FString& Text, int32 Fill);
 	UButton* MenuButton(UPanelWidget* Parent, const FString& Text, int32 Fill, float Width);
-	UVerticalBox* ScreenPanel(float Width);
+	// Title stack button: style-guide art by kind, fixed kButtonW x kButtonH so the stack is one width.
+	UButton* MenuButton(UPanelWidget* Parent, const FString& Text, ETTAButtonKind Kind);
+	UVerticalBox* ScreenPanel(float Width, EHorizontalAlignment HAlign = HAlign_Center, EVerticalAlignment VAlign = VAlign_Center);
 	void SettingRow(UPanelWidget* Parent, const FString& Name, UWidget* Control);
 	USlider* SettingSlider(UPanelWidget* Parent, const FString& Name, float Value01);
 	UComboBoxString* SettingCombo(UPanelWidget* Parent, const FString& Name);

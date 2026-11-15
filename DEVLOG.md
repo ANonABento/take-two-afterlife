@@ -369,3 +369,6 @@ Buttons, panel, pill, banner, text field and slider art are now drawn by `Script
 
 ## UI redo task 3 — one type scale
 Type sizes now have one source: `Docs/design/ui-style.md` Fonts table = `UTTAUIStyle::kTitle/kH1/kH2/kBody/kSmall` (120/96/64/32/24), checked by `test_ui_style_guide`. Old `kTimer` and the menu's private size constants are gone; on-screen px are unchanged. Editor compile still needed.
+
+## UI redo task 4 — title, join, how to play
+Title now sits top-left inside the safe area: logo, then a five-button stack all `kButtonW` wide, drawn with the style-guide button art (`UTTAUIStyle::MakeButton`), Host as the one gold Primary. Join and How to Play are each one centred panel with a heading and Back inside. `test_menu_structure` checks order, equal widths, Primary and safe-area margins. Editor compile + in-game look pending.

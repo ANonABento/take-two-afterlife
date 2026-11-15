@@ -110,15 +110,26 @@ UButton* UTTAMenuWidget::MenuButton(UPanelWidget* Parent, const FString& Text, i
 	return Button;
 }
 
-UVerticalBox* UTTAMenuWidget::ScreenPanel(float Width)
+UButton* UTTAMenuWidget::MenuButton(UPanelWidget* Parent, const FString& Text, ETTAButtonKind Kind)
+{
+	UButton* Button = UTTAUIStyle::MakeButton(WidgetTree, FText::FromString(Text), Kind);
+	USizeBox* Size = WidgetTree->ConstructWidget<USizeBox>();
+	Size->SetWidthOverride(kButtonW);
+	Size->SetHeightOverride(kButtonH);
+	Size->SetContent(Button);
+	GapAfter(Parent->AddChild(Size));
+	return Button;
+}
+
+UVerticalBox* UTTAMenuWidget::ScreenPanel(float Width, EHorizontalAlignment HAlign, EVerticalAlignment VAlign)
 {
 	USizeBox* Size = WidgetTree->ConstructWidget<USizeBox>();
 	Size->SetWidthOverride(Width);
 	UVerticalBox* Box = WidgetTree->ConstructWidget<UVerticalBox>();
 	Size->SetContent(Box);
 	UWidgetSwitcherSlot* SwitchSlot = CastChecked<UWidgetSwitcherSlot>(Switcher->AddChild(Size));
-	SwitchSlot->SetHorizontalAlignment(HAlign_Center);
-	SwitchSlot->SetVerticalAlignment(VAlign_Center);
+	SwitchSlot->SetHorizontalAlignment(HAlign);
+	SwitchSlot->SetVerticalAlignment(VAlign);
 	return Box;
 }
 
@@ -174,38 +185,35 @@ void UTTAMenuWidget::NativeOnInitialized()
 	SwitcherSlot->SetVerticalAlignment(VAlign_Fill);
 	SwitcherSlot->SetPadding(UTTAUIStyle::Get().SafeArea);
 
-	// Title
+	// Title: logo top-left of the safe area, one-width button stack under it, Host is the gold primary.
 	{
-		UVerticalBox* Box = ScreenPanel(kScreenW);
-		UVerticalBox* TitleRow = WidgetTree->ConstructWidget<UVerticalBox>();
+		UVerticalBox* Box = ScreenPanel(kButtonW, HAlign_Left, VAlign_Top);
 		// Logo art slot when set, else the text title.
 		if (UTexture2D* Logo = UTTAUIStyle::Get().LoadSlotTexture(UTTAUIStyle::Get().MenuLogo))
 		{
 			UImage* LogoImage = WidgetTree->ConstructWidget<UImage>();
 			LogoImage->SetBrushFromTexture(Logo, true);
-			Cast<UVerticalBoxSlot>(TitleRow->AddChild(LogoImage))->SetHorizontalAlignment(HAlign_Center);
+			Cast<UVerticalBoxSlot>(Box->AddChild(LogoImage))->SetHorizontalAlignment(HAlign_Left);
 		}
 		else
 		{
-			UTextBlock* Title = Label(TitleRow, TEXT("TAKE TWO: AFTERLIFE"), UTTAUIStyle::kH1, true);
+			UTextBlock* Title = Label(Box, TEXT("TAKE TWO: AFTERLIFE"), UTTAUIStyle::kH1, true);
 			Title->SetRenderTransformAngle(kTitleTilt);
-			Title->SetJustification(ETextJustify::Center);
 		}
-		Label(TitleRow, TEXT("Director's Cut"), UTTAUIStyle::kBody)->SetJustification(ETextJustify::Center);
-		Box->AddChild(TitleRow);
-		GapAfter(TitleRow->Slot);
-		MenuButton(Box, TEXT("PLAY SOLO"), tta::kOrange)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnPlaySoloClicked);
-		MenuButton(Box, TEXT("HOST GAME"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnHostClicked);
-		MenuButton(Box, TEXT("JOIN (CODE OR IP)"), tta::kGrass)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnJoinClicked);
-		MenuButton(Box, TEXT("SETTINGS"), tta::kPurple)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnSettingsClicked);
-		MenuButton(Box, TEXT("QUIT"), tta::kInk)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnQuitClicked);
+		GapAfter(Label(Box, TEXT("Director's Cut"), UTTAUIStyle::kBody)->Slot);
+		MenuButton(Box, TEXT("PLAY SOLO"), ETTAButtonKind::Secondary)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnPlaySoloClicked);
+		MenuButton(Box, TEXT("HOST GAME"), ETTAButtonKind::Primary)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnHostClicked);
+		MenuButton(Box, TEXT("JOIN (CODE OR IP)"), ETTAButtonKind::Secondary)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnJoinClicked);
+		MenuButton(Box, TEXT("SETTINGS"), ETTAButtonKind::Secondary)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnSettingsClicked);
+		MenuButton(Box, TEXT("QUIT"), ETTAButtonKind::Secondary)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnQuitClicked);
 	}
-	// Join
+	// Join: one centred panel, heading to Back.
 	{
 		UVerticalBox* Box = ScreenPanel(kScreenW);
 		JoinCard = Card(Box, tta::kBone);
 		UVerticalBox* Inner = WidgetTree->ConstructWidget<UVerticalBox>();
 		JoinCard->SetContent(Inner);
+		Label(Inner, TEXT("JOIN A GAME"), UTTAUIStyle::kH2);
 		Label(Inner, TEXT("Ask the host for the code"), UTTAUIStyle::kBody);
 		CodeBox = WidgetTree->ConstructWidget<UEditableTextBox>();
 		CodeBox->SetHintText(FText::FromString(TEXT("ABCDEF")));
@@ -216,7 +224,7 @@ void UTTAMenuWidget::NativeOnInitialized()
 		IpBox->SetHintText(FText::FromString(TEXT("127.0.0.1:7777")));
 		Inner->AddChild(IpBox);
 		MenuButton(Inner, TEXT("DIRECT IP"), tta::kInk)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnDirectClicked);
-		MenuButton(Box, TEXT("BACK"), tta::kInk)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnBackClicked);
+		MenuButton(Inner, TEXT("BACK"), tta::kInk)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnBackClicked);
 	}
 	// Lobby
 	{
@@ -275,9 +283,14 @@ void UTTAMenuWidget::NativeOnInitialized()
 		SettingsText = Label(Inner, TEXT(""), UTTAUIStyle::kSmall);
 		MenuButton(Box, TEXT("BACK"), tta::kInk)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnBackClicked);
 	}
-	// How to play
+	// How to play: one centred panel holding the step cards and Back.
 	{
 		UVerticalBox* Box = ScreenPanel(kWideW);
+		UBorder* Panel = UTTAUIStyle::MakePanel(WidgetTree, ETTAPanelKind::Panel);
+		Box->AddChild(Panel);
+		UVerticalBox* PanelBox = WidgetTree->ConstructWidget<UVerticalBox>();
+		Panel->SetContent(PanelBox);
+		Label(PanelBox, TEXT("HOW TO PLAY"), UTTAUIStyle::kH2);
 		UHorizontalBox* Cards = WidgetTree->ConstructWidget<UHorizontalBox>();
 		const int32 Fills[] = {tta::kOrange, tta::kRed, tta::kTeal, tta::kPurple};
 		for (size_t i = 0; i < tta::kHowToPlay.size(); ++i)
@@ -287,8 +300,8 @@ void UTTAMenuWidget::NativeOnInitialized()
 			Label(Inner, UTF8_TO_TCHAR(tta::kHowToPlay[i].title), UTTAUIStyle::kBody, true);
 			Label(Inner, UTF8_TO_TCHAR(tta::kHowToPlay[i].line), UTTAUIStyle::kSmall)->SetAutoWrapText(true);
 		}
-		Box->AddChild(Cards);
-		MenuButton(Box, TEXT("BACK"), tta::kInk)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnBackClicked);
+		GapAfter(PanelBox->AddChild(Cards));
+		MenuButton(PanelBox, TEXT("BACK"), tta::kInk)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnBackClicked);
 	}
 	// Reels
 	{
