@@ -1,0 +1,18 @@
+{
+ "task_id": "bd71ffe3-52b3-427a-a6c0-9a6f139c8773",
+ "request": {
+  "type": "multiview_to_model",
+  "files": [
+   {"type": "png", "file_token": "fd65d214-d0eb-46f5-a3a0-345922cf22c3"},
+   {"type": "png", "file_token": "5696c705-c851-48fa-a119-12487e672a3a"},
+   {"type": "png", "file_token": "506e680b-7e52-4214-99ff-094d0cf4744f"},
+   {}
+  ],
+  "texture": true,
+  "pbr": true,
+  "texture_quality": "detailed",
+  "auto_size": true,
+  "generate_parts": false
+ },
+ "slots": ["front", "left", "back", "right(empty)"]
+}
