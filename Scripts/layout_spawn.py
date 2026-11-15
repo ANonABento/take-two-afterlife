@@ -119,6 +119,22 @@ def placement(target, yaw, box_min, box_max, scale):
     return (target[0] - ox, target[1] - oy, target[2] - cz)
 
 
+def mesh_bounds(mesh):
+    """(lo, hi) of a StaticMesh's local bounding box in cm, as UE reports it."""
+    box = mesh.get_bounding_box()
+    return (box.min.x, box.min.y, box.min.z), (box.max.x, box.max.y, box.max.z)
+
+
+def fitted_location(lo, hi, fit, target, yaw):
+    """Pure placement math of spawn_fitted: (scale, (roll, pitch), actor location, rotated lo, rotated hi).
+
+    The actor goes where the fitted mesh's bounding-box bottom-centre lands on `target`, never its pivot.
+    """
+    scale, rot, _ = fit_mesh([h - l for h, l in zip(hi, lo)], fit)
+    rlo, rhi = rotated_box(lo, hi, scale, rot)
+    return scale, rot, placement(target, yaw, rlo, rhi, (1.0, 1.0, 1.0)), rlo, rhi
+
+
 def is_stale(class_name, tags):
     """True for an actor an earlier layout run spawned (tagged TTA_Layout) that is safe to delete."""
     return LAYOUT_TAG in [str(t) for t in tags] and class_name not in PROTECTED_CLASSES
@@ -155,11 +171,8 @@ def spawn_fitted(unreal, subsystem, label, mesh, fit, target, yaw, extra_tags=()
     Unit and axis fixes come from fit_mesh (x100 for sub-10 cm imports, roll 90 for Y-up slabs).
     Returns (actor, world size in cm after fit). Raises BadFit before spawning anything when the mesh can't fit.
     """
-    box = mesh.get_bounding_box()
-    lo, hi = (box.min.x, box.min.y, box.min.z), (box.max.x, box.max.y, box.max.z)
-    scale, rot, _ = fit_mesh([h - l for h, l in zip(hi, lo)], fit)
-    rlo, rhi = rotated_box(lo, hi, scale, rot)
-    loc = placement(target, yaw, rlo, rhi, (1.0, 1.0, 1.0))
+    lo, hi = mesh_bounds(mesh)
+    scale, rot, loc, rlo, rhi = fitted_location(lo, hi, fit, target, yaw)
     rotator = unreal.Rotator(float(rot[0]), float(rot[1]), float(yaw))   # (roll, pitch, yaw)
     actor = subsystem.spawn_actor_from_object(mesh, unreal.Vector(*loc), rotator)
     actor.set_actor_label(label)
@@ -202,6 +215,12 @@ PODIUM_SIZE = (450.0, 152.0, 100.0)
 PODIUM_STEPS = {"1st": (0.0, 100.0), "2nd": (-150.0, 70.0), "3rd": (150.0, 40.0)}   # tag -> (mesh x, top z)
 STATUE_HALF_HEIGHT = 90.0   # runner capsule half height + 2: a statue is spawned by its centre
 STATUE_HEIGHT = 180.0
+# Floor: SM_Heaven_Cloud is ATTACinema's root; its walkable disc top is at the cinema actor's origin
+# (models/build_heaven.py: "Cloud top at z=0"). Layout z values are heights above that top, in cinema space,
+# so dress_heaven.py turns them into world space through the cinema transform, not as world Z.
+FLOOR_TOP = 0.0
+# A slab whose bottom is exactly on the floor top z-fights with it (the podium's brown base flickered).
+SLAB_LIFT = 0.5
 GATE_TRIGGER_HALF = (50.0, 250.0, 250.0)   # ATTAFinishGate trigger, gate space: thin along the walk direction
 
 
@@ -222,19 +241,24 @@ def podium_spots(layout):
 
 def heaven_pieces(layout):
     """Every mesh dress_heaven.py spawns: dicts label, mesh, fit (cm, mesh axes), at (x, y, z cm), yaw, colour,
-    collide. Podium, carpet and gate spots come from the layout's protected boxes."""
+    collide, grounded. `at` is cinema space, z above the cloud top (FLOOR_TOP); it is where the bottom-centre of
+    the fitted bounds goes. grounded = stands on the floor (z 0, or SLAB_LIFT for the podium slab); the sky
+    clouds and the halo float. Podium, carpet and gate spots come from the layout's protected boxes."""
     prot = heaven_protected(layout)
     carpet, podium = prot["RedCarpet"], prot["Podium"]
     first = podium_spots(layout)["1st"]
     out = [
-        dict(label="SM_Heaven_Cloud_A", mesh="SM_Heaven_Cloud_A", at=(-600.0, -1700.0, 280.0), colour="Bone"),
-        dict(label="SM_Heaven_Cloud_B", mesh="SM_Heaven_Cloud_B", at=(2100.0, 1300.0, 420.0), colour="Sky"),
-        dict(label="SM_Heaven_Cloud_C", mesh="SM_Heaven_Cloud_C", at=(2000.0, -1700.0, 180.0), colour="Bone"),
-        dict(label="Podium", mesh="SM_Heaven_Podium", at=(podium["x"], podium["y"], 0.0), yaw=podium["yaw"],
+        dict(label="SM_Heaven_Cloud_A", mesh="SM_Heaven_Cloud_A", at=(-600.0, -1700.0, 280.0), colour="Bone",
+             grounded=False),
+        dict(label="SM_Heaven_Cloud_B", mesh="SM_Heaven_Cloud_B", at=(2100.0, 1300.0, 420.0), colour="Sky",
+             grounded=False),
+        dict(label="SM_Heaven_Cloud_C", mesh="SM_Heaven_Cloud_C", at=(2000.0, -1700.0, 180.0), colour="Bone",
+             grounded=False),
+        dict(label="Podium", mesh="SM_Heaven_Podium", at=(podium["x"], podium["y"], SLAB_LIFT), yaw=podium["yaw"],
              colour="Wood"),
         # The halo hangs over the winner's head; the trophy stands on the floor in front of the plates.
         dict(label="Halo", mesh="SM_Heaven_Halo", at=(first[0], first[1], PODIUM_STEPS["1st"][1] + STATUE_HEIGHT + 45.0),
-             colour="Yellow", collide=False),
+             colour="Yellow", collide=False, grounded=False),
         dict(label="Trophy", mesh="SM_Heaven_FilmReelTrophy", colour="Yellow", collide=False,
              at=tuple(a + b for a, b in zip((podium["x"], podium["y"], 0.0),
                                             rotate(0.0, -(PODIUM_SIZE[1] / 2 + 45.0), podium["yaw"]) + (0.0,))),
@@ -252,6 +276,7 @@ def heaven_pieces(layout):
     for p in out:
         p.setdefault("yaw", 0.0)
         p.setdefault("collide", True)
+        p.setdefault("grounded", True)
         p.setdefault("fit", HEAVEN_FIT.get(p["mesh"]))
     return out
 

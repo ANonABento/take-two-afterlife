@@ -142,5 +142,105 @@
    30,
    100
   ]
+ },
+ "HeavenBounds": {
+  "_note": "lo/hi cm, Z-up, from models/SM_Heaven_*.glb (glTF Y-up -> UE (x, -z, y)). Pivots sit at the bottom-centre-back, not the bounds centre, so placement must use these, not the pivot.",
+  "SM_Heaven_Cloud_A": [
+   [
+    -99,
+    -50,
+    0
+   ],
+   [
+    99,
+    50,
+    88
+   ]
+  ],
+  "SM_Heaven_Cloud_B": [
+   [
+    -174,
+    -78,
+    0
+   ],
+   [
+    174,
+    78,
+    154
+   ]
+  ],
+  "SM_Heaven_Cloud_C": [
+   [
+    -248,
+    -110,
+    0
+   ],
+   [
+    248,
+    110,
+    220
+   ]
+  ],
+  "SM_Heaven_FilmReelTrophy": [
+   [
+    -18,
+    -12,
+    0
+   ],
+   [
+    18,
+    12,
+    58
+   ]
+  ],
+  "SM_Heaven_Halo": [
+   [
+    -150,
+    -150,
+    0
+   ],
+   [
+    150,
+    150,
+    20
+   ]
+  ],
+  "SM_Heaven_Podium": [
+   [
+    -225,
+    -76,
+    0
+   ],
+   [
+    225,
+    76,
+    100
+   ]
+  ],
+  "SM_Heaven_RedCarpet": [
+   [
+    -125,
+    -600,
+    0
+   ],
+   [
+    125,
+    600,
+    2
+   ]
+  ],
+  "SM_Heaven_VelvetRopeStanchions": [
+   [
+    -117,
+    -17,
+    0
+   ],
+   [
+    117,
+    17,
+    100
+   ]
+  ],
+  "SM_Heaven_Cloud_floor_top": 0.0
  }
 }
