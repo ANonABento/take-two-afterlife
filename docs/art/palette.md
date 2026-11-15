@@ -21,7 +21,7 @@ The only colours UI code may use. Same order as `Scripts/toon_spec.py` `PALETTE`
 ## Type
 - Headings, numbers, buttons: **Lilita One** (`/Game/UI/Fonts/LilitaOne`), Bone fill, 3 px Ink outline.
 - Body: **Nunito** (`/Game/UI/Fonts/Nunito`), Ink on light cards, Bone on dark ones.
-- Sizes at 1080p: H1 120, H2 64, timer 96, body 32, small 24 (`UTTAUIStyle::kH1` ...).
+- Text sizes: see the Fonts table in Docs/design/ui-style.md (the one type scale).
 
 ## Layout
 - Design size 1920x1080. Keep everything inside the safe area: 96 px left/right, 54 px top/bottom.

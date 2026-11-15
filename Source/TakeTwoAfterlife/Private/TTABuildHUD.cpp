@@ -120,10 +120,10 @@ void ATTABuildHUD::DrawHUD()
 	// Timer, top centre.
 	const int32 SecondsLeft = State->GetSecondsLeft();
 	const FString Timer = FString::Printf(TEXT("%d:%02d"), SecondsLeft / 60, SecondsLeft % 60);
-	const float TimerW = MeasureText(Timer, UTTAUIStyle::kTimer, true) + 2 * kPad;
+	const float TimerW = MeasureText(Timer, UTTAUIStyle::kH1, true) + 2 * kPad;
 	const float TimerX = (kDesignW - TimerW) * 0.5f;
 	DrawCard(TimerX, Top, TimerW, kBarH, SecondsLeft <= kTimerWarnSeconds ? tta::kRed : tta::kInk);
-	DrawStyledText(Timer, tta::kBone, TimerX + kPad, Top, UTTAUIStyle::kTimer, true);
+	DrawStyledText(Timer, tta::kBone, TimerX + kPad, Top, UTTAUIStyle::kH1, true);
 
 	float Y = Top + kBarH + kPad;
 	if (Phase == ETTAPhase::Lobby && State->IsGateOpen())

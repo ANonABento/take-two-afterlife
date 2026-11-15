@@ -111,8 +111,8 @@ FSlateFontInfo UTTAUIStyle::Font(ETTAFont Name)
 {
 	switch (Name)
 	{
-	case ETTAFont::Title: return MakeFont(Get().LoadFont(true), true, kH1);
-	case ETTAFont::H1: return MakeFont(Get().LoadFont(true), true, kTimer);
+	case ETTAFont::Title: return MakeFont(Get().LoadFont(true), true, kTitle);
+	case ETTAFont::H1: return MakeFont(Get().LoadFont(true), true, kH1);
 	case ETTAFont::H2: return MakeFont(Get().LoadFont(true), true, kH2);
 	case ETTAFont::Body: return MakeFont(Get().LoadFont(false), false, kBody);
 	case ETTAFont::Small: return MakeFont(Get().LoadFont(false), false, kSmall);

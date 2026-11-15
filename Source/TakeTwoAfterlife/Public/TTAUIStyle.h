@@ -46,7 +46,7 @@ enum class ETTAColor : uint8
 	Wood,
 };
 
-// Type ramp (sizes in docs/design/ui-style.md). Title/H1/H2 use the display face.
+// Type ramp (sizes in Docs/design/ui-style.md). Title/H1/H2 use the display face.
 UENUM()
 enum class ETTAFont : uint8
 {
@@ -105,11 +105,11 @@ class TAKETWOAFTERLIFE_API UTTAUIStyle : public UObject
 	GENERATED_BODY()
 
 public:
-	// Type sizes at 1080p. One declarator per line: MSVC gives C2487 on the 2nd+ name of a
+	// Type scale at 1080p (Docs/design/ui-style.md, Fonts). Named k<Token> per ETTAFont. One declarator per line: MSVC gives C2487 on the 2nd+ name of a
 	// comma list of static members in an exported (TAKETWOAFTERLIFE_API) class.
-	static constexpr int32 kH1 = 120;
+	static constexpr int32 kTitle = 120;
+	static constexpr int32 kH1 = 96;
 	static constexpr int32 kH2 = 64;
-	static constexpr int32 kTimer = 96;
 	static constexpr int32 kBody = 32;
 	static constexpr int32 kSmall = 24;
 	static constexpr float kDesignHeight = 1080.f;
@@ -148,7 +148,7 @@ public:
 	void ApplyBackground(UBorder* Border, ETTAUIScreen Screen, int32 Fill, float Opacity) const;
 
 
-	// Named tokens (docs/design/ui-style.md). Screens use these, never literals.
+	// Named tokens (Docs/design/ui-style.md). Screens use these, never literals.
 	static FLinearColor Color(ETTAColor Name);
 	static FSlateFontInfo Font(ETTAFont Name);
 	// Spacing scale, Step 0-5: 0, 4, 8, 16, 24, 32 px.

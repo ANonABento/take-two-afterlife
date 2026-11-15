@@ -4,7 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "Source" / "TakeTwoAfterlife"
-DOC = ROOT / "docs" / "design" / "ui-style.md"
+DOC = ROOT / "Docs" / "design" / "ui-style.md"
 ART = ROOT / "Art" / "UI"
 HEADER = (SRC / "Public" / "TTAUIStyle.h").read_text()
 CPP = (SRC / "Private" / "TTAUIStyle.cpp").read_text()
@@ -53,6 +53,18 @@ class UIStyleGuideTests(unittest.TestCase):
         for token, size, _ in rows:
             const = re.search(rf"case ETTAFont::{tick(token)}: return MakeFont\([^;]*, (k\w+)\);", CPP).group(1)
             self.assertEqual(sizes[const], size, token)
+
+    def test_type_scale_equals_constants(self):
+        sizes = dict(re.findall(r"static constexpr int32 k(\w+) = (\d+);", HEADER))
+        guide = {tick(token): size for token, size, _ in section("Fonts")}
+        self.assertEqual(guide, {t: sizes[t] for t in enum("ETTAFont")})
+        self.assertEqual(guide, {"Title": "120", "H1": "96", "H2": "64", "Body": "32", "Small": "24"})
+        self.assertNotIn("kTimer", HEADER)
+
+    def test_no_second_type_table(self):
+        for doc in [*ROOT.glob("Docs/**/*.md"), *ROOT.glob("docs/**/*.md")]:
+            if doc != DOC:
+                self.assertNotRegex(doc.read_text(encoding="utf-8-sig"), r"\bH1 \d+", doc.name)
 
     def test_spacing_matches_both_ways(self):
         rows = section("Spacing")

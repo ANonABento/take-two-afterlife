@@ -25,6 +25,7 @@ Single reference for every screen (plan.md addendum R-S1..R-S3). Code: `UTTAUISt
 ## Fonts
 
 `UTTAUIStyle::Font(ETTAFont)`. Sizes in px at 1080p. Display face Lilita One (3 px Ink outline), body face Nunito.
+This is the only type scale: each row is `UTTAUIStyle::k<Token>` (Canvas HUD text uses the same constants). The countdown timer uses `H1`.
 
 | Token | Size | Face |
 |---|---|---|

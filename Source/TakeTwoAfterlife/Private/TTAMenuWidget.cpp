@@ -32,8 +32,8 @@ DEFINE_LOG_CATEGORY_STATIC(LogTTAMenu, Log, All);
 
 namespace
 {
-// Ref sizes at 1080p: H1 120, room code 160, body 32, small 24.
-constexpr int32 kH1 = 120, kTitle = 96, kCode = 160, kBody = 32, kSmall = 24;
+// Room code size at 1080p; every other size comes from the UTTAUIStyle type scale.
+constexpr int32 kCode = 160;
 // Layout: screens are a centred 520 px column (two of them for Lobby / How to play).
 constexpr float kScreenW = 520.f, kWideW = 2 * kScreenW + 40.f;
 constexpr float kButtonW = 480.f, kButtonH = 72.f, kGap = 12.f, kCorner = 18.f;
@@ -101,7 +101,7 @@ UButton* UTTAMenuWidget::MenuButton(UPanelWidget* Parent, const FString& Text, i
 	Style.SetDisabled(FSlateRoundedBoxBrush(Base.CopyWithNewOpacity(0.4f), kCorner));
 	UButton* Button = WidgetTree->ConstructWidget<UButton>();
 	Button->SetStyle(Style);
-	Label(Button, Text, kBody, true);
+	Label(Button, Text, UTTAUIStyle::kBody, true);
 	USizeBox* Size = WidgetTree->ConstructWidget<USizeBox>();
 	Size->SetWidthOverride(Width);
 	Size->SetHeightOverride(kButtonH);
@@ -128,7 +128,7 @@ void UTTAMenuWidget::SettingRow(UPanelWidget* Parent, const FString& Name, UWidg
 	USizeBox* LabelSize = WidgetTree->ConstructWidget<USizeBox>();
 	LabelSize->SetWidthOverride(kRowLabelW);
 	Row->AddChild(LabelSize);
-	Label(LabelSize, Name, kSmall);
+	Label(LabelSize, Name, UTTAUIStyle::kSmall);
 	USizeBox* ControlSize = WidgetTree->ConstructWidget<USizeBox>();
 	ControlSize->SetWidthOverride(kRowControlW);
 	ControlSize->SetContent(Control);
@@ -187,11 +187,11 @@ void UTTAMenuWidget::NativeOnInitialized()
 		}
 		else
 		{
-			UTextBlock* Title = Label(TitleRow, TEXT("TAKE TWO: AFTERLIFE"), kTitle, true);
+			UTextBlock* Title = Label(TitleRow, TEXT("TAKE TWO: AFTERLIFE"), UTTAUIStyle::kH1, true);
 			Title->SetRenderTransformAngle(kTitleTilt);
 			Title->SetJustification(ETextJustify::Center);
 		}
-		Label(TitleRow, TEXT("Director's Cut"), kBody)->SetJustification(ETextJustify::Center);
+		Label(TitleRow, TEXT("Director's Cut"), UTTAUIStyle::kBody)->SetJustification(ETextJustify::Center);
 		Box->AddChild(TitleRow);
 		GapAfter(TitleRow->Slot);
 		MenuButton(Box, TEXT("PLAY SOLO"), tta::kOrange)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnPlaySoloClicked);
@@ -206,12 +206,12 @@ void UTTAMenuWidget::NativeOnInitialized()
 		JoinCard = Card(Box, tta::kBone);
 		UVerticalBox* Inner = WidgetTree->ConstructWidget<UVerticalBox>();
 		JoinCard->SetContent(Inner);
-		Label(Inner, TEXT("Ask the host for the code"), kBody);
+		Label(Inner, TEXT("Ask the host for the code"), UTTAUIStyle::kBody);
 		CodeBox = WidgetTree->ConstructWidget<UEditableTextBox>();
 		CodeBox->SetHintText(FText::FromString(TEXT("ABCDEF")));
 		CodeBox->OnTextCommitted.AddDynamic(this, &UTTAMenuWidget::OnCodeCommitted);
 		Inner->AddChild(CodeBox);
-		JoinError = Label(Inner, TEXT(""), kSmall);
+		JoinError = Label(Inner, TEXT(""), UTTAUIStyle::kSmall);
 		IpBox = WidgetTree->ConstructWidget<UEditableTextBox>();
 		IpBox->SetHintText(FText::FromString(TEXT("127.0.0.1:7777")));
 		Inner->AddChild(IpBox);
@@ -237,10 +237,10 @@ void UTTAMenuWidget::NativeOnInitialized()
 		UVerticalBox* Players = Column();
 		Cast<UHorizontalBoxSlot>(Players->GetParent()->Slot)->SetPadding(UTTAUIStyle::PadAfter(Orient_Horizontal, kWideW - 2 * kScreenW));
 		RoomCodeText = Label(Card(Players, tta::kBone), TEXT("------"), kCode, true);
-		WaitingText = Label(Players, TEXT(""), kBody);
+		WaitingText = Label(Players, TEXT(""), UTTAUIStyle::kBody);
 		UVerticalBox* Cosmetics = Column();
 		LookSwatch = Card(Cosmetics, tta::kRed);
-		LookText = Label(LookSwatch, TEXT(""), kBody, true);
+		LookText = Label(LookSwatch, TEXT(""), UTTAUIStyle::kBody, true);
 		MenuButton(Cosmetics, TEXT("COLOUR >"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnColourNext);
 		MenuButton(Cosmetics, TEXT("HAT >"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnHatNext);
 		MenuButton(Cosmetics, TEXT("FACE >"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnFaceNext);
@@ -272,7 +272,7 @@ void UTTAMenuWidget::NativeOnInitialized()
 		MicMeter = WidgetTree->ConstructWidget<UProgressBar>();
 		MicMeter->SetFillColorAndOpacity(Palette(tta::kGrass));
 		SettingRow(Inner, TEXT("Mic test"), MicMeter);
-		SettingsText = Label(Inner, TEXT(""), kSmall);
+		SettingsText = Label(Inner, TEXT(""), UTTAUIStyle::kSmall);
 		MenuButton(Box, TEXT("BACK"), tta::kInk)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnBackClicked);
 	}
 	// How to play
@@ -284,8 +284,8 @@ void UTTAMenuWidget::NativeOnInitialized()
 		{
 			UVerticalBox* Inner = WidgetTree->ConstructWidget<UVerticalBox>();
 			Card(Cards, Fills[i])->SetContent(Inner);
-			Label(Inner, UTF8_TO_TCHAR(tta::kHowToPlay[i].title), kBody, true);
-			Label(Inner, UTF8_TO_TCHAR(tta::kHowToPlay[i].line), kSmall)->SetAutoWrapText(true);
+			Label(Inner, UTF8_TO_TCHAR(tta::kHowToPlay[i].title), UTTAUIStyle::kBody, true);
+			Label(Inner, UTF8_TO_TCHAR(tta::kHowToPlay[i].line), UTTAUIStyle::kSmall)->SetAutoWrapText(true);
 		}
 		Box->AddChild(Cards);
 		MenuButton(Box, TEXT("BACK"), tta::kInk)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnBackClicked);
@@ -293,7 +293,7 @@ void UTTAMenuWidget::NativeOnInitialized()
 	// Reels
 	{
 		UVerticalBox* Box = ScreenPanel(kScreenW);
-		Label(Box, TEXT("REELS"), kH1, true);
+		Label(Box, TEXT("REELS"), UTTAUIStyle::kTitle, true);
 		ReelList = WidgetTree->ConstructWidget<UVerticalBox>();
 		Box->AddChild(ReelList);
 		MenuButton(Box, TEXT("BACK"), tta::kInk)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnBackClicked);
@@ -515,5 +515,5 @@ void UTTAMenuWidget::RefreshReels()
 	{
 		MenuButton(ReelList, FPaths::GetBaseFilename(Path), tta::kTeal);
 	}
-	if (Reels.IsEmpty()) Label(ReelList, TEXT("No reels yet - go make a film!"), kBody);
+	if (Reels.IsEmpty()) Label(ReelList, TEXT("No reels yet - go make a film!"), UTTAUIStyle::kBody);
 }
