@@ -132,7 +132,9 @@ void ATTARunnerPawn::ApplyLook(int32 HatIndex, int32 FaceIndex)
 	}
 	Hat->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, HatSocket);
 	Hat->SetStaticMesh(HatRow->HatMesh.LoadSynchronous());
-	Hat->SetRelativeTransform(FTransform(HatRow->Rotation, HatRow->SocketOffset, HatRow->Scale));
+	Hat->SetUsingAbsoluteScale(true);
+    Hat->SetRelativeTransform(FTransform(HatRow->Rotation, HatRow->SocketOffset, HatRow->Scale));
+    Hat->SetWorldScale3D(HatRow->Scale);
 	if (tta::kPaletteHex.size() > static_cast<size_t>(HatRow->PaletteIndex) && HatRow->PaletteIndex >= 0)
 	{
 		if (UMaterialInstanceDynamic* HatMid = Hat->GetNumMaterials() > 0 && Hat->GetMaterial(0) ? Hat->CreateAndSetMaterialInstanceDynamic(0) : nullptr)
