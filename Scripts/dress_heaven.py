@@ -3,6 +3,7 @@
 # Dresses /Game/Maps/Heaven: soft pastel sky and fog, the sun feeds the atmosphere, four
 # player starts in a row facing the screen, toon clouds, and the podium set. ATTACinema
 # does not look up podium spots, so 1st/2nd/3rd are TargetPoints tagged 1st, 2nd and 3rd.
+import json
 import os
 import sys
 
@@ -20,6 +21,7 @@ SEAT = unreal.Vector(0.0, 0.0, 45.0)
 START_X = -300.0
 START_YS = (-135.0, -45.0, 45.0, 135.0)
 PODIUM_X = 780.0
+LAYOUT_JSON = os.path.join(os.path.dirname(os.path.abspath(__file__)), "heaven_layout.json")
 COLOUR = {
     "SM_Heaven_Cloud_A": "Bone",
     "SM_Heaven_Cloud_B": "Sky",
@@ -222,6 +224,15 @@ def main():
             point.set_actor_location(loc, False, False)
             point.set_actor_rotation(unreal.Rotator(0, 180.0, 0), False)
         point.set_editor_property("tags", [unreal.Name(tag)])
+
+    with open(LAYOUT_JSON, encoding="utf-8") as f:
+        layout = json.load(f)
+    for piece in layout["podium_dressing"] + layout["spectator_ring"]:
+        mesh = load_mesh(piece["mesh"])
+        scale = sensible_scale(mesh)
+        loc = ground_location(mesh, piece["x"], piece["y"], scale)
+        spawn_mesh(subsystem, existing, piece["label"], mesh, loc, unreal.Rotator(0, piece["yaw"], 0),
+                   piece["colour"], toon, scale)
 
     if not level.save_current_level():
         raise RuntimeError(f"could not save {MAP_PATH}")
