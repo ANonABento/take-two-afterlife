@@ -31,6 +31,11 @@ constexpr std::array<const char*, 12> kPaletteHex = {
     "2BB3A3", "5BA8F5", "3F5BD9", "8E5CD9", "F27BB0", "9A6A43"};
 constexpr int kInk = 0, kBone = 1, kRed = 2, kOrange = 3, kYellow = 4, kGrass = 5,
               kTeal = 6, kSky = 7, kBlue = 8, kPurple = 9, kPink = 10;
+// Match HUD fills (plans/tta-ui-redo/mock-hud.png): the timer banner turns Red at
+// kTimerWarnSeconds or less; the budget card is Grass until the budget is spent.
+constexpr int kTimerWarnSeconds = 10;
+constexpr int hudTimerFill(int secondsLeft) { return secondsLeft <= kTimerWarnSeconds ? kRed : kInk; }
+constexpr int hudBudgetFill(int remaining) { return remaining > 0 ? kGrass : kRed; }
 // Lobby colour choices, P1-P4 defaults (palette indices).
 constexpr std::array<int, 4> kPlayerColours = {kRed, kBlue, kGrass, kOrange};
 // models/: SM_Hat_* and T_Face_*, alphabetical.

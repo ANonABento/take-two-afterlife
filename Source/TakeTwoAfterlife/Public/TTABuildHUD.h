@@ -10,7 +10,7 @@ class UTTAResultsWidget;
 
 // Match HUD, styled by UTTAUIStyle inside the 1920x1080 safe area. Top bar on every phase:
 // phase + round (left), timer (centre), budget while building (right). Below it the build
-// panel while the player flies an ATTABuildPawn. In Podium it adds the results + podium widgets.
+// tiles + panel while the player flies an ATTABuildPawn. In Podium it adds the results + podium widgets.
 UCLASS()
 class TAKETWOAFTERLIFE_API ATTABuildHUD : public AHUD
 {
@@ -26,6 +26,8 @@ private:
 	// Draws at 1080p design coords; returns the text width in design units.
 	float DrawStyledText(const FString& Text, int32 Colour, float X, float Y, int32 Size, bool bDisplay);
 	float MeasureText(const FString& Text, int32 Size, bool bDisplay);
+	// Equal square tiles, one per build item (selected = Yellow); returns the row's bottom Y.
+	float DrawBuildTiles(float X, float Y, int32 Selected);
 	void ShowResults();
 	// Kahoot-style bars during each cut's Reveal (ATTACinema::GetScoreBoard).
 	void DrawScoreBoard();

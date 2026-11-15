@@ -37,7 +37,7 @@ void UTTAResultsWidget::NativeOnInitialized()
 	ColumnSlot->SetVerticalAlignment(VAlign_Center);
 	UVerticalBox* Box = WidgetTree->ConstructWidget<UVerticalBox>();
 	Column->SetContent(Box);
-	UTTAUIStyle::AddLabel(WidgetTree, Box, TEXT("RESULTS"), UTTAUIStyle::kH1, true, tta::kBone);
+	Box->AddChild(UTTAUIStyle::MakeBanner(WidgetTree, FText::FromString(TEXT("RESULTS"))));
 	List = WidgetTree->ConstructWidget<UVerticalBox>();
 	Box->AddChild(List);
 }
