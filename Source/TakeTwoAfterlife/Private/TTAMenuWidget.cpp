@@ -444,10 +444,16 @@ void UTTAMenuWidget::ApplyWindowMode(tta::WindowMode Mode)
 
 bool UTTAMenuWidget::ApplyResolution(int32 ChoiceIndex)
 {
-	if (ChoiceIndex < 0 || ChoiceIndex >= NumResolutionChoices())
+	// Saved/combo indices are 0-based; a stale one (e.g. a 1-based save or a shorter list) is clamped.
+	const int32 Index = tta::clampResolutionIndex(ChoiceIndex, NumResolutionChoices());
+	if (Index < 0)
 	{
-		UE_LOG(LogTTAMenu, Warning, TEXT("Resolution choice %d out of range (%d choices)"), ChoiceIndex, NumResolutionChoices());
+		UE_LOG(LogTTAMenu, Log, TEXT("No resolution choices; resolution not applied"));
 		return false;
+	}
+	if (Index != ChoiceIndex)
+	{
+		UE_LOG(LogTTAMenu, Verbose, TEXT("Resolution choice %d clamped to %d"), ChoiceIndex, Index);
 	}
 	UGameUserSettings* Video = UGameUserSettings::GetGameUserSettings();
 	if (!Video)
@@ -455,7 +461,7 @@ bool UTTAMenuWidget::ApplyResolution(int32 ChoiceIndex)
 		UE_LOG(LogTTAMenu, Warning, TEXT("No GameUserSettings (bare automation world); video settings skipped"));
 		return false;
 	}
-	const tta::Resolution& R = ResolutionChoices[ChoiceIndex];
+	const tta::Resolution& R = ResolutionChoices[Index];
 	Video->SetScreenResolution(FIntPoint(R.width, R.height));
 	Video->ApplySettings(false);
 	return true;

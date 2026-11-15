@@ -9,6 +9,8 @@
 #include "CollisionQueryParams.h"
 #include "Engine/HitResult.h"
 
+DEFINE_LOG_CATEGORY_STATIC(LogTTABots, Log, All);
+
 const FName ATTABotController::RouteTag(TEXT("TTARoute"));
 
 ATTABotController::ATTABotController()
@@ -44,6 +46,8 @@ void ATTABotController::StartRun(const TArray<FVector>& RouteCm)
 	bWasGroundAhead = true;
 	bSkipThisGap = false;
 	LastLife = tta::LifeState::Alive;
+	LogClock = 0.f;
+	UE_LOG(LogTTABots, Log, TEXT("%s: run start, %d route points, pawn %s, PlayerState %s"), *GetName(), RouteCm.Num(), *GetNameSafe(GetPawn()), *GetNameSafe(PlayerState));
 }
 
 void ATTABotController::StopRun()
@@ -81,6 +85,11 @@ void ATTABotController::DriveRunner(float DeltaSeconds)
 	{
 		Runner->Hit(); // freeze -> ragdoll -> respawn at the start
 		return;
+	}
+	if ((LogClock += DeltaSeconds) >= 1.f)
+	{
+		LogClock = 0.f; // once a second: enough to see a bot that never moves on the user's PC
+		UE_LOG(LogTTABots, Verbose, TEXT("%s: pos %s target %d/%d dir (%.2f, %.2f) ground %d done %d"), *GetName(), *Pos.ToString(), static_cast<int32>(Route->target()), static_cast<int32>(Route->size()), Step.dirX, Step.dirY, bGroundAhead, Step.done);
 	}
 	if (Step.done) return;
 	Runner->AddMovementInput(FVector(Step.dirX, Step.dirY, 0.0));

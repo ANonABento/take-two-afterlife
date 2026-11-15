@@ -5,6 +5,7 @@ Built on Scripts/maplib (grid, roles, kill plane, credits, validate); this file 
 Scripts/build_backyard_map.py places this in UE; `make test` checks it (bounds, clear route, credits).
 """
 import difflib
+import math
 from pathlib import Path
 
 import maplib
@@ -45,15 +46,27 @@ ZONES = (
 )
 
 
+FLOOR_TILE = 8.0   # longest floor piece (m): a 1 m placeholder cube or kit tile stays under scale 10
+
+
+def _tiles(x0, x1):
+    """Split [x0, x1] into equal, touching pieces no longer than FLOOR_TILE: (centre x, length)."""
+    n = max(1, math.ceil((x1 - x0) / FLOOR_TILE - 1e-9))
+    step = (x1 - x0) / n
+    return [(x0 + step * (i + 0.5), step) for i in range(n)]
+
+
 def _floor():
     props = []
     for x0, x1, colour, _ in ZONES:
-        props.append(Prop("KayKitPrototypeBits", "Primitive_Floor", "floor", (x0 + x1) / 2, 0.0, -FLOOR_THICKNESS, 0,
-                          colour, ("box", (x1 - x0, CORRIDOR_WIDTH, FLOOR_THICKNESS))))
+        for x, length in _tiles(x0, x1):
+            props.append(Prop("KayKitPrototypeBits", "Primitive_Floor", "floor", x, 0.0, -FLOOR_THICKNESS, 0,
+                              colour, ("box", (length, CORRIDOR_WIDTH, FLOOR_THICKNESS))))
     lawn_y = HALF_WIDTH + DITCH + LAWN_WIDTH / 2
     for side in (-1, 1):
-        props.append(Prop("KayKitPrototypeBits", "Floor_Dirt", "floor", CORRIDOR_LENGTH / 2, side * lawn_y,
-                          -FLOOR_THICKNESS, 0, "Grass", ("box", (CORRIDOR_LENGTH + 16.0, LAWN_WIDTH, FLOOR_THICKNESS))))
+        for x, length in _tiles(-8.0, CORRIDOR_LENGTH + 8.0):
+            props.append(Prop("KayKitPrototypeBits", "Floor_Dirt", "floor", x, side * lawn_y,
+                              -FLOOR_THICKNESS, 0, "Grass", ("box", (length, LAWN_WIDTH, FLOOR_THICKNESS))))
     return props
 
 
@@ -62,7 +75,7 @@ ROUTE_TAG = "TTARoute"  # ATTABotController::RouteTag: bots walk these markers s
 
 def _markers():
     """Bone stepping stones down the centre line every 4 m: the route reads at a glance."""
-    return [Prop("KayKitPrototypeBits", "Coin_A", "marker", x, 0.0, 0.0, 0, "Bone", ("box", (0.6, 0.6, 0.03)))
+    return [Prop("KayKitPrototypeBits", "Coin_A", "marker", x, 0.0, 0.0, 0, "Bone", ("box", (0.6, 0.6, 0.05)))
             for x in range(4, int(CORRIDOR_LENGTH) - 3, 4)]
 
 
@@ -76,7 +89,7 @@ def _shortcuts():
     for x0, x1, side in SHORTCUTS:
         for dx, y in ((1.5, 1.5), (3.0, 2.5), (5.0, 2.5), (6.5, 1.5)):
             props.append(Prop("KayKitPrototypeBits", "Coin_A", "shortcut", x0 + dx, side * y, 0.0, 0, "Sky",
-                              ("box", (0.6, 0.6, 0.03))))
+                              ("box", (0.6, 0.6, 0.05))))
         assert x0 + 6.5 < x1
     return props
 

@@ -14,6 +14,7 @@ import unreal
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import backyard_layout as L  # noqa: E402
+import layout_spawn as S  # noqa: E402
 import toon_spec  # noqa: E402
 
 EAL = unreal.EditorAssetLibrary
@@ -102,35 +103,34 @@ def component(actor, name):
     return found
 
 
-def fit(component, mesh, prop):
-    """Scale + offset so the mesh's bounding box bottom-centre lands on the prop position at the fitted size."""
-    box = mesh.get_bounding_box()
-    size = box.max - box.min
+def target_fit(prop):
+    """Layout fit (metres) as a layout_spawn fit (cm)."""
     kind, target = prop.fit
     if kind == "box":
-        scale = unreal.Vector(target[0] * CM / size.x, target[1] * CM / size.y, target[2] * CM / size.z)
-    else:
-        s = target * CM / size.z
-        scale = unreal.Vector(s, s, s)
-    centre = unreal.Vector((box.min.x + box.max.x) / 2 * scale.x, (box.min.y + box.max.y) / 2 * scale.y,
-                           box.min.z * scale.z)
-    component.set_relative_scale3d(scale)
-    component.set_relative_location(unreal.Vector(-centre.x, -centre.y, -centre.z), False, False)
+        return ("box", tuple(v * CM for v in target))
+    return (kind, target * CM)
+
+
+def fit_component(comp, mesh, prop):
+    """Child component (the gate Arch): scale + relative offset, bottom-centre on the actor origin."""
+    box = mesh.get_bounding_box()
+    lo, hi = (box.min.x, box.min.y, box.min.z), (box.max.x, box.max.y, box.max.z)
+    scale = S.fit_scale([h - l for h, l in zip(hi, lo)], target_fit(prop))
+    off = S.placement((0.0, 0.0, 0.0), 0.0, lo, hi, scale)
+    comp.set_relative_scale3d(unreal.Vector(*scale))
+    comp.set_relative_location(unreal.Vector(*off), False, False)
 
 
 def place(actors, prop, toon, paths):
     mesh = prop_mesh(prop, paths)
-    actor = actors.spawn_actor_from_class(unreal.StaticMeshActor, unreal.Vector(prop.x * CM, prop.y * CM, prop.z * CM),
-                                          unreal.Rotator(0.0, 0.0, float(prop.yaw)))
-    actor.set_actor_label(f"{prop.role}_{prop.mesh}")
+    extra = (L.ROUTE_TAG,) if prop.role == "marker" else ()
+    actor, _ = S.spawn_fitted(unreal, actors, f"{prop.role}_{prop.mesh}", mesh, target_fit(prop),
+                              (prop.x * CM, prop.y * CM, prop.z * CM), prop.yaw, extra)
     comp = actor.static_mesh_component
-    comp.set_static_mesh(mesh)
-    fit(comp, mesh, prop)
     for slot in range(comp.get_num_materials()):
         comp.set_material(slot, palette_instance(prop.palette, toon))
     if prop.role == "marker":
         comp.set_collision_enabled(unreal.CollisionEnabled.NO_COLLISION)
-        actor.set_editor_property("tags", [unreal.Name(L.ROUTE_TAG)])
     return actor
 
 
@@ -152,39 +152,49 @@ def build(downloads):
     elif not level.new_level(L.MAP_PATH):
         raise RuntimeError(f"could not create {L.MAP_PATH}")
     actors = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
-    for actor in actors.get_all_level_actors():
-        if isinstance(actor, (unreal.StaticMeshActor, unreal.PlayerStart, unreal.TTAFinishGate, unreal.TTAKillPlane)):
-            actors.destroy_actor(actor)
+    # Reruns: only what an earlier run tagged TTA_Layout goes. PlayerStart, gate, kill plane, KillZ, NavMesh stay.
+    unreal.log(f"removed {S.delete_previous(actors)} old {S.LAYOUT_TAG} actors")
+    level_actors = actors.get_all_level_actors()
+
+    def first(cls):
+        return next((a for a in level_actors if isinstance(a, cls)), None)
 
     for prop in L.props():
-        if prop.role == "gate":
+        if prop.role != "gate":
+            place(actors, prop, toon, paths)
+        elif first(unreal.TTAFinishGate) is None:
             gate = actors.spawn_actor_from_class(unreal.TTAFinishGate, unreal.Vector(L.GATE.x * CM, L.GATE.y * CM,
                                                                                      L.GATE.z * CM))
             mesh = prop_mesh(prop, paths)
             arch = component(gate, "Arch")
             arch.set_static_mesh(mesh)
-            fit(arch, mesh, prop)
+            fit_component(arch, mesh, prop)
             for slot in range(arch.get_num_materials()):
                 arch.set_material(slot, palette_instance(prop.palette, toon))
             hx, hy, hz = L.GATE_TRIGGER_HALF
             component(gate, "Trigger").set_box_extent(unreal.Vector(hx * CM, hy * CM, hz * CM))
-        else:
-            place(actors, prop, toon, paths)
 
-    actors.spawn_actor_from_class(unreal.PlayerStart, unreal.Vector(L.START.x * CM, L.START.y * CM, L.START.z * CM + 100.0))
-    k = L.KILL_PLANE
-    kill = actors.spawn_actor_from_class(unreal.TTAKillPlane, unreal.Vector(
-        (k.min_x + k.max_x) / 2 * CM, (k.min_y + k.max_y) / 2 * CM, (k.min_z + k.max_z) / 2 * CM))
-    component(kill, "Volume").set_box_extent(unreal.Vector((k.max_x - k.min_x) / 2 * CM, (k.max_y - k.min_y) / 2 * CM,
-                                                           (k.max_z - k.min_z) / 2 * CM))
+    if first(unreal.PlayerStart) is None:
+        actors.spawn_actor_from_class(unreal.PlayerStart,
+                                      unreal.Vector(L.START.x * CM, L.START.y * CM, L.START.z * CM + 100.0))
+    first_build = first(unreal.TTAKillPlane) is None
+    if first_build:
+        k = L.KILL_PLANE
+        kill = actors.spawn_actor_from_class(unreal.TTAKillPlane, unreal.Vector(
+            (k.min_x + k.max_x) / 2 * CM, (k.min_y + k.max_y) / 2 * CM, (k.min_z + k.max_z) / 2 * CM))
+        component(kill, "Volume").set_box_extent(unreal.Vector((k.max_x - k.min_x) / 2 * CM,
+                                                               (k.max_y - k.min_y) / 2 * CM,
+                                                               (k.max_z - k.min_z) / 2 * CM))
     world = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()
-    world.get_world_settings().set_editor_property("kill_z", L.WORLD_KILL_Z * CM)
+    if first_build:
+        world.get_world_settings().set_editor_property("kill_z", L.WORLD_KILL_Z * CM)
     # Only the backyard runs the match/build mode (TTABuildHUD); Title overrides to TTATitleGameMode.
     world.get_world_settings().set_editor_property(
         "default_game_mode", unreal.load_class(None, "/Script/TakeTwoAfterlife.TTAGameMode"))
     sun = actors.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 2000),
                                         unreal.Rotator(0.0, -50.0, 30.0))
     sun.set_actor_label("Sun")
+    S.tag(unreal, sun)
     if not level.save_current_level():
         raise RuntimeError(f"could not save {L.MAP_PATH}")
     EAL.save_directory(toon_spec.INSTANCE_DIR, only_if_is_dirty=False, recursive=True)

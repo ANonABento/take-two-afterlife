@@ -68,7 +68,8 @@ void UTTAMicRecorder::EndPlay(const EEndPlayReason::Type Reason)
 void UTTAMicRecorder::OnPhaseChanged(ETTAPhase Phase, int32 Round)
 {
 	const APawn* Pawn = Cast<APawn>(GetOwner());
-	if (Phase == ETTAPhase::Run && Pawn && Pawn->IsLocallyControlled())
+	// AI pawns are locally controlled on the server too; only a local human records (bots have no mic).
+	if (Phase == ETTAPhase::Run && Pawn && Pawn->IsLocallyControlled() && Pawn->IsPlayerControlled())
 	{
 		StartCapture(Round);
 	}
@@ -81,8 +82,16 @@ void UTTAMicRecorder::OnPhaseChanged(ETTAPhase Phase, int32 Round)
 void UTTAMicRecorder::StartCapture(int32 Round)
 {
 	if (IsRecording()) return;
+	const APawn* Pawn = Cast<APawn>(GetOwner());
+	const APlayerState* PlayerState = Pawn ? Pawn->GetPlayerState() : nullptr;
+	if (!PlayerState)
+	{
+		UE_LOG(LogTTAMic, Error, TEXT("No mic track for round %d: runner has no PlayerState"), Round);
+		return;
+	}
 	Reset();
 	RecordingRound = Round;
+	RecordingPlayerId = PlayerState->GetPlayerId();
 	Capture = FVoiceModule::Get().CreateVoiceCapture(FString(), tta::kMicSampleRate, 1);
 	if (!Capture.IsValid() || !Capture->Start())
 	{
@@ -102,16 +111,7 @@ void UTTAMicRecorder::StopAndSave()
 	Capture->Shutdown();
 	Capture.Reset();
 	SetComponentTickEnabled(false);
-	const APawn* Pawn = Cast<APawn>(GetOwner());
-	const APlayerState* PlayerState = Pawn ? Pawn->GetPlayerState() : nullptr;
-	if (PlayerState)
-	{
-		Save(FilePath(RecordingRound, PlayerState->GetPlayerId()));
-	}
-	else
-	{
-		UE_LOG(LogTTAMic, Error, TEXT("Mic track for round %d dropped: runner has no PlayerState"), RecordingRound);
-	}
+	Save(FilePath(RecordingRound, RecordingPlayerId));
 }
 
 void UTTAMicRecorder::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
