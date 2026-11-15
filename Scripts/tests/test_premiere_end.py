@@ -34,6 +34,11 @@ class PremiereEnds(unittest.TestCase):
     def setUp(self):
         self.mode = (SRC / "Private" / "TTAGameMode.cpp").read_text(encoding="utf-8-sig")
 
+    def test_end_premiere_writes_player_scores(self):
+        end = body(self.mode, "bool ATTAGameMode::EndPremiere(")
+        self.assertLess(end.index("Score.addRatings"), end.index("SetScore("))
+        self.assertIn("Score.total(PS->GetPlayerId())", end)
+
     def test_cinema_finish_calls_end_premiere(self):
         finish = body(self.mode, "void ATTAGameMode::OnCinemaStep(")
         self.assertIn("PremiereStep::Podium", finish)
