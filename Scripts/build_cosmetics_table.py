@@ -19,6 +19,12 @@ HATS = "/Game/Characters/Hats"
 HAT_MAP = {"Chef": "crown", "Cowboy": "viking-helmet", "Firefighter": "propeller-beanie",
            "HardHat": "party-cone", "Pilot": "bunny-ears", "Police": "devil-horns"}
 HAT_Z_CM = 0.0
+# Per-hat fit on the head socket: offset (cm), rotation (Pitch, Yaw, Roll), uniform scale.
+# Find values live (Play, F8, select Hat), then copy them here and re-run.
+DEFAULT_FIT = ((0.0, 0.0, 0.0), (180.0, 0.0, 270.0), 1.0)
+HAT_FIT = {
+    "crown": ((0.0, 0.1, 0.0), (180.0, 0.0, 270.0), 1.33),
+}
 
 
 def camel(folder):
@@ -58,7 +64,8 @@ def run():
         if not EAL.does_asset_exist(f"{HATS}/{name}"):
             unreal.log_warning(f"{name} not imported yet: run import_gen3_assets.py")
         r["HatMesh"] = f"{HATS}/{name}.{name}"
-        r["SocketOffset"] = (0.0, 0.0, HAT_Z_CM)
+        off, rot, sc = HAT_FIT.get(HAT_MAP[hat], DEFAULT_FIT)
+        r["SocketOffset"], r["Rotation"], r["Scale"] = off, rot, (sc, sc, sc)
         report.append(f"{r['Name']}: {hat} -> {name}")
     struct = unreal.load_object(None, C.ROW_STRUCT)
     if struct is None:
