@@ -74,7 +74,14 @@ public:
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UCameraComponent> Handheld;
 	// Records this runner's mic during Run (locally controlled runner only).
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UTTAMicRecorder> MicRecorder;
-	UPROPERTY(EditAnywhere, Category = "TTA") float VoiceFalloffCm = 2500.f;
+	// Proximity voice: full volume inside VoiceFullVolumeCm, silent past VoiceSilentCm.
+	UPROPERTY(Config, EditAnywhere, Category = "TTA") float VoiceFullVolumeCm = 500.f;
+	UPROPERTY(Config, EditAnywhere, Category = "TTA") float VoiceSilentCm = 2500.f;
+
+	// [M] mutes/unmutes this player's outgoing voice. Only stops network voice;
+	// UTTAMicRecorder keeps its own capture, so the replay mic track still records.
+	UFUNCTION(BlueprintCallable) void ToggleVoiceMute();
+	bool IsVoiceMuted() const { return bVoiceMuted; }
 
 	UFUNCTION(BlueprintCallable) void SetFilming(bool bOn);
 	bool IsFilming() const;
@@ -101,6 +108,7 @@ private:
 	FTransform MeshRelative;
 	ETTAForm Form = ETTAForm::Human;
 	float Flash = 0.f;
+	bool bVoiceMuted = false;
 	UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> FlashMaterials;
 	UPROPERTY() TObjectPtr<UVOIPTalker> Talker;
 	UPROPERTY() TObjectPtr<USoundAttenuation> VoiceAttenuation;
