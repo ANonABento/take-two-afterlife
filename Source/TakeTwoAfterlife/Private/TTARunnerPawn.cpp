@@ -5,6 +5,9 @@
 #include "Camera/CameraShakeBase.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "CollisionQueryParams.h"
+#include "Engine/OverlapResult.h"
+#include "Engine/World.h"
 #include "Components/InputComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -160,6 +163,7 @@ void ATTARunnerPawn::SetupPlayerInputComponent(UInputComponent* Input)
 	Input->BindAction(TEXT("Jump"), IE_Pressed, this, &ACharacter::Jump);
 	Input->BindAction(TEXT("Jump"), IE_Released, this, &ACharacter::StopJumping);
 	Input->BindAction(TEXT("Dive"), IE_Pressed, this, &ATTARunnerPawn::Dive);
+	Input->BindAction(TEXT("Punch"), IE_Pressed, this, &ATTARunnerPawn::Punch);
 	Input->BindAction(TEXT("RaiseCamera"), IE_Pressed, this, &ATTARunnerPawn::RaiseCamera);
 	Input->BindAction(TEXT("RaiseCamera"), IE_Released, this, &ATTARunnerPawn::LowerCamera);
 	Input->BindAction(TEXT("ToggleVoiceMute"), IE_Pressed, this, &ATTARunnerPawn::ToggleVoiceMute);
@@ -198,6 +202,63 @@ void ATTARunnerPawn::Dive()
 	LaunchCharacter(GetActorForwardVector() * DiveSpeed + FVector(0.f, 0.f, DiveLift), true, true);
 }
 
+void ATTARunnerPawn::Punch()
+{
+	ServerPunch();
+}
+
+void ATTARunnerPawn::ServerPunch_Implementation()
+{
+	PunchState.start(Life.state()); // refuses while not Alive, mid-punch or on cooldown
+}
+
+void ATTARunnerPawn::AdvancePunch(float WorldDeltaSeconds)
+{
+	// Same slicing as AdvanceLife: one Punch transition per advance call.
+	constexpr float Step = 0.05f;
+	for (float Left = WorldDeltaSeconds; Left > 0.f; Left -= Step)
+	{
+		if (PunchState.phase() == tta::PunchPhase::Idle && PunchState.cooldownLeft() <= 0.0) return;
+		if (PunchState.advance(FMath::Min(Left, Step)) == tta::PunchEvent::OpenHitWindow)
+		{
+			PunchHitCheck();
+		}
+	}
+}
+
+void ATTARunnerPawn::PunchHitCheck()
+{
+	const FVector Forward = GetActorForwardVector();
+	TArray<FOverlapResult> Overlaps;
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(TTAPunch), false, this);
+	GetWorld()->OverlapMultiByObjectType(Overlaps, GetActorLocation() + Forward * PunchReach, FQuat::Identity,
+		FCollisionObjectQueryParams(ECC_Pawn), FCollisionShape::MakeSphere(PunchRadius), Params);
+	ATTARunnerPawn* Victim = nullptr;
+	float Best = TNumericLimits<float>::Max();
+	for (const FOverlapResult& Overlap : Overlaps)
+	{
+		ATTARunnerPawn* Runner = Cast<ATTARunnerPawn>(Overlap.GetActor());
+		if (!Runner || Runner == this || Runner->GetLifeState() != tta::LifeState::Alive || Runner->IsPunchImmune()) continue;
+		const float Dist = FVector::DistSquared(GetActorLocation(), Runner->GetActorLocation());
+		if (Dist < Best)
+		{
+			Best = Dist;
+			Victim = Runner;
+		}
+	}
+	if (Victim)
+	{
+		Victim->MulticastPunched(Forward);
+	}
+}
+
+void ATTARunnerPawn::MulticastPunched_Implementation(FVector_NetQuantizeNormal Direction)
+{
+	if (!Life.stun(tta::kStunSeconds)) return;
+	StartRagdoll();
+	GetMesh()->SetAllPhysicsLinearVelocity(Direction * PunchSpeed + FVector(0.f, 0.f, PunchLift), true);
+}
+
 void ATTARunnerPawn::SetForm(ETTAForm NewForm)
 {
 	Form = NewForm;
@@ -233,19 +294,25 @@ void ATTARunnerPawn::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	// DeltaSeconds is scaled by CustomTimeDilation (0 while frozen); timers need world time.
 	AdvanceLife(GetWorld()->GetDeltaSeconds());
+	if (HasAuthority())
+	{
+		AdvancePunch(GetWorld()->GetDeltaSeconds());
+	}
 }
 
 void ATTARunnerPawn::AdvanceLife(float WorldDeltaSeconds)
 {
 	// PawnLife applies one transition and drops the rest of dt. Feed it short slices so a
 	// hitch (or a test that passes the whole recovery) still walks Frozen -> Ragdoll -> Alive.
+	// Punch immunity also ticks down while Alive.
 	constexpr float Step = 0.05f;
-	for (float Left = WorldDeltaSeconds; Left > 0.f && Life.state() != tta::LifeState::Alive; Left -= Step)
+	for (float Left = WorldDeltaSeconds; Left > 0.f && (Life.state() != tta::LifeState::Alive || Life.punchImmune()); Left -= Step)
 	{
 		switch (Life.advance(FMath::Min(Left, Step)))
 		{
 		case tta::LifeEvent::StartRagdoll: StartRagdoll(); break;
 		case tta::LifeEvent::Respawn: Respawn(); break;
+		case tta::LifeEvent::GetUp: StopStun(); break;
 		case tta::LifeEvent::None: break;
 		}
 	}
@@ -275,6 +342,22 @@ void ATTARunnerPawn::StartRagdoll()
 
 void ATTARunnerPawn::Respawn()
 {
+	RestoreBody();
+	SetActorLocation(StartLocation, false, nullptr, ETeleportType::TeleportPhysics);
+}
+
+void ATTARunnerPawn::StopStun()
+{
+	// Read the pelvis before the mesh snaps back onto the capsule.
+	const FVector Pelvis = GetMesh()->GetBoneLocation(PelvisBone);
+	RestoreBody();
+	// Sweep (not teleport) so a ragdoll that ended against a wall doesn't stand up inside it.
+	const FVector Target = Pelvis + FVector(0.f, 0.f, GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+	SetActorLocation(Target, true, nullptr, ETeleportType::TeleportPhysics);
+}
+
+void ATTARunnerPawn::RestoreBody()
+{
 	USkeletalMeshComponent* Body = GetMesh();
 	Body->SetSimulatePhysics(false);
 	Body->SetAllBodiesSimulatePhysics(false);
@@ -282,7 +365,6 @@ void ATTARunnerPawn::Respawn()
 	Body->AttachToComponent(GetCapsuleComponent(), FAttachmentTransformRules::KeepRelativeTransform);
 	Body->SetRelativeTransform(MeshRelative);
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	SetActorLocation(StartLocation, false, nullptr, ETeleportType::TeleportPhysics);
 	GetCharacterMovement()->StopMovementImmediately();
 	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 }

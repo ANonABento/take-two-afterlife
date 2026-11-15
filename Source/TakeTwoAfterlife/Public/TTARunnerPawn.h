@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "tta/PawnLife.h"
+#include "tta/Punch.h"
 #include "TTARunnerPawn.generated.h"
 
 class UCameraComponent;
@@ -39,6 +40,8 @@ public:
 	UFUNCTION(BlueprintCallable) void Hit();
 	// Forward lunge; only from the ground while alive.
 	UFUNCTION(BlueprintCallable) void Dive();
+	// [LMB]/[Gamepad right face] punch (punch plan req 1-5). Asks the server to start it.
+	UFUNCTION(BlueprintCallable) void Punch();
 	// Angel shows wings + halo; human (runner) form hides both and shows the hat.
 	UFUNCTION(BlueprintCallable) void SetForm(ETTAForm NewForm);
 	// Hat mesh/transform/tint from DT_Cosmetics row HatIndex, face texture from row FaceIndex.
@@ -51,7 +54,12 @@ public:
 	// Advances the hit timers in world seconds (not slowed by the freeze). Called from Tick.
 	void AdvanceLife(float WorldDeltaSeconds);
 
+	// Advances the punch timers (server only); the hit check runs when the window opens.
+	void AdvancePunch(float WorldDeltaSeconds);
+
 	tta::LifeState GetLifeState() const { return Life.state(); }
+	tta::PunchPhase GetPunchPhase() const { return PunchState.phase(); }
+	bool IsPunchImmune() const { return Life.punchImmune(); }
 	FVector GetStartLocation() const { return StartLocation; }
 	float GetFlash() const { return Flash; }
 	ETTAForm GetForm() const { return Form; }
@@ -67,6 +75,12 @@ public:
 	UPROPERTY(EditAnywhere, Category = "TTA") TSubclassOf<UCameraShakeBase> ImpactShake;
 	UPROPERTY(EditAnywhere, Category = "TTA") float DiveSpeed = 900.f;
 	UPROPERTY(EditAnywhere, Category = "TTA") float DiveLift = 250.f;
+	UPROPERTY(EditAnywhere, Category = "TTA") float PunchRadius = 120.f;
+	UPROPERTY(EditAnywhere, Category = "TTA") float PunchReach = 90.f;
+	UPROPERTY(EditAnywhere, Category = "TTA") float PunchSpeed = 600.f;
+	UPROPERTY(EditAnywhere, Category = "TTA") float PunchLift = 200.f;
+	// Bone the capsule is snapped to when a stunned runner gets up.
+	UPROPERTY(EditAnywhere, Category = "TTA") FName PelvisBone = TEXT("pelvis");
 
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> Wings;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> Halo;
@@ -106,8 +120,17 @@ private:
 	void SetFlash(float Value);
 	void StartRagdoll();
 	void Respawn();
+	// Ragdoll off, mesh back on the capsule, collision and walking restored.
+	void RestoreBody();
+	// Get up in place after a punch stun: sweep the capsule to the pelvis, no teleport to start.
+	void StopStun();
+	void PunchHitCheck();
+
+	UFUNCTION(Server, Reliable) void ServerPunch();
+	UFUNCTION(NetMulticast, Reliable) void MulticastPunched(FVector_NetQuantizeNormal Direction);
 
 	tta::PawnLife Life;
+	tta::Punch PunchState;
 	FVector StartLocation = FVector::ZeroVector;
 	FTransform MeshRelative;
 	ETTAForm Form = ETTAForm::Human;
