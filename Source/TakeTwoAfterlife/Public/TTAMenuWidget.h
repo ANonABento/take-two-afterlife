@@ -124,7 +124,9 @@ private:
 	UPROPERTY() TObjectPtr<UBorder> LookSwatch;
 	UPROPERTY() TObjectPtr<UButton> StartButton;
 	UPROPERTY() TObjectPtr<UProgressBar> MicMeter;
-	UPROPERTY() TObjectPtr<UTextBlock> SettingsText;
+	// One per ClientSettings field, in RefreshSettings order (master, music, vo, sfx, sensitivity).
+	UPROPERTY() TArray<TObjectPtr<USlider>> SettingSliders;
+	UPROPERTY() TArray<TObjectPtr<UTextBlock>> SettingValues;
 	UPROPERTY() TObjectPtr<UComboBoxString> WindowModeBox;
 	UPROPERTY() TObjectPtr<UComboBoxString> ResolutionBox;
 	UPROPERTY() TObjectPtr<UVerticalBox> ReelList;
@@ -139,6 +141,9 @@ private:
 	// Title stack button: style-guide art by kind, fixed kButtonW x kButtonH so the stack is one width.
 	UButton* MenuButton(UPanelWidget* Parent, const FString& Text, ETTAButtonKind Kind);
 	UVerticalBox* ScreenPanel(float Width, EHorizontalAlignment HAlign = HAlign_Center, EVerticalAlignment VAlign = VAlign_Center);
+	static constexpr float kVolumeSliderMax = 100.f;      // slider 0..1 -> volume 0..100
+	static constexpr float kSensitivitySliderMax = 500.f; // slider 0..1 -> sensitivity 0..500 %
+	static constexpr float kSettingValueW = 96.f;         // number column right of each slider
 	void SettingRow(UPanelWidget* Parent, const FString& Name, UWidget* Control);
 	USlider* SettingSlider(UPanelWidget* Parent, const FString& Name, float Value01);
 	UComboBoxString* SettingCombo(UPanelWidget* Parent, const FString& Name);
@@ -159,11 +164,11 @@ private:
 	UFUNCTION() void OnColourNext() { CycleLook(tta::LookPart::Colour, 1); }
 	UFUNCTION() void OnHatNext() { CycleLook(tta::LookPart::Hat, 1); }
 	UFUNCTION() void OnFaceNext() { CycleLook(tta::LookPart::Face, 1); }
-	UFUNCTION() void OnMasterChanged(float V) { Settings.master = FMath::RoundToInt(V * 100.f); RefreshSettings(); }
-	UFUNCTION() void OnMusicChanged(float V) { Settings.music = FMath::RoundToInt(V * 100.f); RefreshSettings(); }
-	UFUNCTION() void OnVoChanged(float V) { Settings.vo = FMath::RoundToInt(V * 100.f); RefreshSettings(); }
-	UFUNCTION() void OnSfxChanged(float V) { Settings.sfx = FMath::RoundToInt(V * 100.f); RefreshSettings(); }
+	UFUNCTION() void OnMasterChanged(float V) { Settings.master = FMath::RoundToInt(V * kVolumeSliderMax); RefreshSettings(); }
+	UFUNCTION() void OnMusicChanged(float V) { Settings.music = FMath::RoundToInt(V * kVolumeSliderMax); RefreshSettings(); }
+	UFUNCTION() void OnVoChanged(float V) { Settings.vo = FMath::RoundToInt(V * kVolumeSliderMax); RefreshSettings(); }
+	UFUNCTION() void OnSfxChanged(float V) { Settings.sfx = FMath::RoundToInt(V * kVolumeSliderMax); RefreshSettings(); }
 	UFUNCTION() void OnWindowModeChanged(FString Item, ESelectInfo::Type Select);
 	UFUNCTION() void OnResolutionChanged(FString Item, ESelectInfo::Type Select);
-	UFUNCTION() void OnSensitivityChanged(float V) { Settings.sensitivity = FMath::RoundToInt(V * 500.f); RefreshSettings(); }
+	UFUNCTION() void OnSensitivityChanged(float V) { Settings.sensitivity = FMath::RoundToInt(V * kSensitivitySliderMax); RefreshSettings(); }
 };

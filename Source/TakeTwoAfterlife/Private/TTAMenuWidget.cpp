@@ -149,11 +149,19 @@ void UTTAMenuWidget::SettingRow(UPanelWidget* Parent, const FString& Name, UWidg
 
 USlider* UTTAMenuWidget::SettingSlider(UPanelWidget* Parent, const FString& Name, float Value01)
 {
-	USlider* Slider = WidgetTree->ConstructWidget<USlider>();
+	// Style-guide SliderBar/SliderKnob art, with the current number to the right of the bar.
+	USlider* Slider = UTTAUIStyle::MakeSlider(WidgetTree);
 	Slider->SetValue(Value01);
-	Slider->SetSliderBarColor(Palette(tta::kInk));
-	Slider->SetSliderHandleColor(Palette(tta::kBlue));
-	SettingRow(Parent, Name, Slider);
+	UHorizontalBox* Control = WidgetTree->ConstructWidget<UHorizontalBox>();
+	UHorizontalBoxSlot* BarSlot = Control->AddChildToHorizontalBox(Slider);
+	BarSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+	BarSlot->SetVerticalAlignment(VAlign_Center);
+	USizeBox* ValueSize = WidgetTree->ConstructWidget<USizeBox>();
+	ValueSize->SetWidthOverride(kSettingValueW);
+	Control->AddChild(ValueSize);
+	SettingValues.Add(Label(ValueSize, TEXT(""), UTTAUIStyle::kSmall));
+	SettingSliders.Add(Slider);
+	SettingRow(Parent, Name, Control);
 	return Slider;
 }
 
@@ -292,11 +300,11 @@ void UTTAMenuWidget::NativeOnInitialized()
 		UBorder* Face = Card(Box, tta::kBone);
 		UVerticalBox* Inner = WidgetTree->ConstructWidget<UVerticalBox>();
 		Face->SetContent(Inner);
-		SettingSlider(Inner, TEXT("Master"), Settings.master / 100.f)->OnValueChanged.AddDynamic(this, &UTTAMenuWidget::OnMasterChanged);
-		SettingSlider(Inner, TEXT("Music"), Settings.music / 100.f)->OnValueChanged.AddDynamic(this, &UTTAMenuWidget::OnMusicChanged);
-		SettingSlider(Inner, TEXT("Voice"), Settings.vo / 100.f)->OnValueChanged.AddDynamic(this, &UTTAMenuWidget::OnVoChanged);
-		SettingSlider(Inner, TEXT("SFX"), Settings.sfx / 100.f)->OnValueChanged.AddDynamic(this, &UTTAMenuWidget::OnSfxChanged);
-		SettingSlider(Inner, TEXT("Mouse sensitivity"), Settings.sensitivity / 500.f)->OnValueChanged.AddDynamic(this, &UTTAMenuWidget::OnSensitivityChanged);
+		SettingSlider(Inner, TEXT("Master"), Settings.master / kVolumeSliderMax)->OnValueChanged.AddDynamic(this, &UTTAMenuWidget::OnMasterChanged);
+		SettingSlider(Inner, TEXT("Music"), Settings.music / kVolumeSliderMax)->OnValueChanged.AddDynamic(this, &UTTAMenuWidget::OnMusicChanged);
+		SettingSlider(Inner, TEXT("Voice"), Settings.vo / kVolumeSliderMax)->OnValueChanged.AddDynamic(this, &UTTAMenuWidget::OnVoChanged);
+		SettingSlider(Inner, TEXT("SFX"), Settings.sfx / kVolumeSliderMax)->OnValueChanged.AddDynamic(this, &UTTAMenuWidget::OnSfxChanged);
+		SettingSlider(Inner, TEXT("Sensitivity"), Settings.sensitivity / kSensitivitySliderMax)->OnValueChanged.AddDynamic(this, &UTTAMenuWidget::OnSensitivityChanged);
 		WindowModeBox = SettingCombo(Inner, TEXT("Display"));
 		for (const char* Name : tta::kWindowModeNames) WindowModeBox->AddOption(UTF8_TO_TCHAR(Name));
 		WindowModeBox->OnSelectionChanged.AddDynamic(this, &UTTAMenuWidget::OnWindowModeChanged);
@@ -306,7 +314,6 @@ void UTTAMenuWidget::NativeOnInitialized()
 		MicMeter = WidgetTree->ConstructWidget<UProgressBar>();
 		MicMeter->SetFillColorAndOpacity(Palette(tta::kGrass));
 		SettingRow(Inner, TEXT("Mic test"), MicMeter);
-		SettingsText = Label(Inner, TEXT(""), UTTAUIStyle::kSmall);
 		MenuButton(Box, TEXT("BACK"), tta::kInk)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnBackClicked);
 	}
 	// How to play: one centred panel holding the step cards and Back.
@@ -494,8 +501,14 @@ void UTTAMenuWidget::SetSettings(const tta::ClientSettings& InSettings)
 void UTTAMenuWidget::RefreshSettings()
 {
 	Settings = tta::clampClientSettings(Settings);
-	SettingsText->SetText(FText::FromString(FString::Printf(TEXT("Master %d  Music %d  Voice %d  SFX %d  Sensitivity %d%%"),
-		Settings.master, Settings.music, Settings.vo, Settings.sfx, Settings.sensitivity)));
+	const int32 Values[] = {Settings.master, Settings.music, Settings.vo, Settings.sfx, Settings.sensitivity};
+	check(SettingSliders.Num() == UE_ARRAY_COUNT(Values) && SettingValues.Num() == UE_ARRAY_COUNT(Values));
+	for (int32 i = 0; i < UE_ARRAY_COUNT(Values); ++i)
+	{
+		const float Max = i == UE_ARRAY_COUNT(Values) - 1 ? kSensitivitySliderMax : kVolumeSliderMax;
+		SettingSliders[i]->SetValue(Values[i] / Max);
+		SettingValues[i]->SetText(FText::AsNumber(Values[i]));
+	}
 }
 
 static_assert(static_cast<int32>(tta::WindowMode::Fullscreen) == EWindowMode::Fullscreen
