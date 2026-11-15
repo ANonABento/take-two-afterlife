@@ -360,3 +360,10 @@ Added `tta::Punch` (wind-up/active/recovery + 1.5 s cooldown) and a PawnLife stu
 - **Prompt:** wind-up pose or scale-up placeholder, whoosh + hit cues via AudioCues, short camera shake on the victim.
 - **Agent did:** `AudioEvent::PunchWindUp`/`PunchHit` with `SFX_PunchWhoosh`/`SFX_PunchHit` (doctest). Server `ServerPunch` now fires `MulticastWindUp` (Unreliable) when the punch starts: every client swells the runner mesh to `WindUpScale` 1.15 over the 0.45 s wind-up and plays the whoosh. `MulticastPunched` plays the hit and starts `ImpactShake` on the victim's own camera.
 - **Failed / fixed by hand:** no SFX files yet; run `create_placeholder_audio.py` (silent placeholders) or drop real ones in `/Game/Audio/SFX/`. Editor compile + PIE feel check pending.
+
+## Audio drop-in (music + SFX)
+- **Prompt:** real CC0 music and SFX for the 16 cue names, 44.1 kHz WAV, about -16 LUFS music / -12 LUFS SFX, CREDITS rows, captions only for VO.
+- **Agent did:** `Scripts/build_audio.py` downloads six CC0 OpenGameArt loops (In the Lobby, Happy Adventure, Lasso Lady, Menu Music, Heavenly Loop, Funky Victory Loop), cuts them to 32 s mono so each stays under 3 MB, renames the `make_sfx.py` synth pack to the `SFX_*` cue ids, and loudness-normalises everything with ffmpeg into `Content/Audio/{Music,SFX}/`. CREDITS rows filled in; WeLoveIndies/Freesound rows dropped. Test: `Scripts/tests/test_audio_dropin.py`.
+- **Failed / fixed by hand:** kenney.nl returns 403 to the sandbox, so SFX come from the in-house synth pack. Music longer than 32 s no longer loops seamlessly. On the PC: run `python Scripts/build_audio.py`, drag the WAVs into `/Game/Audio/Music` and `/Game/Audio/SFX` (replace the silent placeholders), tick Looping on the six MUS_ waves, then PIE.
+
+- 2026-11-15: Narrator VO generated with ElevenLabs (voice George, eleven_multilingual_v2): 60 `VO_*` WAVs, 44.1 kHz mono, -16 LUFS. Unzip into `Content/Audio/VO/` and import over the silent placeholders. `Scripts/tests/test_vo_audio.py` checks names match `AudioCues.cpp`.
