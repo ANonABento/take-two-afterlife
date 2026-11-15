@@ -60,10 +60,14 @@ const FSoftObjectPath& UTTAUIStyle::BackgroundPath(ETTAUIScreen Screen) const
 
 UTexture2D* UTTAUIStyle::LoadBackground(ETTAUIScreen Screen) const
 {
-	const FSoftObjectPath& Path = BackgroundPath(Screen);
+	return LoadSlotTexture(BackgroundPath(Screen));
+}
+
+UTexture2D* UTTAUIStyle::LoadSlotTexture(const FSoftObjectPath& Path) const
+{
 	if (Path.IsNull()) return nullptr;
 	UTexture2D* Image = Cast<UTexture2D>(Path.TryLoad());
-	if (!Image) UE_LOG(LogTTAUIStyle, Error, TEXT("UI background %s is set but is not a loadable Texture2D"), *Path.ToString());
+	if (!Image) UE_LOG(LogTTAUIStyle, Error, TEXT("UI image %s is set but is not a loadable Texture2D"), *Path.ToString());
 	return Image;
 }
 

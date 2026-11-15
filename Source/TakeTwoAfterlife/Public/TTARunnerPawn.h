@@ -42,6 +42,9 @@ public:
 	UFUNCTION(BlueprintCallable) void SetForm(ETTAForm NewForm);
 	// Hat mesh/transform/tint from DT_Cosmetics row HatIndex, face texture from row FaceIndex.
 	UFUNCTION(BlueprintCallable) void ApplyLook(int32 HatIndex, int32 FaceIndex);
+	// Podium statue: angel form with this hat, face and body colour, no controller,
+	// no movement, animation paused on its current pose.
+	void FreezeAsStatue(int32 HatIndex, int32 FaceIndex, int32 Colour);
 	UFUNCTION(BlueprintCallable) void SetStartLocation(const FVector& Location) { StartLocation = Location; }
 
 	// Advances the hit timers in world seconds (not slowed by the freeze). Called from Tick.
@@ -57,6 +60,7 @@ public:
 
 	UPROPERTY(Config, EditAnywhere, Category = "TTA") TSoftObjectPtr<USkeletalMesh> RunnerMesh;
 	UPROPERTY(Config, EditAnywhere, Category = "TTA") TSoftObjectPtr<UDataTable> CosmeticsTable;
+	static inline const FName StatueTag = TEXT("TTA_Statue");
 	UPROPERTY(EditAnywhere, Category = "TTA") FName HatSocket = TEXT("head");
 	UPROPERTY(EditAnywhere, Category = "TTA") TObjectPtr<USoundBase> ImpactSound;
 	UPROPERTY(EditAnywhere, Category = "TTA") TSubclassOf<UCameraShakeBase> ImpactShake;
@@ -70,7 +74,14 @@ public:
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UCameraComponent> Handheld;
 	// Records this runner's mic during Run (locally controlled runner only).
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UTTAMicRecorder> MicRecorder;
-	UPROPERTY(EditAnywhere, Category = "TTA") float VoiceFalloffCm = 2500.f;
+	// Proximity voice: full volume inside VoiceFullVolumeCm, silent past VoiceSilentCm.
+	UPROPERTY(Config, EditAnywhere, Category = "TTA") float VoiceFullVolumeCm = 500.f;
+	UPROPERTY(Config, EditAnywhere, Category = "TTA") float VoiceSilentCm = 2500.f;
+
+	// [M] mutes/unmutes this player's outgoing voice. Only stops network voice;
+	// UTTAMicRecorder keeps its own capture, so the replay mic track still records.
+	UFUNCTION(BlueprintCallable) void ToggleVoiceMute();
+	bool IsVoiceMuted() const { return bVoiceMuted; }
 
 	UFUNCTION(BlueprintCallable) void SetFilming(bool bOn);
 	bool IsFilming() const;
@@ -97,6 +108,7 @@ private:
 	FTransform MeshRelative;
 	ETTAForm Form = ETTAForm::Human;
 	float Flash = 0.f;
+	bool bVoiceMuted = false;
 	UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> FlashMaterials;
 	UPROPERTY() TObjectPtr<UVOIPTalker> Talker;
 	UPROPERTY() TObjectPtr<USoundAttenuation> VoiceAttenuation;

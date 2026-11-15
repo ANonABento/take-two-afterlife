@@ -8,6 +8,7 @@
 #pragma warning(disable: 4458) // local Owner shadows AActor::Owner
 
 #include "Engine/World.h"
+#include "UObject/Package.h"
 #include "Misc/FileHelper.h"
 #include "Misc/PackageName.h"
 #include "Misc/Paths.h"
@@ -17,11 +18,14 @@
 #include "TTASessionSubsystem.h"
 #include "TTAMatchSettings.h"
 #include "GameFramework/PlayerController.h"
+#include "Components/InputComponent.h"
+#include "InputCoreTypes.h"
 #include "TTABuildHUD.h"
 #include "TTABuildPawn.h"
 #include "TTARunDirector.h"
 #include "TTARunnerPawn.h"
 #include "TTATrapActor.h"
+#include "Engine/TargetPoint.h"
 
 #include <algorithm>
 #include <stdexcept>
@@ -48,11 +52,16 @@ bool ATTAGameMode::RequestPhase(ETTAPhase To)
 		return false;
 	}
 	GetGameState<ATTAGameState>()->SetPhase(ToUE(Match.phase()), Match.round(), Match.phaseSeconds());
-	// Round 1 is already in the Backyard; on a failed travel the round still goes on here.
-	if (To == ETTAPhase::Build && (Match.round() == 1 || !TravelTo(BackyardMap))) EnterBuild();
+	// Traps and cameras stay between rounds; each Build gives every player a fresh budget (before travel, so the carry keeps it).
+	if (To == ETTAPhase::Build) Layout.beginBuild(Match.round());
+	// Last match's podium statues stay through the lobby and go when the next match starts.
+	if (!tta::statuesStand(Match.phase())) ClearStatues();
+	// Heaven is the lobby, so every Build travels to the Backyard; on a failed travel the round still goes on here.
+	if (To == ETTAPhase::Build && (IsOnMap(BackyardMap) || !TravelTo(BackyardMap))) EnterBuild();
 	if (To == ETTAPhase::Run) EnterRun();
 	// On a failed travel the premiere still runs (and ends) here.
 	if (To == ETTAPhase::Premiere && !TravelTo(HeavenMap)) BeginPremiere();
+	if (To == ETTAPhase::Podium) StartPodium(IsOnMap(HeavenMap));
 	return true;
 }
 
@@ -68,7 +77,9 @@ bool ATTAGameMode::ReturnToLobby()
 	GetGameState<ATTAGameState>()->SetPhase(ETTAPhase::Lobby, Match.round());
 	// Seamless travel keeps every connection and the session, so the room code stays.
 	// A world with no game-instance subsystems (automation) has already reset; there is no map to travel to.
-	if (UTTASessionSubsystem* Session = GetGameInstance() ? GetGameInstance()->GetSubsystem<UTTASessionSubsystem>() : nullptr)
+	// Already in Heaven (the lobby) after the podium: stay, so the statues stay too.
+	UTTASessionSubsystem* Session = GetGameInstance() ? GetGameInstance()->GetSubsystem<UTTASessionSubsystem>() : nullptr;
+	if (Session && !IsOnMap(Session->GetLobbyMap()))
 	{
 		TravelTo(Session->GetLobbyMap());
 	}
@@ -77,6 +88,49 @@ bool ATTAGameMode::ReturnToLobby()
 		RestartLobbyRunners();
 	}
 	return true;
+}
+
+bool ATTAGameMode::IsOnMap(const FString& Map) const
+{
+	return UWorld::RemovePIEPrefix(GetWorld()->GetOutermost()->GetName()) == Map;
+}
+
+bool ATTAGameMode::OpenGate()
+{
+	if (Match.phase() != tta::Phase::Lobby) return false;
+	Gate.open();
+	for (TActorIterator<ATTABotController> It(GetWorld()); It; ++It) MarkReady(*It);
+	SyncGate();
+	return true;
+}
+
+bool ATTAGameMode::MarkReady(const AController* Player)
+{
+	if (Match.phase() != tta::Phase::Lobby || !Player || !Player->PlayerState) return false;
+	if (!Gate.markReady(Player->PlayerState->GetPlayerId())) return false;
+	SyncGate();
+	return true;
+}
+
+void ATTAGameMode::SyncGate()
+{
+	ATTAGameState* State = GetGameState<ATTAGameState>();
+	Gate.setPlayers(State->PlayerArray.Num());
+	State->SetGate(Gate.isOpen(), Gate.readyCount(), Gate.players());
+}
+
+void ATTAPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+	InputComponent->BindKey(EKeys::Enter, IE_Pressed, this, &ATTAPlayerController::PressStart);
+	InputComponent->BindKey(EKeys::Gamepad_Special_Right, IE_Pressed, this, &ATTAPlayerController::PressStart);
+}
+
+void ATTAPlayerController::PressStart()
+{
+	ATTAGameMode* Mode = GetWorld()->GetAuthGameMode<ATTAGameMode>();
+	if (!Mode || !IsLocalController()) return; // clients have no game mode: only the host starts
+	if (!Mode->OpenGate()) UE_LOG(LogTemp, Verbose, TEXT("ATTAGameMode: START ignored outside the Heaven lobby"));
 }
 
 void ATTAPlayerController::BeginPlay()
@@ -141,6 +195,11 @@ void ATTAGameMode::PostSeamlessTravel()
 	if (Match.phase() == tta::Phase::Premiere)
 	{
 		BeginPremiere();
+		return;
+	}
+	if (Match.phase() == tta::Phase::Podium)
+	{
+		StartPodium(true);
 		return;
 	}
 	if (Match.phase() != tta::Phase::Build) return;
@@ -286,6 +345,7 @@ void ATTAGameMode::BeginPremiere()
 	}
 	TArray<int32> Podium;
 	for (int P : Score.podium()) Podium.Add(P);
+	Cinema->SetBaseTotals(Score.totals());
 	Cinema->OnStep.RemoveAll(this);
 	Cinema->OnStep.AddUObject(this, &ATTAGameMode::OnCinemaStep);
 	try
@@ -321,6 +381,7 @@ void ATTAGameMode::StartPlay()
 {
 	Super::StartPlay();
 	AddBots(BotCount);
+	if (BotCount > 0) OpenGate(); // Play Solo: no host START, the gate is open from the start
 }
 
 void ATTAGameMode::AddBots(int32 Count)
@@ -417,10 +478,31 @@ void ATTAGameMode::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	const ATTAGameState* State = GetGameState<ATTAGameState>();
 	if (!State) return;
+	if (State->GetPhase() == ETTAPhase::Lobby && !bGateTravelled)
+	{
+		SyncGate();
+		Gate.tick(DeltaSeconds);
+		if (Gate.shouldTravel())
+		{
+			bGateTravelled = true;
+			verify(RequestPhase(ETTAPhase::Build));
+		}
+		return;
+	}
 	const bool bTimerDone = Match.phaseSeconds() > 0 && State->GetSecondsLeft() == 0;
 	if (State->GetPhase() == ETTAPhase::Build && bTimerDone) verify(RequestPhase(ETTAPhase::Run));
 	if (State->GetPhase() == ETTAPhase::Edit && bTimerDone) verify(RequestPhase(ETTAPhase::Premiere));
 	if (bPremiereLive && (PremiereElapsed += DeltaSeconds) >= PremiereDeadline) FinishPremiere();
+	if (State->GetPhase() == ETTAPhase::Podium && Podium)
+	{
+		Podium->tick(DeltaSeconds);
+		if (Podium->step() == tta::PodiumStep::Lobby)
+		{
+			Podium.reset();
+			verify(RequestPhase(ETTAPhase::Lobby));
+		}
+		return;
+	}
 	if (State->GetPhase() != ETTAPhase::Run || !Director || !Director->IsRunning()) return;
 	if (Director->IsTimedOut()) TimedOutFor += DeltaSeconds;
 	if (Director->AllFinished() || TimedOutFor >= SmiteHoldSeconds) EndRun();
@@ -537,4 +619,56 @@ ETTAPlaceOutcome ATTAGameMode::RemovePlacement(const AController* By, int32 Id)
 	TObjectPtr<ATTAPlacementMarker> Marker;
 	if (Markers.RemoveAndCopyValue(Id, Marker) && Marker) Marker->Destroy();
 	return ETTAPlaceOutcome::Ok;
+}
+
+void ATTAGameMode::StartPodium(bool bInHeaven)
+{
+	Podium.emplace(Score.podium(), bInHeaven, PodiumHoldSeconds);
+	if (Podium->step() == tta::PodiumStep::Travel)
+	{
+		if (TravelTo(HeavenMap)) return; // PostSeamlessTravel starts it again, in Heaven
+		UE_LOG(LogTemp, Warning, TEXT("ATTAGameMode: podium without Heaven; statues go up here"));
+		Podium->arrived();
+	}
+	SpawnStatues();
+	Podium->statuesPlaced();
+}
+
+void ATTAGameMode::SpawnStatues()
+{
+	ClearStatues();
+	static const FName Spots[tta::PodiumShow::kStatues] = {TEXT("1st"), TEXT("2nd"), TEXT("3rd")};
+	const std::vector<int>& Top = Podium->statues();
+	for (size_t i = 0; i < Top.size(); ++i)
+	{
+		const ATargetPoint* Spot = nullptr;
+		for (TActorIterator<ATargetPoint> It(GetWorld()); It; ++It)
+		{
+			if (It->ActorHasTag(Spots[i])) Spot = *It;
+		}
+		if (!Spot)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("ATTAGameMode: no TargetPoint tagged %s (run py Scripts/dress_heaven.py)"), *Spots[i].ToString());
+			continue;
+		}
+		tta::PlayerLook Look;
+		for (const APlayerState* PS : GetGameState<ATTAGameState>()->PlayerArray)
+		{
+			const ATTAPlayerState* TTA = Cast<ATTAPlayerState>(PS);
+			if (TTA && TTA->GetPlayerId() == Top[i]) Look = TTA->GetLook();
+		}
+		FActorSpawnParameters Params;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+		ATTARunnerPawn* Statue = GetWorld()->SpawnActor<ATTARunnerPawn>(RunnerPawnClass, Spot->GetActorTransform(), Params);
+		check(Statue);
+		Statue->FreezeAsStatue(Look.hat, Look.face, tta::kPlayerColours[Look.colour]);
+	}
+}
+
+void ATTAGameMode::ClearStatues()
+{
+	for (TActorIterator<ATTARunnerPawn> It(GetWorld()); It; ++It)
+	{
+		if (It->ActorHasTag(ATTARunnerPawn::StatueTag)) It->Destroy();
+	}
 }

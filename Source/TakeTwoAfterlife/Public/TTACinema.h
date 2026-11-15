@@ -4,9 +4,11 @@
 #include "GameFramework/Actor.h"
 #include "tta/CutPlayback.h"
 #include "tta/Premiere.h"
+#include "tta/ScoreBoard.h"
 
 #include <map>
 #include <memory>
+#include <vector>
 
 #include "TTACinema.generated.h"
 
@@ -62,6 +64,12 @@ public:
 	FText GetIntroLine() const;
 	// Players by total, set once the final premiere reaches the podium.
 	const TArray<int32>& GetPodium() const { return ShownPodium; }
+	// Match totals before this premiere (PlayerState ids); set before StartPremiere.
+	void SetBaseTotals(const std::map<int, double>& Totals) { BaseTotals = Totals; }
+	// Score board for the Reveal step after each vote (totals before -> after this cut),
+	// empty outside Reveal; GetScoreBoardAlpha = 0..1 through that step.
+	const std::vector<tta::ScoreRow>& GetScoreBoard() const { return Board; }
+	float GetScoreBoardAlpha() const;
 
 	FTTAOnPremiereStep OnStep;
 
@@ -78,6 +86,9 @@ private:
 	std::map<int, FTTACinemaCut> CutsById;
 	TArray<int32> FinalPodium;
 	TArray<int32> ShownPodium;
+	std::map<int, double> BaseTotals;
+	std::map<int, double> ShownTotals;
+	std::vector<tta::ScoreRow> Board;
 	UPROPERTY() TObjectPtr<UTTACutPlayer> Player;
 	int32 LastClip = -1;
 	bool bMicLoaded = false;

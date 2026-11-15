@@ -51,6 +51,7 @@ struct Placement {
     int rotation = 0;
     std::array<int, 2> settings{};        // traps only
     bool hidden = true;                   // hidden from other players until Run
+    int round = 0;                        // Build it was bought in; only that round's spend counts
 };
 
 enum class PlaceResult { Ok, OutOfBounds, OverBudget, CameraCapReached, BadSetting };
@@ -66,6 +67,11 @@ public:
     PlaceResult setTrapSetting(int id, int index, int value);
     bool remove(int id);
 
+    // A new Build (1-based match round): placements stay, every player gets a fresh kBudget.
+    void beginBuild(int round) { round_ = round; }
+    int round() const { return round_; }
+
+    // Trap spend this round; placements from earlier rounds are already paid for.
     int spent(int owner) const;
     int remaining(int owner) const { return kBudget - spent(owner); }
     int cameraCount(int owner) const;
@@ -82,6 +88,7 @@ private:
     PlaceResult add(Placement p, double xMeters, double yMeters, double degrees, int* outId);
     std::vector<Placement> placements_;
     int nextId_ = 1;
+    int round_ = 0;
 };
 
 std::string toJson(const Layout& layout);

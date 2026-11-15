@@ -1,4 +1,4 @@
-﻿#include "TTARunnerPawn.h"
+#include "TTARunnerPawn.h"
 #include "Engine/SkeletalMesh.h"
 
 #include "Camera/CameraComponent.h"
@@ -134,6 +134,15 @@ void ATTARunnerPawn::SetupPlayerInputComponent(UInputComponent* Input)
 	Input->BindAction(TEXT("Dive"), IE_Pressed, this, &ATTARunnerPawn::Dive);
 	Input->BindAction(TEXT("RaiseCamera"), IE_Pressed, this, &ATTARunnerPawn::RaiseCamera);
 	Input->BindAction(TEXT("RaiseCamera"), IE_Released, this, &ATTARunnerPawn::LowerCamera);
+	Input->BindAction(TEXT("ToggleVoiceMute"), IE_Pressed, this, &ATTARunnerPawn::ToggleVoiceMute);
+}
+
+void ATTARunnerPawn::ToggleVoiceMute()
+{
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (!PC || !IsLocallyControlled()) return;
+	bVoiceMuted = !bVoiceMuted;
+	PC->ToggleSpeaking(!bVoiceMuted);
 }
 
 void ATTARunnerPawn::MoveForward(float Value)
@@ -271,8 +280,25 @@ void ATTARunnerPawn::OnPlayerStateChanged(APlayerState* NewPlayerState, APlayerS
 	VoiceAttenuation = NewObject<USoundAttenuation>(this);
 	VoiceAttenuation->Attenuation.bAttenuate = true;
 	VoiceAttenuation->Attenuation.bSpatialize = true;
-	VoiceAttenuation->Attenuation.FalloffDistance = VoiceFalloffCm;
+	VoiceAttenuation->Attenuation.AttenuationShape = EAttenuationShape::Sphere;
+	VoiceAttenuation->Attenuation.AttenuationShapeExtents = FVector(VoiceFullVolumeCm, 0.f, 0.f);
+	VoiceAttenuation->Attenuation.FalloffDistance = VoiceSilentCm - VoiceFullVolumeCm;
 	Talker = UVOIPTalker::CreateTalkerForPlayer(NewPlayerState);
 	Talker->Settings.ComponentToAttachTo = GetMesh();
 	Talker->Settings.AttenuationSettings = VoiceAttenuation;
+}
+
+void ATTARunnerPawn::FreezeAsStatue(int32 HatIndex, int32 FaceIndex, int32 Colour)
+{
+	SetForm(ETTAForm::Angel);
+	ApplyLook(HatIndex, FaceIndex);
+	const FLinearColor Body(FColor::FromHex(UTF8_TO_TCHAR(tta::kPaletteHex[Colour])));
+	for (UMaterialInstanceDynamic* Material : FlashMaterials)
+	{
+		if (Material) Material->SetVectorParameterValue(TintParam, Body);
+	}
+	GetCharacterMovement()->DisableMovement();
+	GetMesh()->bPauseAnims = true;
+	SetActorTickEnabled(false);
+	Tags.AddUnique(StatueTag);
 }
