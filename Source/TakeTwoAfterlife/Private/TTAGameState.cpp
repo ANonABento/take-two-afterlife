@@ -20,6 +20,14 @@ void ATTAGameState::SetSettingsJson(const FString& Json)
 	SettingsJson = Json;
 }
 
+void ATTAGameState::SetGate(bool bOpen, int32 Ready, int32 Max)
+{
+	check(HasAuthority());
+	bGateOpen = bOpen;
+	ReadyCount = Ready;
+	ReadyMax = Max;
+}
+
 int32 ATTAGameState::GetSecondsLeft() const
 {
 	return PhaseEndsAt < 0.0 ? 0 : FMath::Max(0, FMath::CeilToInt32(PhaseEndsAt - GetServerWorldTimeSeconds()));
@@ -44,4 +52,7 @@ void ATTAGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME(ATTAGameState, PhaseEndsAt);
 	DOREPLIFETIME(ATTAGameState, PhaseStartedAt);
 	DOREPLIFETIME(ATTAGameState, SettingsJson);
+	DOREPLIFETIME(ATTAGameState, bGateOpen);
+	DOREPLIFETIME(ATTAGameState, ReadyCount);
+	DOREPLIFETIME(ATTAGameState, ReadyMax);
 }

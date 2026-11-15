@@ -157,6 +157,14 @@ def main():
         if piece["label"] not in ("Podium", "Trophy", "Halo"):
             spawn_mesh(subsystem, piece, toon)
 
+    # Lobby gate trigger on the red carpet: in Lobby, going through it marks a player ready.
+    gate_at = unreal.Vector(*next(p for p in pieces.values() if p["mesh"] == "SM_Heaven_RedCarpet")["at"])
+    gate = next((a for a in actors if isinstance(a, unreal.TTAFinishGate)), None)
+    if gate is None:
+        gate = subsystem.spawn_actor_from_class(unreal.TTAFinishGate, gate_at)
+    gate.set_actor_label("HeavenGate")
+    gate.set_actor_location(gate_at, False, False)
+
     podium, podium_h, width = spawn_mesh(subsystem, pieces["Podium"], toon)
     top_z = pieces["Podium"]["at"][2] + podium_h
     trophy = dict(pieces["Trophy"], at=(PODIUM_X, 0.0, top_z))

@@ -5,12 +5,15 @@
 #include "GameFramework/PlayerController.h"
 #include "TTAGameState.h"
 #include "TTAPlacementMarker.h"
+#include "tta/HeavenGate.h"
 #include "tta/MatchFlow.h"
 #include "tta/MatchStateMachine.h"
+#include "tta/PodiumShow.h"
 #include "tta/Premiere.h"
 #include "tta/Scoring.h"
 
 #include <map>
+#include <optional>
 #include <vector>
 #include "TTAGameMode.generated.h"
 
@@ -28,6 +31,9 @@ class TAKETWOAFTERLIFE_API ATTAPlayerController : public APlayerController
 	GENERATED_BODY()
 
 protected:
+	virtual void SetupInputComponent() override;
+	// Host START (Enter / gamepad Menu): opens the Heaven gate. Listen-server host only.
+	void PressStart();
 	// The Title menu leaves the viewport in UIOnly with a cursor, and that survives the travel
 	// to the match map; the match controller puts the game back in charge.
 	virtual void BeginPlay() override;
@@ -93,6 +99,11 @@ public:
 	ATTARunDirector* GetRunDirector() const { return Director; }
 
 	virtual void Tick(float DeltaSeconds) override;
+	// Heaven lobby (server). OpenGate: the host's START (Solo calls it at StartPlay); bots are ready
+	// at once. MarkReady: a player went through the gate. Both false outside Lobby.
+	bool OpenGate();
+	bool MarkReady(const AController* Player);
+	const tta::HeavenGate& GetGate() const { return Gate; }
 	// Play Solo: `?bots=N` on the map URL (0-MaxBots) adds that many bots at StartPlay.
 	virtual void StartPlay() override;
 	static constexpr int32 MaxBots = 3;
@@ -107,12 +118,18 @@ public:
 	// Maps from DefaultGame.ini [/Script/TakeTwoAfterlife.TTAGameMode].
 	UPROPERTY(Config) FString BackyardMap;
 	UPROPERTY(Config) FString HeavenMap;
+	// Seconds on the podium statues before everyone goes back to the Heaven lobby.
+	UPROPERTY(EditDefaultsOnly, Category = "TTA") float PodiumHoldSeconds = 8.f;
 	UPROPERTY(EditDefaultsOnly, Category = "TTA") FTransform BuildCameraStart = FTransform(FRotator(-30.f, 0.f, 0.f), FVector(-500.f, 0.f, 800.f));
 
 private:
 	// Saves the match to UTTAMatchCarry and server-travels. False (logged) when Map isn't a package.
 	bool TravelTo(const FString& Map);
 	bool ReturnToLobby();
+	// True when this world is Map (PIE prefix ignored).
+	bool IsOnMap(const FString& Map) const;
+	// Player count into the gate, gate into ATTAGameState.
+	void SyncGate();
 	// Gives every player without a runner a fresh one at a PlayerStart (Lobby without travel).
 	void RestartLobbyRunners();
 	void EnterBuild();
@@ -129,6 +146,11 @@ private:
 	void OnCinemaStep(tta::PremiereStep Step);
 	// Hands the cinema's rating points to EndPremiere once (cinema finish or timeout).
 	void FinishPremiere();
+	// Runs tta::PodiumShow: travel to Heaven if needed, statues, hold, then Lobby.
+	void StartPodium(bool bInHeaven);
+	// Top 3 as frozen angels at the TargetPoints tagged 1st / 2nd / 3rd (dress_heaven.py).
+	void SpawnStatues();
+	void ClearStatues();
 
 	tta::Layout Layout; // persists across rounds, like the map
 	UPROPERTY() TMap<int32, TObjectPtr<ATTAPlacementMarker>> Markers;
@@ -140,9 +162,12 @@ private:
 	std::vector<int> RunPlayerIds;
 	int32 RunnerCount = 0;
 	int32 BotCount = 0;
+	tta::HeavenGate Gate;
+	bool bGateTravelled = false;
 	float TimedOutFor = 0.f;
 	UPROPERTY() TObjectPtr<ATTACinema> Cinema;
 	bool bPremiereLive = false;
 	float PremiereElapsed = 0.f;
 	float PremiereDeadline = 0.f;
+	std::optional<tta::PodiumShow> Podium;
 };

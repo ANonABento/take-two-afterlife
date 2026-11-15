@@ -297,8 +297,29 @@ It should end with `Result: Succeeded`. If not, paste the first `error C` lines.
 - KayKit `prototype_texture` -> Masked: in the editor, `py Scripts/fix_prototype_material.py`.
 - **To run (UE 5.5):** `Automation RunTests TTA.` — TTA.UI.MenuFlow expected to pass. Untested here (no Unreal in the sandbox).
 
+## Plan 4 task 1: Heaven lobby + gate start
+- **Did:** Heaven is the lobby (`TTASessionSubsystem::LobbyMap`). Host / Join / Play Solo land there as `ATTARunnerPawn`. The host's START (Enter or gamepad Menu) opens the gate; Solo opens it at StartPlay and its 3 bots count as ready. `ATTAFinishGate` in Lobby marks the player ready. `tta::HeavenGate` (Core, doctest) decides when to travel: all ready, or 20 s after the first player through. GameState replicates `bGateOpen`, `ReadyCount`, `ReadyMax`; the HUD shows "n/max READY". `dress_heaven.py` places a `TTAFinishGate` on the red carpet.
+- **Manual check (UE 5.5, untested here):** 1. `py Scripts/dress_heaven.py` once. 2. Title -> Host: you spawn in Heaven and can walk. 3. Press Enter (START): a "0/1 READY" card shows. 4. Walk or jump through the gate on the red carpet: "1/1 READY", then Backyard loads in Build. Solo: the card shows "3/4 READY" at once; going through the gate loads Backyard. With two players, one through the gate -> Backyard after 20 s.
+
+
+## Plan 5 task 3: Score board, podium statues, back to lobby
+- **Did:** after each cut's Funny/Evil vote the premiere's 4 s Reveal step now shows a Kahoot-style board: bars slide from the old totals to the new ones and rows swap to the new rank (`tta::scoreBoard` / `scoreBarAt`, drawn by `ATTABuildHUD::DrawScoreBoard`). After round 3 `tta::PodiumShow` runs: travel to Heaven if not there, the top 3 stand on the podium as frozen angels (hat, face, palette colour, animation paused), `PodiumHoldSeconds` (8 s) later everyone is back in the Heaven lobby without a map reload, so the statues stay until the next match's Build.
+- **Manual check, solo round (UE 5.5, untested here):** 1. `py Scripts/dress_heaven.py` once (podium TargetPoints tagged 1st/2nd/3rd). 2. Set `Rounds` to 1 in the host settings (or play 3 rounds). 3. Title -> Play Solo, go through the gate, build, run, edit. 4. In the Heaven premiere, after each cut's rating screen a score board shows for ~4 s: bars grow and rows reorder, then the next cut starts. 5. After the last cut: HUD shows PODIUM, three angel statues in their hats/colours stand frozen on the podium spots. 6. ~8 s later the phase is LOBBY, you have a runner in Heaven, the statues are still there. 7. Press Enter, go through the gate: Backyard loads and the statues are gone.
+
+## Plan task 4: Proximity voice chat
+- **Did:** UE 5.5 VOIP was already on in config (`[OnlineSubsystem] bHasVoiceEnabled`, `[Voice] bEnabled`, `DefaultPlatformService=NULL`, open mic `bRequiresPushToTalk=false`). Each remote runner gets a `UVOIPTalker` registered to its PlayerState; its attenuation is now full volume within 5 m and silent past 25 m (`VoiceFullVolumeCm` / `VoiceSilentCm` in DefaultGame.ini). [M] toggles your outgoing voice (`ToggleSpeaking`); the TTAMicRecorder replay track keeps recording while muted. `Scripts/tests/test_proximity_voice.py`.
+- **Two-window test (UE 5.5, untested here):** 1. Editor: Play -> Number of Players 2, Net Mode "Play As Listen Server", "Run Under One Process" off (two processes so each opens the mic). Or two PCs on one LAN: Host on one, Join with the code on the other. 2. Use headphones on at least one side (or two PCs) to avoid echo. 3. Stand next to each other in Heaven and talk: clear, full volume. 4. Walk apart: volume holds to ~5 m, then fades, and is gone past ~25 m. Sound pans with direction. 5. Press M on the talker: the other side hears nothing; press M again: voice is back. 6. Muted during a Run: the premiere still plays your mic track (Saved/Mic/Round<R>_Player<P>.wav exists). If nothing is heard at all, check `LogVoice` in the Output Log and send those lines.
+
+## Plan 6 task 5: Title menu simplified
+Title is Play Solo / Host Game / Join (code or IP) / Settings / Quit. Logo and button art slots added to TTAUIStyle (DefaultGame.ini) so generated art drops in with no code change. Check: build, open the Title map, confirm 5 buttons each work; set MenuLogo to a texture and confirm it replaces the text title.
+
 ## Build watch: automation green on UE 5.5 (Nov 15)
 - Editor build of main (fbaaf9f) succeeded with no changes.
 - `TTA.Bots.SoloRound`: the test called `World->Tick` 840 times inside one engine frame; tick functions queue once per `GFrameCounter`, so only the first tick ran (bots never moved, Run never ended). The test now bumps `GFrameCounter` per simulated frame. Game code untouched.
 - `TTA.UI.MenuFlow`: `ULocalPlayer` is `Within=Engine`; outering it to the game instance tripped an ensure. The test now outers it to `GEngine`; `test_menu_init.py` asserted the opposite and was corrected.
 - **Verified on this PC:** Build.bat exits 0 (all 22 actions, DLL linked); `Automation RunTests TTA.` 16/16 pass; `Scripts/test.ps1` green (doctest + 180 Python tests).
+
+## Merge main into plan branch (Nov 15)
+- Merged `origin/main` (build-watch test fixes) into the plan branch. Only DEVLOG.md and plan.md conflicted; both sides' entries kept. The three test files merged cleanly.
+- First real UE 5.5 compile of the plan-branch features needed two fixes: `TTAGameMode.cpp` includes `UObject/Package.h` (`IsOnMap` calls `GetOutermost()->GetName()`), and `InputCore` is now a module dependency (`EKeys::Enter` / `Gamepad_Special_Right` for the host's START key failed to link).
+- **Verified on this PC:** Build.bat exits 0 (DLL linked); `Automation RunTests TTA.` 16/16 pass headless (`-nullrhi`); `Scripts/test.ps1` green (doctest + 196 Python tests). The manual checks listed above (lobby gate, 3 rounds, podium, voice, menu) are still unplayed.

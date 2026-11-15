@@ -3,6 +3,7 @@
 
 #include "Blueprint/WidgetTree.h"
 #include "Components/Border.h"
+#include "Components/Image.h"
 #include "Components/Button.h"
 #include "Components/ComboBoxString.h"
 #include "Components/EditableTextBox.h"
@@ -19,6 +20,7 @@
 #include "Components/WidgetSwitcher.h"
 #include "Components/WidgetSwitcherSlot.h"
 #include "Brushes/SlateRoundedBoxBrush.h"
+#include "Engine/Texture2D.h"
 #include "GameFramework/GameUserSettings.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Misc/Paths.h"
@@ -80,10 +82,22 @@ UButton* UTTAMenuWidget::MenuButton(UPanelWidget* Parent, const FString& Text, i
 {
 	const FLinearColor Base = Palette(Fill);
 	const FLinearColor Ink = Palette(tta::kInk);
+	const UTTAUIStyle& UIStyle = UTTAUIStyle::Get();
+	// A button art slot set in TTAUIStyle replaces the palette rounded box for that state.
+	auto StateBrush = [&](const FSoftObjectPath& Art, const FLinearColor& Colour) -> FSlateBrush
+	{
+		if (UTexture2D* Image = UIStyle.LoadSlotTexture(Art))
+		{
+			FSlateBrush Brush;
+			Brush.SetResourceObject(Image);
+			return Brush;
+		}
+		return FSlateRoundedBoxBrush(Colour, kCorner);
+	};
 	FButtonStyle Style;
-	Style.SetNormal(FSlateRoundedBoxBrush(Base, kCorner));
-	Style.SetHovered(FSlateRoundedBoxBrush(FLinearColor::LerpUsingHSV(Base, Ink, kHoverDarken), kCorner));
-	Style.SetPressed(FSlateRoundedBoxBrush(FLinearColor::LerpUsingHSV(Base, Ink, kPressedDarken), kCorner));
+	Style.SetNormal(StateBrush(UIStyle.ButtonNormal, Base));
+	Style.SetHovered(StateBrush(UIStyle.ButtonHovered, FLinearColor::LerpUsingHSV(Base, Ink, kHoverDarken)));
+	Style.SetPressed(StateBrush(UIStyle.ButtonPressed, FLinearColor::LerpUsingHSV(Base, Ink, kPressedDarken)));
 	Style.SetDisabled(FSlateRoundedBoxBrush(Base.CopyWithNewOpacity(0.4f), kCorner));
 	UButton* Button = WidgetTree->ConstructWidget<UButton>();
 	Button->SetStyle(Style);
@@ -164,18 +178,26 @@ void UTTAMenuWidget::NativeOnInitialized()
 	{
 		UVerticalBox* Box = ScreenPanel(kScreenW);
 		UVerticalBox* TitleRow = WidgetTree->ConstructWidget<UVerticalBox>();
-		UTextBlock* Title = Label(TitleRow, TEXT("TAKE TWO: AFTERLIFE"), kTitle, true);
-		Title->SetRenderTransformAngle(kTitleTilt);
-		Title->SetJustification(ETextJustify::Center);
+		// Logo art slot when set, else the text title.
+		if (UTexture2D* Logo = UTTAUIStyle::Get().LoadSlotTexture(UTTAUIStyle::Get().MenuLogo))
+		{
+			UImage* LogoImage = WidgetTree->ConstructWidget<UImage>();
+			LogoImage->SetBrushFromTexture(Logo, true);
+			Cast<UVerticalBoxSlot>(TitleRow->AddChild(LogoImage))->SetHorizontalAlignment(HAlign_Center);
+		}
+		else
+		{
+			UTextBlock* Title = Label(TitleRow, TEXT("TAKE TWO: AFTERLIFE"), kTitle, true);
+			Title->SetRenderTransformAngle(kTitleTilt);
+			Title->SetJustification(ETextJustify::Center);
+		}
 		Label(TitleRow, TEXT("Director's Cut"), kBody)->SetJustification(ETextJustify::Center);
 		Box->AddChild(TitleRow);
 		GapAfter(TitleRow->Slot);
-		MenuButton(Box, TEXT("HOST"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnHostClicked);
 		MenuButton(Box, TEXT("PLAY SOLO"), tta::kOrange)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnPlaySoloClicked);
-		MenuButton(Box, TEXT("JOIN"), tta::kGrass)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnJoinClicked);
-		MenuButton(Box, TEXT("REELS"), tta::kTeal)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnReelsClicked);
+		MenuButton(Box, TEXT("HOST GAME"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnHostClicked);
+		MenuButton(Box, TEXT("JOIN (CODE OR IP)"), tta::kGrass)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnJoinClicked);
 		MenuButton(Box, TEXT("SETTINGS"), tta::kPurple)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnSettingsClicked);
-		MenuButton(Box, TEXT("HOW TO PLAY"), tta::kPink)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnHowToClicked);
 		MenuButton(Box, TEXT("QUIT"), tta::kInk)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnQuitClicked);
 	}
 	// Join

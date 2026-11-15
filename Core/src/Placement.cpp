@@ -66,6 +66,7 @@ PlaceResult Layout::add(Placement p, double xMeters, double yMeters, double degr
     const PlaceResult check = canPlace(p.owner, p.isCamera, p.trap, xMeters, yMeters, p.camera);
     if (check != PlaceResult::Ok) return check;
     p.id = nextId_++;
+    p.round = round_;
     placements_.push_back(p);
     if (outId) *outId = p.id;
     return PlaceResult::Ok;
@@ -119,7 +120,7 @@ bool Layout::remove(int id) {
 int Layout::spent(int owner) const {
     int total = 0;
     for (const Placement& p : placements_)
-        if (p.owner == owner && !p.isCamera) total += trapSpec(p.trap).cost;
+        if (p.owner == owner && !p.isCamera && p.round == round_) total += trapSpec(p.trap).cost;
     return total;
 }
 
@@ -157,7 +158,7 @@ std::string toJson(const Layout& layout) {
         o << (first ? "\n" : ",\n") << "  {\"id\": " << p.id << ", \"owner\": " << p.owner << ", \"kind\": \""
           << (p.isCamera ? "camera" : "trap") << "\", \"type\": \""
           << (p.isCamera ? cameraName(p.camera) : trapSpec(p.trap).name) << "\", \"cellX\": " << p.cellX
-          << ", \"cellY\": " << p.cellY << ", \"rotation\": " << p.rotation;
+          << ", \"cellY\": " << p.cellY << ", \"rotation\": " << p.rotation << ", \"round\": " << p.round;
         if (!p.isCamera) o << ", \"setting1\": " << p.settings[0] << ", \"setting2\": " << p.settings[1];
         o << ", \"hidden\": " << (p.hidden ? "true" : "false") << "}";
         first = false;
@@ -265,7 +266,13 @@ int intField(const std::map<std::string, std::string>& row, const char* key) {
 
 Layout parseLayout(const std::string& json) {
     Layout layout;
+    int lastRound = 0;
     for (const auto& row : LayoutParser(json).parse()) {
+        // Files written before rounds kept placements have no "round"; they were all one Build.
+        const int round = row.count("round") ? intField(row, "round") : 0;
+        if (round < 0) throw std::invalid_argument("layout JSON: round must not be negative");
+        layout.beginBuild(round);
+        lastRound = std::max(lastRound, round);
         const std::string& kind = field(row, "kind");
         const std::string& type = field(row, "type");
         const double x = cellToMeters(intField(row, "cellX"));
@@ -294,6 +301,7 @@ Layout parseLayout(const std::string& json) {
         if (r != PlaceResult::Ok) throw std::invalid_argument("layout JSON: placement breaks the rules: " + type);
         if (hidden == "false") layout.markRevealed(id);
     }
+    layout.beginBuild(lastRound);
     return layout;
 }
 
