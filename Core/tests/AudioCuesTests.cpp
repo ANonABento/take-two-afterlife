@@ -61,3 +61,15 @@ TEST_CASE("a missing asset is reported once per session, then skipped quietly") 
     log.reset();                            // new session
     CHECK(log.reportMissing(lobby));
 }
+
+TEST_CASE("punch wind-up plays a whoosh and a landed punch plays a hit, no narrator") {
+    const auto whoosh = cuesFor(AudioEvent::PunchWindUp, AudioKind::Sfx);
+    const auto hit = cuesFor(AudioEvent::PunchHit, AudioKind::Sfx);
+    REQUIRE(whoosh.size() == 1);
+    REQUIRE(hit.size() == 1);
+    CHECK(assetPath(*whoosh[0]) == "/Game/Audio/SFX/SFX_PunchWhoosh.SFX_PunchWhoosh");
+    CHECK(assetPath(*hit[0]) == "/Game/Audio/SFX/SFX_PunchHit.SFX_PunchHit");
+    CHECK(narratorLine(AudioEvent::PunchWindUp, 0) == nullptr);
+    CHECK(narratorLine(AudioEvent::PunchHit, 0) == nullptr);
+    CHECK(std::string(audioEventName(AudioEvent::PunchHit)) == "PunchHit");
+}
