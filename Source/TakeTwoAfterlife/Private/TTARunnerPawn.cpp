@@ -174,8 +174,9 @@ void ATTARunnerPawn::SetForm(ETTAForm NewForm)
 {
 	Form = NewForm;
 	const tta::Form CoreForm = NewForm == ETTAForm::Angel ? tta::Form::Angel : tta::Form::Human;
-	Wings->SetVisibility(tta::wingsVisible(CoreForm));
-	Halo->SetVisibility(tta::haloVisible(CoreForm));
+	// Gen 3 angel: wings are built into SK_Angel and there is no halo.
+	Wings->SetVisibility(false);
+	Halo->SetVisibility(false);
 	Hat->SetVisibility(CoreForm == tta::Form::Human);
 }
 
