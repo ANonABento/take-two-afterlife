@@ -334,3 +334,8 @@ Code only; Heaven.umap untouched. Needs an editor compile first. To keep `dress_
 3. The camera is behind the angel and turns with the mouse.
 4. Back the angel into a cloud or the gate: the camera slides in toward the angel instead of going inside the mesh.
 5. Hold RaiseCamera: the view switches to the handheld; release: back behind the angel.
+
+## Plan task 1 — Toon outline misalignment
+- **Prompt:** outlines sit offset from mesh edges; fix the outline post-process and get world normals into the GBuffer.
+- **Agent did:** `OUTLINE_HLSL` now converts with `ViewportUVToBufferUV(UV)` and samples depth/normal at `buv`, stepping by `View.BufferSizeAndInvSize.zw` (was viewport UV + viewport pixel size, wrong whenever buffer != viewport: editor viewport, screen percentage, split screen). Scanline/vignette keep viewport UV. `M_TTA_Toon` is now Default Lit with the toon result in Emissive and black BaseColor, so it writes world normals. Static tests in `Scripts/tests/test_toon_outline.py`.
+- **Failed / fixed by hand:** not yet checked in the editor: rebuild with `Scripts/setup_content.ps1` and look at TTA_ArtTest.
