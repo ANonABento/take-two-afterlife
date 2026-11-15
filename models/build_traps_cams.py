@@ -1,7 +1,9 @@
 
 # Build trap + camera props for Take Two: Afterlife. Blender 3.4, run: blender -b --factory-startup --python-exit-code 1 --python build_traps_cams.py -- <outdir>
 import bpy, sys, os, math
-from mathutils import Vector
+from mathutils import Vector, Matrix
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import trap_fit
 out = os.path.abspath(sys.argv[sys.argv.index('--')+1]) if '--' in sys.argv else os.path.abspath('out')
 fbxdir = os.path.join(out, 'Assets', 'Traps'); os.makedirs(fbxdir, exist_ok=True)
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -78,6 +80,16 @@ for a in (25, 155, 205, 335):
     sph(0.02, (0.285*math.cos(t), 0.285*math.sin(t)*0.95, 0.02), 'brown', seg=8, ring=5)
 cyl(0.025, 0.06, (0,0,0.12), c='brown', v=8)
 items.append(done('SM_Trap_Banana'))
+# --- Lawnmower ~100x60x50, pivot centre of deck base, drives +X (procedural: no CC0 model found)
+box((0.80,0.50,0.15), (0,0,0.20), 'green')                          # deck
+box((0.06,0.50,0.08), (0.46,0,0.15), 'black')                       # front bumper
+for x in (-0.3, 0.3):
+    for y in (-0.27, 0.27): cyl(0.10, 0.06, (x,y,0.10), Y90, 'black', 12)
+cyl(0.20, 0.02, (0,0,0.11), c='metal', v=16)                        # blade disc (spun in UE)
+box((0.25,0.25,0.12), (0.15,0,0.33), 'red')                         # engine
+for y in (-0.18, 0.18): box((0.31,0.03,0.03), (-0.355,y,0.365), 'metal', rot=(0, math.atan2(0.23,0.21), 0))
+box((0.04,0.40,0.04), (-0.46,0,0.48), 'black')                      # handle bar
+items.append(done('SM_Trap_Lawnmower'))
 # --- Cameras (~40 cm), pivot base centre
 def tripod(hc):
     for k in range(3):
@@ -106,6 +118,37 @@ sph(0.16, (0,0,0.16), 'glass', sc_=(1,1,0.9), seg=16, ring=8)
 cyl(0.165, 0.03, (0,0,0.17), c='white', v=16)
 items.append(done('SM_Cam_TrapCam'))
 
+# --- swap in the CC0 downloads (trap_fit.THIRDPARTY); a missing file keeps the primitive built above
+BOUNDS = trap_fit.load_bounds(); PAL = trap_fit.palette()
+def imported(name, fname, colour):
+    path = os.path.join(trap_fit.THIRDPARTY_DIR, fname)
+    if not os.path.exists(path):
+        print('FALLBACK', name, 'primitive, missing', path); return None
+    before = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=path)
+    new = [o for o in bpy.data.objects if o not in before]
+    obs = [o for o in new if o.type == 'MESH']
+    if not obs: raise RuntimeError('no mesh in ' + path)
+    for o in obs:
+        mw = o.matrix_world.copy(); o.parent = None; o.matrix_world = mw
+    for o in new:
+        if o.type != 'MESH': bpy.data.objects.remove(o)
+    bpy.ops.object.select_all(action='DESELECT')
+    for o in obs: o.select_set(True)
+    bpy.context.view_layer.objects.active = obs[0]
+    bpy.ops.object.join(); o = bpy.context.object
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    vs = [v.co for v in o.data.vertices]
+    mn = [min(v[i] for v in vs) * 100 for i in range(3)]; mx = [max(v[i] for v in vs) * 100 for i in range(3)]
+    rows = trap_fit.fit_matrix(mn, mx, BOUNDS[name])   # cm -> cm: motion axes, pivot at origin, recorded box
+    o.data.transform(Matrix.Scale(0.01, 4) @ Matrix([*rows, [0, 0, 0, 1]]) @ Matrix.Scale(100, 4)); o.data.update()
+    o.data.materials.clear(); o.data.materials.append(mat('pal_' + colour, PAL[colour]))
+    o.name = o.data.name = name; print('IMPORTED', name, fname); return o
+for name, (fname, _url, colour) in trap_fit.THIRDPARTY.items():
+    k = [p.name for p in items].index(name); prim = items[k]; prim.name = prim.data.name = name + '_primitive'
+    o = imported(name, fname, colour)
+    if o: bpy.data.objects.remove(prim); items[k] = o
+    else: prim.name = prim.data.name = name
 # --- export each FBX at origin
 for o in items:
     bpy.ops.object.select_all(action='DESELECT'); o.select_set(True); bpy.context.view_layer.objects.active = o

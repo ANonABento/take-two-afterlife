@@ -370,3 +370,8 @@ Added `tta::Punch` (wind-up/active/recovery + 1.5 s cooldown) and a PawnLife stu
 - **Prompt:** add a one-shot Lawnmower trap (Idle -> Driving -> Spent, 3 x 1.5 m trigger zone, 4 m at 4 m/s, hits through the existing path) and hide Cannon from placement and bots with `BadItem`.
 - **Agent did:** `tta::Lawnmower` + `TrapType::Lawnmower`, `trapPlaceable()` / `PlaceResult::BadItem`, bots and UE build menu skip the cannon. Doctests in `LawnmowerTests.cpp`.
 - **Failed / fixed by hand:** UE side not compiled here; the mower does not move in game until the UE hookup task.
+
+## Trap swap task 4 — import and fit downloaded traps
+- **Prompt:** import the CC0 trap downloads, rotate/pivot/scale them to the recorded boxes, recolour from palette.md, export as `SM_Trap_*` plus a new `SM_Trap_Lawnmower`; primitives when a file is missing.
+- **Agent did:** `trap_fit.THIRDPARTY` + `fit_matrix` + `palette()`, import step in `build_traps_cams.py`, procedural lawnmower, `fetch_traps.py`, CREDITS rows and a third-party credits rule in `check_credits.py`; unittests in `test_trap_bounds.py`.
+- **Failed / fixed by hand:** downloads blocked (403) in the sandbox; fetch and commit the .glb files locally and check orientation in the preview.
