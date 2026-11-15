@@ -3,6 +3,7 @@
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "EngineUtils.h"
+#include "TTAGameMode.h"
 #include "TTARunDirector.h"
 #include "TTARunnerPawn.h"
 #include "Engine/HitResult.h"
@@ -26,6 +27,11 @@ bool ATTAFinishGate::HandleRunnerEntered(ATTARunnerPawn* Runner)
 	if (!Runner || !HasAuthority())
 	{
 		return false;
+	}
+	// Heaven lobby: walking or jumping through marks the player ready.
+	if (ATTAGameMode* Mode = GetWorld()->GetAuthGameMode<ATTAGameMode>(); Mode && Mode->MarkReady(Runner->GetController()))
+	{
+		return true;
 	}
 	for (TActorIterator<ATTARunDirector> It(GetWorld()); It; ++It)
 	{

@@ -119,6 +119,13 @@ void ATTABuildHUD::DrawHUD()
 	DrawStyledText(Timer, tta::kBone, TimerX + kPad, Top, UTTAUIStyle::kTimer, true);
 
 	float Y = Top + kBarH + kPad;
+	if (Phase == ETTAPhase::Lobby && State->IsGateOpen())
+	{
+		const FString Ready = FString::Printf(TEXT("%d/%d READY"), State->GetReadyCount(), State->GetReadyMax());
+		const float ReadyY = Top + kBarH + kPad;
+		DrawCard(Left, ReadyY, MeasureText(Ready, UTTAUIStyle::kH2, true) + 2 * kPad, kBarH, tta::kGrass);
+		DrawStyledText(Ready, tta::kInk, Left + kPad, ReadyY + kPad * 0.5f, UTTAUIStyle::kH2, true);
+	}
 	if (Phase == ETTAPhase::Run)
 	{
 		DrawStyledText(TEXT("[RMB] hold to film"), tta::kBone, Left, Y, UTTAUIStyle::kSmall, false);

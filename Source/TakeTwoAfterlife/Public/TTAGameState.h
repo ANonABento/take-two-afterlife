@@ -44,6 +44,13 @@ public:
 	// Server only.
 	void SetSettingsJson(const FString& Json);
 
+	// Heaven lobby gate: open after the host's START; "ReadyCount/ReadyMax ready" counter.
+	UFUNCTION(BlueprintPure) bool IsGateOpen() const { return bGateOpen; }
+	UFUNCTION(BlueprintPure) int32 GetReadyCount() const { return ReadyCount; }
+	UFUNCTION(BlueprintPure) int32 GetReadyMax() const { return ReadyMax; }
+	// Server only.
+	void SetGate(bool bOpen, int32 Ready, int32 Max);
+
 	// Blueprint/UI listeners.
 	UPROPERTY(BlueprintAssignable) FTTAPhaseChangedSignature OnPhaseChanged;
 	// C++ listeners.
@@ -61,6 +68,9 @@ protected:
 	// Server world time when the current phase started.
 	UPROPERTY(Replicated) double PhaseStartedAt = 0.0;
 	UPROPERTY(Replicated) FString SettingsJson;
+	UPROPERTY(Replicated) bool bGateOpen = false;
+	UPROPERTY(Replicated) int32 ReadyCount = 0;
+	UPROPERTY(Replicated) int32 ReadyMax = 0;
 
 private:
 	void NotifyPhaseChanged();

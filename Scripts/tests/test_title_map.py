@@ -100,7 +100,7 @@ class TitleMapTest(unittest.TestCase):
 
     def test_host_travels_to_backyard(self):
         h = (SRC / "Public" / "TTASessionSubsystem.h").read_text()
-        self.assertIn('LobbyMap = TEXT("/Game/Maps/Backyard")', h)
+        self.assertIn('LobbyMap = TEXT("/Game/Maps/Heaven")', h)
 
 
 if __name__ == "__main__":

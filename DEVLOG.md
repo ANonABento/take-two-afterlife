@@ -296,3 +296,8 @@ It should end with `Result: Succeeded`. If not, paste the first `error C` lines.
 - Runner body MIDs only for slots the loaded SK_Angel has (`RunnerMesh=/Game/Characters/Angel/SK_Angel.SK_Angel`); hat MID guarded.
 - KayKit `prototype_texture` -> Masked: in the editor, `py Scripts/fix_prototype_material.py`.
 - **To run (UE 5.5):** `Automation RunTests TTA.` — TTA.UI.MenuFlow expected to pass. Untested here (no Unreal in the sandbox).
+
+## Plan 4 task 1: Heaven lobby + gate start
+- **Did:** Heaven is the lobby (`TTASessionSubsystem::LobbyMap`). Host / Join / Play Solo land there as `ATTARunnerPawn`. The host's START (Enter or gamepad Menu) opens the gate; Solo opens it at StartPlay and its 3 bots count as ready. `ATTAFinishGate` in Lobby marks the player ready. `tta::HeavenGate` (Core, doctest) decides when to travel: all ready, or 20 s after the first player through. GameState replicates `bGateOpen`, `ReadyCount`, `ReadyMax`; the HUD shows "n/max READY". `dress_heaven.py` places a `TTAFinishGate` on the red carpet.
+- **Manual check (UE 5.5, untested here):** 1. `py Scripts/dress_heaven.py` once. 2. Title -> Host: you spawn in Heaven and can walk. 3. Press Enter (START): a "0/1 READY" card shows. 4. Walk or jump through the gate on the red carpet: "1/1 READY", then Backyard loads in Build. Solo: the card shows "3/4 READY" at once; going through the gate loads Backyard. With two players, one through the gate -> Backyard after 20 s.
+

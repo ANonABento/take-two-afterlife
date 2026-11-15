@@ -5,6 +5,7 @@
 #include "GameFramework/PlayerController.h"
 #include "TTAGameState.h"
 #include "TTAPlacementMarker.h"
+#include "tta/HeavenGate.h"
 #include "tta/MatchFlow.h"
 #include "tta/MatchStateMachine.h"
 #include "tta/Premiere.h"
@@ -28,6 +29,9 @@ class TAKETWOAFTERLIFE_API ATTAPlayerController : public APlayerController
 	GENERATED_BODY()
 
 protected:
+	virtual void SetupInputComponent() override;
+	// Host START (Enter / gamepad Menu): opens the Heaven gate. Listen-server host only.
+	void PressStart();
 	// The Title menu leaves the viewport in UIOnly with a cursor, and that survives the travel
 	// to the match map; the match controller puts the game back in charge.
 	virtual void BeginPlay() override;
@@ -93,6 +97,11 @@ public:
 	ATTARunDirector* GetRunDirector() const { return Director; }
 
 	virtual void Tick(float DeltaSeconds) override;
+	// Heaven lobby (server). OpenGate: the host's START (Solo calls it at StartPlay); bots are ready
+	// at once. MarkReady: a player went through the gate. Both false outside Lobby.
+	bool OpenGate();
+	bool MarkReady(const AController* Player);
+	const tta::HeavenGate& GetGate() const { return Gate; }
 	// Play Solo: `?bots=N` on the map URL (0-MaxBots) adds that many bots at StartPlay.
 	virtual void StartPlay() override;
 	static constexpr int32 MaxBots = 3;
@@ -113,6 +122,10 @@ private:
 	// Saves the match to UTTAMatchCarry and server-travels. False (logged) when Map isn't a package.
 	bool TravelTo(const FString& Map);
 	bool ReturnToLobby();
+	// True when this world is Map (PIE prefix ignored).
+	bool IsOnMap(const FString& Map) const;
+	// Player count into the gate, gate into ATTAGameState.
+	void SyncGate();
 	// Gives every player without a runner a fresh one at a PlayerStart (Lobby without travel).
 	void RestartLobbyRunners();
 	void EnterBuild();
@@ -140,6 +153,8 @@ private:
 	std::vector<int> RunPlayerIds;
 	int32 RunnerCount = 0;
 	int32 BotCount = 0;
+	tta::HeavenGate Gate;
+	bool bGateTravelled = false;
 	float TimedOutFor = 0.f;
 	UPROPERTY() TObjectPtr<ATTACinema> Cinema;
 	bool bPremiereLive = false;
