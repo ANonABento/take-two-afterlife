@@ -18,10 +18,10 @@ TODO: confirm the KayKit/Kenney mesh names and pack versions once `fetch_assets.
 | Course kit: `SM_Course_GateFinish` (Backyard finish arch) | Take Two: Afterlife team, scripted in Blender | own work | models/build_course_kit.py |
 
 ## Audio
-Music and SFX WAVs in `Content/Audio/` are built by `Scripts/build_audio.py`. Narrator VO is not recorded yet; the game shows captions only.
+Music and SFX WAVs in `Content/Audio/` are built by `Scripts/build_audio.py`. Narrator VO WAVs ship separately (`VO_wavs.zip`, unzip into `Content/Audio/VO/`).
 | Asset | Author | License | Source |
 |---|---|---|---|
-| Narrator voice, 60 lines `VO_*` (script exported by `Core/tools/vo_script.cpp` → `build/tta_vo_script`; voice/model: TODO) | ElevenLabs text-to-speech, script by Kevin | ElevenLabs Free tier: attribution required ("Voice generated with ElevenLabs, elevenlabs.io") | https://elevenlabs.io |
+| Narrator voice, 60 lines `VO_*` (script exported by `Core/tools/vo_script.cpp` → `build/tta_vo_script`; voice: George `JBFqnCBsd6RMkjVDRZzb`, model `eleven_multilingual_v2`) | ElevenLabs text-to-speech, script by Kevin | ElevenLabs Free tier: attribution required ("Voice generated with ElevenLabs, elevenlabs.io") | https://elevenlabs.io |
 | SFX pack `Audio/SFX/*.wav`: trap_place, countdown_beep, clock_tick, bonk, thunder, gate_chime, projector_start, rating_ding, applause, fanfare (synthesised by `Scripts/make_sfx.py`, numpy + wave) | generated in-house | CC0 1.0 | `Scripts/make_sfx.py` |
 | Music `MUS_Lobby`: "In the Lobby" (cut to 32 s, mono, -16 LUFS) | Umplix | CC0 1.0 | https://opengameart.org/content/in-the-lobby |
 | Music `MUS_Build`: "Happy Adventure (Loop)" (cut to 32 s, mono, -16 LUFS) | TinyWorlds | CC0 1.0 | https://opengameart.org/content/happy-adventure-loop |
