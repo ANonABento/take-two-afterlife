@@ -1,16 +1,15 @@
-# Gen 3 character assets -> Unreal, one shot. Run inside the UE 5.5 editor (Python Editor Script Plugin on):
-#   Output Log > Cmd > Python:   py "Scripts/import_gen3_assets.py"
-# Before running (PowerShell, repo root) so the gen 3 hats are on disk:
-#   git checkout origin/plan/take-two-afterlife-mwgf7edt -- models/angel-v2/hats
+# Gen 3 character assets -> Unreal, one shot. Run inside the UE 5.5 editor (Python Editor Script Plugin on).
+# Output Log > Cmd > Python, full path:  py "C:/Users/<you>/take-two-afterlife/Scripts/import_gen3_assets.py"
+# Hats are read from models/angel-v2/hats/<name>/ or flat models/<name>.fbx|.glb
 # What it does:
-#   1. imports models/SK_Angel.fbx (gen 3, 20 bones) to /Game/Characters/Angel/SK_Angel, new skeleton + physics asset
-#   2. builds M_TTA_Angel (Tint + FaceTexture params, face UV scale/offset) and gives every slot an instance:
+#   1. keeps your existing /Game/Characters/Angel/SK_Angel (set REIMPORT_ANGEL = True to re-import models/SK_Angel.fbx)
+#   2. builds M_TTA_Angel (Tint, FaceTexture, FaceUVScale, FaceUVOffset) and gives every slot an instance:
 #      Body white #F2F0EC, Outfit blue #A9C6E3, Face = FaceTexture
-#   3. makes the hat attach point the runner uses (HatSocket = "head"): a socket on the head_hat bone if no bone is named head
+#   3. checks the hat attach point "head"; if missing, prints the one manual step (Python cannot name sockets)
 #   4. imports the 8 gen 3 hats as SM_Hat_<Name> in /Game/Characters/Hats (cm, scale checked)
-#   5. rewrites DT_Cosmetics: the game's 6 hat slots (MenuFlow.h kHats) point at gen 3 hats via HAT_MAP; faces stay T_Face_*
-#   6. saves and prints a report. Re-run any time; it replaces.
-# Not done here: animations (old anims are on the old skeleton: retarget or make a new AnimBP), per-hat fine nudging.
+#   5. calls Scripts/build_cosmetics_table.py run() to rewrite DT_Cosmetics (HAT_MAP lives there)
+#   6. saves and prints a report. Re-run any time.
+# Not done here: animations, per-hat fine nudging.
 import re
 from pathlib import Path
 
@@ -26,12 +25,10 @@ FACES = "/Game/Characters/Faces"
 MAT_DIR = "/Game/Characters/Angel/Materials"
 HAT_SRC = REPO / "models" / "angel-v2" / "hats"
 GEN3_HATS = ["crown", "halo", "devil-horns", "propeller-beanie", "party-cone", "viking-helmet", "bunny-ears", "traffic-cone"]
-# Game slot name (kHats order) -> gen 3 hat folder. Edit to taste, then re-run.
-HAT_MAP = {"Chef": "crown", "Cowboy": "viking-helmet", "Firefighter": "propeller-beanie",
-           "HardHat": "party-cone", "Pilot": "bunny-ears", "Police": "devil-horns"}
+# Hat slot mapping lives in Scripts/build_cosmetics_table.py (HAT_MAP).
 SLOT_COLOURS = {"body": (0.886, 0.871, 0.831), "outfit": (0.397, 0.564, 0.768)}  # linear of #F2F0EC / #A9C6E3
 FACE_UV = (1.0, 1.0, 0.0, 0.0)  # scale u, scale v, offset u, offset v; tweak on MI_Angel_Face if the face sits wrong
-HAT_Z_CM = 0.0                  # extra lift above the hat bone, per-row edits in DT_Cosmetics after
+REIMPORT_ANGEL = False  # True to re-import SK_Angel.fbx; False keeps your existing clean import
 
 
 def camel(folder):
@@ -46,6 +43,8 @@ def task(src, dest, name, opts):
 
 
 def import_angel():
+    if not REIMPORT_ANGEL and EAL.does_asset_exist(f"{ANGEL}/SK_Angel"):
+        return EAL.load_asset(f"{ANGEL}/SK_Angel")
     src = REPO / "models" / "SK_Angel.fbx"
     if not src.is_file():
         raise RuntimeError(f"missing {src}")
@@ -53,7 +52,7 @@ def import_angel():
     ui.import_mesh, ui.import_as_skeletal, ui.import_animations = True, True, False
     ui.import_materials, ui.import_textures, ui.create_physics_asset = False, False, True
     ui.mesh_type_to_import = unreal.FBXImportType.FBXIT_SKELETAL_MESH
-    ui.skeleton = None  # gen 3 has its own bones; never reuse the old skeleton
+    ui.skeleton = None
     d = ui.skeletal_mesh_import_data
     d.import_uniform_scale, d.convert_scene, d.convert_scene_unit = 1.0, True, True
     d.normal_import_method = unreal.FBXNormalImportMethod.FBXNIM_IMPORT_NORMALS
@@ -85,12 +84,15 @@ def angel_material():
     use.set_editor_property("parameter_name", "UseFace")
     uv = MEL.create_material_expression(m, unreal.MaterialExpressionTextureCoordinate, -1300, 400)
     su = MEL.create_material_expression(m, unreal.MaterialExpressionVectorParameter, -1300, 550)
-    su.set_editor_property("parameter_name", "FaceUV")  # R,G scale  B,A offset
-    su.set_editor_property("default_value", unreal.LinearColor(*FACE_UV))
+    su.set_editor_property("parameter_name", "FaceUVScale")
+    su.set_editor_property("default_value", unreal.LinearColor(FACE_UV[0], FACE_UV[1], 0, 1))
+    so = MEL.create_material_expression(m, unreal.MaterialExpressionVectorParameter, -1300, 700)
+    so.set_editor_property("parameter_name", "FaceUVOffset")
+    so.set_editor_property("default_value", unreal.LinearColor(FACE_UV[2], FACE_UV[3], 0, 1))
     rg = MEL.create_material_expression(m, unreal.MaterialExpressionComponentMask, -1100, 550)
     rg.set_editor_property("r", True); rg.set_editor_property("g", True)
-    ba = MEL.create_material_expression(m, unreal.MaterialExpressionComponentMask, -1100, 650)
-    ba.set_editor_property("b", True); ba.set_editor_property("a", True)
+    rg2 = MEL.create_material_expression(m, unreal.MaterialExpressionComponentMask, -1100, 700)
+    rg2.set_editor_property("r", True); rg2.set_editor_property("g", True)
     mul = MEL.create_material_expression(m, unreal.MaterialExpressionMultiply, -950, 450)
     add = MEL.create_material_expression(m, unreal.MaterialExpressionAdd, -800, 450)
     tex = MEL.create_material_expression(m, unreal.MaterialExpressionTextureSampleParameter2D, -600, 400)
@@ -98,9 +100,9 @@ def angel_material():
     tex.set_editor_property("sampler_type", unreal.MaterialSamplerType.SAMPLERTYPE_COLOR)
     blend = MEL.create_material_expression(m, unreal.MaterialExpressionLinearInterpolate, -300, 100)
     alpha = MEL.create_material_expression(m, unreal.MaterialExpressionMultiply, -450, 300)
-    MEL.connect_material_expressions(su, "", rg, ""); MEL.connect_material_expressions(su, "", ba, "")
+    MEL.connect_material_expressions(su, "", rg, ""); MEL.connect_material_expressions(so, "", rg2, "")
     MEL.connect_material_expressions(uv, "", mul, "A"); MEL.connect_material_expressions(rg, "", mul, "B")
-    MEL.connect_material_expressions(mul, "", add, "A"); MEL.connect_material_expressions(ba, "", add, "B")
+    MEL.connect_material_expressions(mul, "", add, "A"); MEL.connect_material_expressions(rg2, "", add, "B")
     MEL.connect_material_expressions(add, "", tex, "UVs")
     MEL.connect_material_expressions(tex, "A", alpha, "A"); MEL.connect_material_expressions(use, "", alpha, "B")
     MEL.connect_material_expressions(tint, "", blend, "A"); MEL.connect_material_expressions(tex, "RGB", blend, "B")
@@ -160,15 +162,12 @@ def hat_attach(sk):
     if "head" in bones:
         return "bone head"
     target = next((b for b in bones if b.lower() == "head_hat"), None) or next(
-        (b for b in bones if b.lower() == "head"), None)
+        (b for b in bones if "head" in b.lower()), None)
     if target is None:
-        raise RuntimeError(f"no head bone in {bones}")
+        return f"MANUAL STEP: no head bone found in {bones}"
     if sk.find_socket("head") is None:
-        s = unreal.SkeletalMeshSocket(outer=sk)
-        s.set_editor_property("socket_name", "head")
-        s.set_editor_property("bone_name", target)
-        sk.add_socket(s, True)
-        EAL.save_loaded_asset(sk)
+        return (f"MANUAL STEP: open SK_Angel_Skeleton, right-click bone {target} > Add Socket, "
+                f"rename it 'head', save. (Python cannot name sockets.)")
     return f"socket head on {target}"
 
 
@@ -176,11 +175,15 @@ def import_hats():
     tasks = []
     for folder in GEN3_HATS:
         d = HAT_SRC / folder
-        src = d / f"{folder}.fbx"
-        if not src.is_file():
-            src = d / f"{folder}.glb"
-        if not src.is_file():
-            raise RuntimeError(f"missing hat {d}: run the git checkout line at the top")
+        src = None
+        for cand in (d / f"{folder}.fbx", d / f"{folder}.glb",
+                     REPO / "models" / f"{folder}.fbx", REPO / "models" / f"{folder}.glb"):
+            if cand.is_file():
+                src = cand
+                break
+        if src is None:
+            unreal.log_warning(f"missing hat source for {folder}, skipped")
+            continue
         name = f"SM_Hat_{camel(folder)}"
         if src.suffix == ".fbx":
             ui = unreal.FbxImportUI()
@@ -192,50 +195,30 @@ def import_hats():
             tasks.append(task(src, HATS, name, ui))
         else:
             tasks.append(task(src, HATS, name, None))
-    TOOLS.import_asset_tasks(tasks)
+    if tasks:
+        TOOLS.import_asset_tasks(tasks)
     out = []
     for folder in GEN3_HATS:
         name = f"SM_Hat_{camel(folder)}"
         mesh = EAL.load_asset(f"{HATS}/{name}")
         if mesh is None:
-            raise RuntimeError(f"{name} failed to import")
-        size = mesh.get_bounding_box().max - mesh.get_bounding_box().min
+            out.append(f"{name} NOT IMPORTED")
+            continue
+        bb = mesh.get_bounding_box()
+        size = bb.max - bb.min
         if max(size.x, size.y, size.z) < 5:
             unreal.log_warning(f"{name} is {size.z:.2f} cm tall (metres): reimport it with Uniform Scale 100")
         out.append(f"{name} {size.x:.0f}x{size.y:.0f}x{size.z:.0f} cm")
     return out
 
 
-def game_hat_slots():
-    text = (REPO / "Core" / "include" / "tta" / "MenuFlow.h").read_text(encoding="utf-8")
-    hats = re.findall(r'"([^"]+)"', re.search(r"kHats\s*=\s*\{([^}]*)\}", text).group(1))
-    faces = re.findall(r'"([^"]+)"', re.search(r"kFaces\s*=\s*\{([^}]*)\}", text).group(1))
-    return hats, faces
-
-
 def rebuild_table():
-    import sys
+    """DT_Cosmetics has one writer: Scripts/build_cosmetics_table.py (holds HAT_MAP)."""
+    import sys, importlib
     sys.path.insert(0, str(REPO / "Scripts"))
-    import cosmetics_rows as C
-    hats, faces = game_hat_slots()
-    rows = C.build_rows(hats, faces)
-    for r, hat in zip(rows, hats):
-        name = f"SM_Hat_{camel(HAT_MAP[hat])}"
-        r["HatMesh"] = f"{HATS}/{name}.{name}"
-        r["SocketOffset"] = (0.0, 0.0, HAT_Z_CM)
-    struct = unreal.load_object(None, C.ROW_STRUCT)
-    if struct is None:
-        raise RuntimeError("compile the game module first (TTACosmeticRow missing)")
-    path = f"{C.TABLE_DIR}/{C.TABLE_NAME}"
-    table = EAL.load_asset(path)
-    if table is None:
-        f = unreal.DataTableFactory(); f.set_editor_property("struct", struct)
-        table = TOOLS.create_asset(C.TABLE_NAME, C.TABLE_DIR, unreal.DataTable, f)
-    if not unreal.DataTableFunctionLibrary.fill_data_table_from_csv_string(table, C.to_csv(rows)):
-        raise RuntimeError("DT_Cosmetics CSV fill failed")
-    EAL.save_asset(path)
-    missing = [r["FaceTexture"] for r in rows if not EAL.does_asset_exist(r["FaceTexture"].split(".")[0])]
-    return [f"{r['Name']}: {h} -> {r['HatMesh'].split('.')[-1]}" for r, h in zip(rows, hats)], missing
+    import build_cosmetics_table as B
+    importlib.reload(B)
+    return B.run()
 
 
 def main():
@@ -247,7 +230,7 @@ def main():
     rows, missing_faces = rebuild_table()
     report += rows
     if missing_faces:
-        report.append(f"MISSING faces (run Scripts/build_cosmetics_table.py once): {missing_faces}")
+        report.append(f"MISSING faces: {missing_faces}")
     for folder in (ANGEL, HATS, "/Game/Data"):
         EAL.save_directory(folder, only_if_is_dirty=False, recursive=True)
     unreal.log("\n".join(["=== gen 3 import ==="] + report))

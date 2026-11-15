@@ -2,9 +2,8 @@
 #   UnrealEditor-Cmd.exe TakeTwoAfterlife.uproject -run=pythonscript -script=Scripts/import_kits.py -unattended -nosplash
 # Imports every unique .fbx/.glb/.obj under Downloads/<kit> into /Game/ThirdParty/<kit>
 # (FBX over GLB over OBJ, static mesh, combined, collision on). Default or untextured
-# materials become an M_TTA_Toon palette instance. Kits in kit_obj.OBJ_FIX ship metres, Y-up OBJ only:
-# they are staged through kit_obj.stage() so they arrive upright and in centimetres.
-# Optional args: the kit keys to import (default: all three). Placing meshes is build_backyard_map.py's job.
+# materials become an M_TTA_Toon palette instance. Backyard dressing cubes for the garden
+# props keep their actor names and transforms; the mesh and scale are fitted to the layout.
 import os
 import re
 import sys
@@ -14,13 +13,18 @@ import unreal
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import backyard_layout as L  # noqa: E402
-import kit_obj  # noqa: E402
 import toon_spec  # noqa: E402
 
 EAL = unreal.EditorAssetLibrary
 MEL = unreal.MaterialEditingLibrary
 CM = 100.0
 RANK = {".fbx": 0, ".glb": 1, ".obj": 2}
+# Layout mesh names for the garden props the Backyard cubes stand in for.
+DRESSING = {
+    "fence", "planter", "tree-large", "tree-small", "plant_bushLarge",
+    "flower_redA", "flower_yellowA", "rock_smallA", "Barrel_A", "Box_A", "Box_B",
+    "Pallet_Small", "table_medium",
+}
 BATCH = 20
 
 
@@ -137,11 +141,13 @@ def paint_plain_slots(mesh, bone):
         slot.set_editor_property("material_slot_name", "Palette")
         mesh.set_editor_property("static_materials", [slot])
         return True
-    # StaticMesh.set_material, not a write-back of the static_materials array: that one did not stick.
-    for index, slot in enumerate(slots):
-        if is_plain(slot.get_editor_property("material_interface")):
-            mesh.set_material(index, bone)
+    for slot in slots:
+        old = slot.get_editor_property("material_interface")
+        if is_plain(old):
+            slot.set_editor_property("material_interface", bone)
             changed = True
+    if changed:
+        mesh.set_editor_property("static_materials", slots)
     return changed
 
 
@@ -178,20 +184,93 @@ def finish_meshes(dest, bone):
     return painted
 
 
+def mesh_asset(prop):
+    name = asset_name(prop.mesh)
+    path = f"/Game/ThirdParty/{prop.kit}/{name}"
+    if EAL.does_asset_exist(path):
+        return EAL.load_asset(path)
+    raw = f"/Game/ThirdParty/{prop.kit}/{prop.mesh}"
+    if EAL.does_asset_exist(raw):
+        return EAL.load_asset(raw)
+    return None
+
+
+def fit(component, mesh, prop):
+    box = mesh.get_bounding_box()
+    size = box.max - box.min
+    size = unreal.Vector(max(size.x, 0.01), max(size.y, 0.01), max(size.z, 0.01))
+    kind, target = prop.fit
+    if kind == "box":
+        scale = unreal.Vector(target[0] * CM / size.x, target[1] * CM / size.y, target[2] * CM / size.z)
+    else:
+        s = target * CM / size.z
+        scale = unreal.Vector(s, s, s)
+    centre = unreal.Vector((box.min.x + box.max.x) / 2 * scale.x, (box.min.y + box.max.y) / 2 * scale.y,
+                           box.min.z * scale.z)
+    component.set_relative_scale3d(scale)
+    component.set_relative_location(unreal.Vector(-centre.x, -centre.y, -centre.z), False, False)
+
+
+def retarget_backyard(toon):
+    """Swap dressing cubes for kit meshes. Actor label, location and rotation stay."""
+    level = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
+    if not EAL.does_asset_exist(L.MAP_PATH):
+        raise RuntimeError(f"{L.MAP_PATH} missing")
+    level.load_level(L.MAP_PATH)
+    actors = unreal.get_editor_subsystem(unreal.EditorActorSubsystem).get_all_level_actors()
+    statics = [a for a in actors if isinstance(a, unreal.StaticMeshActor)]
+    used = set()
+    swapped = 0
+    missing = []
+    for prop in L.props():
+        if prop.mesh not in DRESSING:
+            continue
+        mesh = mesh_asset(prop)
+        if mesh is None:
+            missing.append(f"{prop.kit}/{prop.mesh}")
+            continue
+        want = f"{prop.role}_{prop.mesh}"
+        target = unreal.Vector(prop.x * CM, prop.y * CM, prop.z * CM)
+        best = None
+        best_score = None
+        for index, actor in enumerate(statics):
+            if index in used:
+                continue
+            label = actor.get_actor_label()
+            dist = (actor.get_actor_location() - target).length()
+            if label != want and dist > 25.0:
+                continue
+            score = (0 if label == want else 1, dist)
+            if best is None or score < best_score:
+                best, best_score = index, score
+        if best is None:
+            missing.append(f"actor {want}")
+            continue
+        used.add(best)
+        actor = statics[best]
+        if actor.get_actor_label() != want:
+            actor.set_actor_label(want)
+        comp = actor.static_mesh_component
+        comp.set_static_mesh(mesh)
+        fit(comp, mesh, prop)
+        colour = palette_instance(prop.palette, toon)
+        for slot in range(max(comp.get_num_materials(), 1)):
+            comp.set_material(slot, colour)
+        swapped += 1
+    if not level.save_current_level():
+        raise RuntimeError(f"could not save {L.MAP_PATH}")
+    return swapped, missing
+
+
 def main():
     toon = EAL.load_asset(toon_spec.TOON_MATERIAL)
     if toon is None:
         raise RuntimeError(f"{toon_spec.TOON_MATERIAL} missing: run Scripts/create_toon_assets.py first")
     bone = palette_instance("Bone", toon)
     downloads = L.downloads_dir([])
-    kits = sys.argv[1:] or list(L.KITS)
     total = 0
-    for kit in kits:
-        if kit in kit_obj.OBJ_FIX:
-            staging = L.REPO / "Saved" / "KitStaging" / kit
-            files = kit_obj.stage(downloads / kit, staging, kit_obj.OBJ_FIX[kit])
-        else:
-            files = choose_sources(downloads / kit)
+    for kit in ("KayKitPrototypeBits", "KenneyCitySuburban", "KenneyNature"):
+        files = choose_sources(downloads / kit)
         if not files:
             raise RuntimeError(f"no meshes under {downloads / kit}")
         unreal.log(f"{kit}: {len(files)} unique meshes")
@@ -199,8 +278,13 @@ def main():
         painted = finish_meshes(dest, bone)
         total += len(files)
         unreal.log(f"{kit}: painted {painted} plain meshes")
+    swapped, missing = retarget_backyard(toon)
     EAL.save_directory("/Game/ThirdParty", only_if_is_dirty=False, recursive=True)
-    unreal.log(f"imported {total} kit meshes")
+    if missing:
+        for item in missing:
+            unreal.log_error(f"backyard retarget missing {item}")
+        raise RuntimeError(f"backyard retarget missed {len(missing)}")
+    unreal.log(f"imported {total} kit meshes, retargeted {swapped} backyard actors")
 
 
 main()
