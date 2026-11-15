@@ -3,6 +3,7 @@
 
 #include "Camera/CameraComponent.h"
 #include "Camera/CameraShakeBase.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -43,6 +44,17 @@ ATTARunnerPawn::ATTARunnerPawn()
 	Handheld->bUsePawnControlRotation = true;
 	Handheld->FieldOfView = 70.f;
 	Handheld->SetAutoActivate(false);
+	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
+	CameraBoom->SetupAttachment(RootComponent);
+	CameraBoom->TargetArmLength = 350.f;
+	CameraBoom->SocketOffset = FVector(0.f, 0.f, 60.f);
+	CameraBoom->bUsePawnControlRotation = true;
+	CameraBoom->bDoCollisionTest = true; // sweep from pawn to camera; shorten the arm when a mesh is in the way
+	CameraBoom->ProbeSize = 12.f;
+	CameraBoom->ProbeChannel = ECC_Camera;
+	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
+	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
+	FollowCamera->bUsePawnControlRotation = false;
 	Hat->SetupAttachment(GetMesh());
 	for (UStaticMeshComponent* Part : {Wings.Get(), Halo.Get(), Hat.Get()})
 	{
@@ -261,6 +273,7 @@ void ATTARunnerPawn::Respawn()
 void ATTARunnerPawn::SetFilming(bool bOn)
 {
 	Handheld->SetActive(bOn);
+	FollowCamera->SetActive(!bOn); // one active camera, so the view uses the handheld while filming
 }
 
 bool ATTARunnerPawn::IsFilming() const
