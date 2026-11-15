@@ -50,22 +50,23 @@ TEST_CASE("budget is 100 per owner") {
     CHECK(l.spent(1) == 95);
 }
 
-TEST_CASE("cameras are free and capped at 12 per type per owner") {
+TEST_CASE("cameras are free, fixed only and capped at 8 per owner") {
     Layout l;
-    for (int i = 0; i < kCameraCap; ++i)
-        CHECK(l.placeCamera(1, static_cast<CameraType>(i % 4), i, 0, 0) == PlaceResult::Ok);
+    CHECK(kCameraCap == 8);
+    for (int i = 0; i < 8; ++i) CHECK(l.placeCamera(1, CameraType::Fixed, i, 0, 0) == PlaceResult::Ok);
     CHECK(l.spent(1) == 0);
-    CHECK(l.cameraCount(1, CameraType::TrapCam) == 3);
-    CHECK(l.placeCamera(1, CameraType::Follow, 20, 0, 0) == PlaceResult::Ok);
-    CHECK(l.placeCamera(2, CameraType::Follow, 20, 0, 0) == PlaceResult::Ok);
+    CHECK(l.cameraCount(1) == 8);
+    CHECK(l.placeCamera(1, CameraType::Fixed, 20, 0, 0) == PlaceResult::CameraCapReached);
+    CHECK(l.placeCamera(2, CameraType::Fixed, 20, 0, 0) == PlaceResult::Ok);
 }
 
-TEST_CASE("the camera cap counts only cameras of the type being placed") {
+TEST_CASE("only fixed cameras can be placed") {
     Layout l;
-    for (int i = 0; i < kCameraCap; ++i) REQUIRE(l.placeCamera(1, CameraType::Pan, i, 0, 0) == PlaceResult::Ok);
-    CHECK(l.placeCamera(1, CameraType::Pan, 20, 0, 0) == PlaceResult::CameraCapReached);
-    CHECK(l.cameraCount(1, CameraType::Pan) == kCameraCap);
-    CHECK(l.placeCamera(1, CameraType::Fixed, 20, 0, 0) == PlaceResult::Ok);
+    for (CameraType t : {CameraType::Pan, CameraType::Follow, CameraType::TrapCam}) {
+        CHECK(l.placeCamera(1, t, 1, 0, 0) == PlaceResult::BadItem);
+        CHECK(l.canPlace(1, true, TrapType::Hammer, 1.0, 0.0, t) == PlaceResult::BadItem);
+    }
+    CHECK(l.all().empty());
 }
 
 TEST_CASE("trap settings are range checked") {
@@ -80,7 +81,7 @@ TEST_CASE("trap settings are range checked") {
 TEST_CASE("placements are hidden from other owners until reveal") {
     Layout l;
     l.placeTrap(1, TrapType::Spinner, 1, 0, 0);
-    l.placeCamera(2, CameraType::Pan, 2, 0, 0);
+    l.placeCamera(2, CameraType::Fixed, 2, 0, 0);
     CHECK(l.visibleTo(1).size() == 1);
     CHECK(l.visibleTo(2).size() == 1);
     l.revealAll();
@@ -92,7 +93,7 @@ TEST_CASE("JSON round-trip") {
     int id = 0;
     l.placeTrap(1, TrapType::Trapdoor, 12.5, -3.5, 135, &id);
     l.setTrapSetting(id, 0, 4);
-    l.placeCamera(1, CameraType::TrapCam, 0, 4, 270);
+    l.placeCamera(1, CameraType::Fixed, 0, 4, 270);
     l.revealAll();
     l.placeTrap(2, TrapType::PusherWall, 59.5, 0, 0);
     const std::string json = toJson(l);
@@ -119,9 +120,9 @@ TEST_CASE("canPlace previews the place rules without placing") {
     for (int i = 0; i < 4; ++i) REQUIRE(l.placeTrap(1, TrapType::Cannon, 5.0 * i, 0.0, 0.0) == PlaceResult::Ok);
     CHECK(l.canPlace(1, false, TrapType::Banana, 30.0, 0.0) == PlaceResult::OverBudget);
     CHECK(l.canPlace(2, false, TrapType::Banana, 30.0, 0.0) == PlaceResult::Ok);
-    for (int i = 0; i < kCameraCap; ++i) REQUIRE(l.placeCamera(1, CameraType::Pan, i, 1.0, 0.0) == PlaceResult::Ok);
-    CHECK(l.canPlace(1, true, TrapType::Hammer, 30.0, 0.0, CameraType::Pan) == PlaceResult::CameraCapReached);
     CHECK(l.canPlace(1, true, TrapType::Hammer, 30.0, 0.0, CameraType::Fixed) == PlaceResult::Ok);
+    for (int i = 0; i < kCameraCap; ++i) REQUIRE(l.placeCamera(1, CameraType::Fixed, i, 1.0, 0.0) == PlaceResult::Ok);
+    CHECK(l.canPlace(1, true, TrapType::Hammer, 30.0, 0.0, CameraType::Fixed) == PlaceResult::CameraCapReached);
     CHECK(l.all().size() == 4 + kCameraCap);
 }
 

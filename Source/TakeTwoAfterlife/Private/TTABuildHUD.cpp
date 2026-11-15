@@ -151,9 +151,7 @@ void ATTABuildHUD::DrawHUD()
 	DrawStyledText(Budget, tta::kBone, Right - BudgetW + kPad, Top + kPad * 0.5f, UTTAUIStyle::kH2, true);
 
 	TArray<TPair<FString, int32>> Lines;
-	Lines.Emplace(FString::Printf(TEXT("CAMERAS %d / %d   fixed %d  pan %d  follow %d  trap-cam %d"), Own.cameraCount(Me), tta::kCameraCap,
-		Own.cameraCount(Me, tta::CameraType::Fixed), Own.cameraCount(Me, tta::CameraType::Pan),
-		Own.cameraCount(Me, tta::CameraType::Follow), Own.cameraCount(Me, tta::CameraType::TrapCam)), tta::kBone);
+	Lines.Emplace(FString::Printf(TEXT("CAMERAS %d / %d"), Own.cameraCount(Me), tta::kCameraCap), tta::kBone);
 	const bool bGhostOk = Pawn->GetGhostOutcome() == ETTAPlaceOutcome::Ok;
 	Lines.Emplace(FString::Printf(TEXT("%s   [wheel] item  [R] rotate  [LMB] place  [RMB] remove  [F] select"),
 		*TTABuildItem::Label(Pawn->GetSelectedItem())), tta::kBone);

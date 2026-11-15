@@ -9,20 +9,19 @@
 #include "GameFramework/PlayerState.h"
 #include "Net/UnrealNetwork.h"
 
-static_assert(static_cast<int>(ETTAPlaceOutcome::BadSetting) == static_cast<int>(tta::PlaceResult::BadSetting),
+static_assert(static_cast<int>(ETTAPlaceOutcome::BadItem) == static_cast<int>(tta::PlaceResult::BadItem),
 	"ETTAPlaceOutcome must mirror tta::PlaceResult");
 
 namespace
 {
 constexpr double kCmPerMeter = 100.0;
-constexpr int32 kCameraTypeCount = static_cast<int32>(tta::CameraType::TrapCam) + 1;
 int32 TrapCount() { return static_cast<int32>(tta::trapCatalogue().size()); }
 }
 
-int32 TTABuildItem::Count() { return TrapCount() + kCameraTypeCount; }
+int32 TTABuildItem::Count() { return TrapCount() + 1; } // traps, then the one placeable camera
 bool TTABuildItem::IsCamera(int32 Item) { return Item >= TrapCount(); }
 tta::TrapType TTABuildItem::Trap(int32 Item) { return tta::trapCatalogue().at(static_cast<size_t>(Item)).type; }
-tta::CameraType TTABuildItem::Camera(int32 Item) { return static_cast<tta::CameraType>(Item - TrapCount()); }
+tta::CameraType TTABuildItem::Camera(int32 Item) { return Item == TrapCount() ? tta::kPlaceableCamera : static_cast<tta::CameraType>(Item - TrapCount()); }
 
 FString TTABuildItem::Label(int32 Item)
 {

@@ -7,7 +7,6 @@ constexpr int kBuildAttempts = 64;
 constexpr int kBotCameras = 3;
 constexpr int kCorridorCellsX = static_cast<int>(kCorridorLengthMeters / kGridMeters);
 constexpr int kHalfWidthCells = static_cast<int>(kCorridorWidthMeters / 2 / kGridMeters);
-constexpr int kCameraTypes = 4; // CameraType::Fixed..TrapCam
 } // namespace
 
 BotBrain::BotBrain(int playerId, std::uint64_t seed)
@@ -35,8 +34,7 @@ void BotBrain::build(Layout& layout) {
                          cellToMeters(range(-kHalfWidthCells, kHalfWidthCells)), range(0, kRotationSteps - 1) * 45.0);
     }
     for (int i = 0; i < kBotCameras && layout.cameraCount(playerId_) < kCameraCap; ++i) {
-        const auto type = static_cast<CameraType>(range(0, kCameraTypes - 1));
-        layout.placeCamera(playerId_, type, cellToMeters(range(0, kCorridorCellsX)),
+        layout.placeCamera(playerId_, kPlaceableCamera, cellToMeters(range(0, kCorridorCellsX)),
                            cellToMeters(range(-kHalfWidthCells, kHalfWidthCells)), range(0, kRotationSteps - 1) * 45.0);
     }
 }
