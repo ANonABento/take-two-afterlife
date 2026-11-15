@@ -29,17 +29,20 @@ float rim = pow(1 - saturate(dot(n, v)), 3) * RimStrength * step(0.5, ndl);
 return lerp(c + rim, float3(4, 4, 4), saturate(Flash));
 """
 
-# 4-tap edge detect on relative depth and world normal; ink where either crosses its threshold.
+# 4-tap edge detect on relative depth and world normal, sampled in buffer UV (the scene
+# textures can be larger than the viewport); scanline/vignette stay in viewport UV.
+# ink where either crosses its threshold.
 # Ghost and CCTV are blend weights, set to 1 by the MI_TTA_PP_Ghost / MI_TTA_PP_CCTV variants.
 OUTLINE_HLSL = """
-float2 px = View.ViewSizeAndInvSize.zw * Thickness;
-float d = SceneTextureLookup(UV, 1, false).r;
-float3 n = SceneTextureLookup(UV, 8, false).rgb;
+float2 buv = ViewportUVToBufferUV(UV);
+float2 px = View.BufferSizeAndInvSize.zw * Thickness;
+float d = SceneTextureLookup(buv, 1, false).r;
+float3 n = SceneTextureLookup(buv, 8, false).rgb;
 float dEdge = 0; float nEdge = 0;
 float2 o[4] = { float2(px.x, 0), float2(-px.x, 0), float2(0, px.y), float2(0, -px.y) };
 for (int i = 0; i < 4; i++) {
-  dEdge = max(dEdge, abs(SceneTextureLookup(UV + o[i], 1, false).r - d) / max(d, 1));
-  nEdge = max(nEdge, 1 - dot(n, SceneTextureLookup(UV + o[i], 8, false).rgb));
+  dEdge = max(dEdge, abs(SceneTextureLookup(buv + o[i], 1, false).r - d) / max(d, 1));
+  nEdge = max(nEdge, 1 - dot(n, SceneTextureLookup(buv + o[i], 8, false).rgb));
 }
 float ink = saturate(step(DepthThreshold, dEdge) + step(NormalThreshold, nEdge)) * step(d, 100000);
 float3 c = lerp(Scene, InkColor, ink);
@@ -129,7 +132,9 @@ def make_mpc():
 def make_toon(palette, mpc):
     mat = ensure_asset(toon_spec.TOON_MATERIAL, unreal.Material, unreal.MaterialFactoryNew())
     MEL.delete_all_material_expressions(mat)
-    mat.set_editor_property("shading_model", unreal.MaterialShadingModel.MSM_UNLIT)
+    # Default Lit (toon result in Emissive, BaseColor black) so world normals reach the GBuffer
+    # for the outline pass; Unlit writes none.
+    mat.set_editor_property("shading_model", unreal.MaterialShadingModel.MSM_DEFAULT_LIT)
 
     # Palette colour: UV-indexed (meshes exported with palette UVs) or per-instance PaletteIndex.
     index = scalar(mat, "PaletteIndex", float(toon_spec.DEFAULT_INDEX), -1400, 0)
@@ -156,6 +161,9 @@ def make_toon(palette, mpc):
         connect(node, toon, "L" if name == "SunDirection" else name)
     connect(scalar(mat, "Flash", 0.0, -900, 1300), toon, "Flash")  # impact-frame white flash
     MEL.connect_material_property(toon, "", unreal.MaterialProperty.MP_EMISSIVE_COLOR)
+    black = MEL.create_material_expression(mat, unreal.MaterialExpressionConstant3Vector, -400, 300)
+    black.set_editor_property("constant", unreal.LinearColor(0, 0, 0, 1))
+    MEL.connect_material_property(black, "", unreal.MaterialProperty.MP_BASE_COLOR)
     MEL.recompile_material(mat)
     return mat
 
