@@ -1,5 +1,5 @@
 {
- "_note": "Trap bounding boxes in cm (Blender Z-up, relative to the pivot per plan.md). Recorded from models/traps_cams.glb placeholders; SM_Trap_Lawnmower is the planned 1.0 x 0.6 x 0.5 m box, pivot at the centre of the deck base facing +X. Checked by trap_fit.py (+-10%).",
+ "_note": "Trap bounding boxes in cm (Blender Z-up, relative to the pivot per plan.md). Recorded from models/traps_cams.glb placeholders; SM_Trap_Lawnmower is the planned 1.0 x 0.6 x 0.5 m box, pivot at the centre of the deck base facing +X. Checked by trap_fit.py (+-10%). SM_Trap_LawnmowerBlade is the separate visual blade disc (pivot at its centre; attach at (0,0,3) cm under the lawnmower deck).",
  "SM_Trap_Hammer": {
   "min_cm": [
    -14.1,
@@ -94,6 +94,18 @@
    50.0,
    30.0,
    50.0
+  ]
+ },
+ "SM_Trap_LawnmowerBlade": {
+  "min_cm": [
+   -20.0,
+   -20.0,
+   -0.8
+  ],
+  "max_cm": [
+   20.0,
+   20.0,
+   0.8
   ]
  }
 }
