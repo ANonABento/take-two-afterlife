@@ -347,3 +347,16 @@ Generated UI art (18 alpha PNGs: buttons, panel, code pill, timer banner, slider
 
 ## Heaven props on the cloud floor
 Props were placed at world Z 0 instead of the cloud top (the cinema actor's origin), and dress_heaven.py crashed on a missing `mesh_bounds`. Placement now goes through the cinema transform; the podium slab sits 0.5 cm up to stop z-fighting. Editor rerun still needed.
+
+## Punch rules in Core
+Added `tta::Punch` (wind-up/active/recovery + 1.5 s cooldown) and a PawnLife stun: 1 s ragdoll, get up in place, 2 s punch immunity; a trap hit during a stun still respawns. Doctest only; UE wiring is the next task.
+
+## Punch task 2 — Punch on the pawn and online
+- **Prompt:** LMB/gamepad punch with Server RPC, server sphere overlap during Active, Multicast ragdoll + impulse, get up in place.
+- **Agent did:** `Punch` input, `ServerPunch`, server `AdvancePunch`/`PunchHitCheck`, `MulticastPunched`, `StopStun` (capsule sweep to pelvis), shared `RestoreBody`; static test `test_punch_net.py`.
+- **Failed / fixed by hand:** punch immunity never ticked (life loop stopped at Alive); loop now runs while immune. Editor compile + PIE host/client test pending.
+
+## Punch task 3 — readable wind-up
+- **Prompt:** wind-up pose or scale-up placeholder, whoosh + hit cues via AudioCues, short camera shake on the victim.
+- **Agent did:** `AudioEvent::PunchWindUp`/`PunchHit` with `SFX_PunchWhoosh`/`SFX_PunchHit` (doctest). Server `ServerPunch` now fires `MulticastWindUp` (Unreliable) when the punch starts: every client swells the runner mesh to `WindUpScale` 1.15 over the 0.45 s wind-up and plays the whoosh. `MulticastPunched` plays the hit and starts `ImpactShake` on the victim's own camera.
+- **Failed / fixed by hand:** no SFX files yet; run `create_placeholder_audio.py` (silent placeholders) or drop real ones in `/Game/Audio/SFX/`. Editor compile + PIE feel check pending.

@@ -18,6 +18,7 @@ enum class AudioEvent {
     PhaseLobby, PhaseBuild, PhaseRun, PhaseEdit, PhasePremiere, PhasePodium,
     TrapPlaced, RunCountdown, RunHurry, Wipeout, Smite, GateReached,
     PremiereIntro, RatingOpen, RatingReveal,
+    PunchWindUp, PunchHit,
     Count
 };
 
