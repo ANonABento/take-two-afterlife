@@ -34,6 +34,7 @@ const FName TintParam(TEXT("Tint"));
 ATTARunnerPawn::ATTARunnerPawn()
 {
 	PrimaryActorTick.bCanEverTick = true;
+    GetCapsuleComponent()->InitCapsuleSize(22.f, 50.f); // 1 m angel
 	Wings = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Wings"));
 	Wings->SetupAttachment(GetMesh());
 	Halo = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Halo"));
