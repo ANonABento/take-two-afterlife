@@ -7,6 +7,7 @@
 #include "TTAPlacementMarker.h"
 #include "tta/MatchFlow.h"
 #include "tta/MatchStateMachine.h"
+#include "tta/Premiere.h"
 #include "tta/Scoring.h"
 
 #include <map>
@@ -15,6 +16,7 @@
 
 class ATTABotController;
 class ATTABuildPawn;
+class ATTACinema;
 class ATTARunDirector;
 class ATTARunnerPawn;
 class ATTATrapActor;
@@ -53,7 +55,11 @@ public:
 
 	// The cinema finished this round's Premiere: adds its rating points (PlayerState ids),
 	// then starts the next round's Build, or the Podium after the last round. False outside Premiere.
+	// Called by the server when the Heaven ATTACinema reaches Podium/Done, or by the timeout.
 	bool EndPremiere(const std::map<int, double>& RatingPoints);
+	// Seconds past the premiere's full length (every cut's intro, playback, rating and reveal)
+	// before the server ends it anyway: a stuck or missing cinema can't stall the round.
+	UPROPERTY(EditDefaultsOnly, Category = "TTA") float PremiereTimeoutSlack = 3.f;
 
 	// Timings from DefaultGame.ini (UTTAMatchSettings); code defaults if the ini is invalid.
 	static tta::MatchSettings IniSettings();
@@ -117,6 +123,12 @@ private:
 	// Ok when By owns placement Id; fills OutPlacement.
 	ETTAPlaceOutcome CheckOwned(const AController* By, int32 Id, const tta::Placement*& OutPlacement) const;
 	void SyncMarker(int32 Id);
+	// Premiere on the server: starts the level's ATTACinema with the bots' cuts, binds its steps
+	// and arms the timeout. With no cinema or no cuts only the timeout ends it.
+	void BeginPremiere();
+	void OnCinemaStep(tta::PremiereStep Step);
+	// Hands the cinema's rating points to EndPremiere once (cinema finish or timeout).
+	void FinishPremiere();
 
 	tta::Layout Layout; // persists across rounds, like the map
 	UPROPERTY() TMap<int32, TObjectPtr<ATTAPlacementMarker>> Markers;
@@ -129,4 +141,8 @@ private:
 	int32 RunnerCount = 0;
 	int32 BotCount = 0;
 	float TimedOutFor = 0.f;
+	UPROPERTY() TObjectPtr<ATTACinema> Cinema;
+	bool bPremiereLive = false;
+	float PremiereElapsed = 0.f;
+	float PremiereDeadline = 0.f;
 };
