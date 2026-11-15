@@ -376,3 +376,8 @@ Scored 1-5 by judges on: ambition/innovation, theme, fun, gameplay, visuals, lev
 - Done: cause was `ATTAGameMode` leaving `DefaultPawnClass` at the engine's ADefaultPawn (no runner bindings, sphere), plus the Title's UIOnly input mode surviving travel. Default pawn is now `RunnerPawnClass`; `RestartPlayer` override sets start location + human form; Lobby without travel restarts runners; `ATTAPlayerController::BeginPlay` sets GameOnly and hides the cursor. Config already correct (RunnerMesh=SK_Angel, 3 maps, WASD/Space); `test_runner_spawn.py` locks it. DEVLOG has the 5-step PC check.
 - Left: run that check on the user's PC (UE compile untested here).
 - Surprises: none in config; the plan was right that input ini wasn't the cause.
+
+### MVP task 3 handoff: Bot brains
+- Done: `Core/include/tta/BotBrain.h` + `src/BotBrain.cpp`: `BotBrain(playerId, seed)` with `build(Layout&)` (random traps via `Layout::placeTrap`, so budget/bounds rules stay in Placement; skips traps it can't afford; 3 cameras), `planRun()` (`RunnerSkill` Clumsy/Average/Pro + 5-30% deliberate-fail chance), `rate(RatingBook&, cuts)` (skips cuts it edited or built). `tests/BotBrainTests.cpp`: budget/cap over 200 seeds, determinism, no self-rating, run-plan ranges.
+- Left: UE side: bot controllers that drive the runner pawn from `RunnerPlan`, and Play Solo wiring.
+- Surprises: no skill type existed in Core, so `RunnerSkill` is new. RNG is SplitMix64, not `<random>` distributions, so a seed matches across MSVC and GCC. Sandbox has no cmake; `pip install cmake` makes `make test` run fully.
