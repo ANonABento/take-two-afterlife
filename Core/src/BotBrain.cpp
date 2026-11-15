@@ -26,7 +26,8 @@ int BotBrain::range(int lo, int hi) {
 double BotBrain::unit() { return static_cast<double>(next() >> 11) / 9007199254740992.0; }
 
 void BotBrain::build(Layout& layout) {
-    const auto& traps = trapCatalogue();
+    std::vector<TrapSpec> traps;
+    for (const TrapSpec& s : trapCatalogue()) if (trapPlaceable(s.type)) traps.push_back(s);
     for (int i = 0; i < kBuildAttempts; ++i) {
         const TrapSpec& spec = traps[static_cast<size_t>(range(0, static_cast<int>(traps.size()) - 1))];
         if (spec.cost > layout.remaining(playerId_)) continue; // try a cheaper one next

@@ -8,12 +8,17 @@
 #include "TTARunDirector.h"
 #include "TTARunnerPawn.h"
 
+#include "tta/RunRecorder.h"
+
+#include <numeric>
 #include <stdexcept>
+#include <vector>
 #include "Engine/HitResult.h"
 
 namespace
 {
 constexpr float kTrapCmPerMeter = 100.f;
+constexpr double kBladeDegPerSecond = 1440.0; // visual only
 }
 
 ATTATrapActor::ATTATrapActor()
@@ -35,6 +40,9 @@ ATTATrapActor::ATTATrapActor()
 	Hitbox->SetBoxExtent(FVector(50.f));
 	Hitbox->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
 	Hitbox->OnComponentBeginOverlap.AddDynamic(this, &ATTATrapActor::OnHitboxOverlap);
+	Blade = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Blade"));
+	Blade->SetupAttachment(Moving);
+	Blade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void ATTATrapActor::InitFromPlacement(const tta::Placement& InPlacement)
@@ -45,6 +53,12 @@ void ATTATrapActor::InitFromPlacement(const tta::Placement& InPlacement)
 	}
 	tta::pose(InPlacement.trap, InPlacement.settings, 0.0); // throws on out-of-range settings
 	Placement = InPlacement;
+	const bool bMower = Placement.trap == tta::TrapType::Lawnmower;
+	if (bMower) Mower.Emplace(Placement);
+	else Mower.Reset();
+	// Core decides the mower's hits; its hitbox overlap stays off so there is one hit path.
+	Hitbox->SetGenerateOverlapEvents(!bMower);
+	Blade->SetVisibility(bMower);
 	SetActorTransform(ATTAPlacementMarker::WorldTransform(FTTAPlacementRep::FromCore(Placement)));
 	ApplyPoseAt(0.0);
 }
@@ -61,10 +75,45 @@ FTransform ATTATrapActor::MovingTransform(tta::TrapType Type, const tta::TrapPos
 	case tta::TrapType::PusherWall: return FTransform(FVector(Reach, 0.f, 0.f));
 	case tta::TrapType::Trapdoor: return FTransform(FRotator(Angle, 0.f, 0.f));
 	case tta::TrapType::Cannon:
+	case tta::TrapType::Lawnmower:
 	case tta::TrapType::Banana: return FTransform::Identity;
 	}
 	checkNoEntry();
 	return FTransform::Identity;
+}
+
+FTransform ATTATrapActor::MowerTransform(double OffsetMeters)
+{
+	return FTransform(FVector(static_cast<float>(OffsetMeters) * kTrapCmPerMeter, 0.f, 0.f));
+}
+
+FTransform ATTATrapActor::BladeTransform(tta::LawnmowerState State, double T)
+{
+	if (State != tta::LawnmowerState::Driving) return FTransform::Identity;
+	return FTransform(FRotator(0.f, static_cast<float>(FMath::Fmod(T * kBladeDegPerSecond, 360.0)), 0.f));
+}
+
+void ATTATrapActor::UpdateMower(double T)
+{
+	check(Mower);
+	TArray<ATTARunnerPawn*> Runners;
+	std::vector<tta::RunnerSpot> Spots;
+	for (TActorIterator<ATTARunnerPawn> It(GetWorld()); It; ++It)
+	{
+		const FVector At = It->GetActorLocation() / kTrapCmPerMeter; // world cm = Core m * 100
+		Spots.push_back({Runners.Num(), At.X, At.Y});
+		Runners.Add(*It);
+	}
+	if (Runners.Num() > 0)
+	{
+		std::vector<int> Ids(Spots.size());
+		std::iota(Ids.begin(), Ids.end(), 0);
+		tta::RunRecorder Hits(Ids, 1.0); // scratch: only collects which runners Core hit this step
+		Mower->update(FMath::Max(T, 0.0), Spots, Hits);
+		for (const tta::ReplayEvent& E : Hits.replay().events()) TryHit(Runners[E.victim]);
+	}
+	Moving->SetRelativeTransform(MowerTransform(Mower->offsetMeters()));
+	Blade->SetRelativeTransform(BladeTransform(Mower->state(), T));
 }
 
 FTransform ATTATrapActor::ProjectileTransform(tta::TrapType Type, const tta::TrapPose& Pose)
@@ -94,7 +143,9 @@ void ATTATrapActor::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	if (const AGameStateBase* State = GetWorld()->GetGameState())
 	{
-		ApplyPoseAt(State->GetServerWorldTimeSeconds() - RunStartTime);
+		const double T = State->GetServerWorldTimeSeconds() - RunStartTime;
+		if (Mower) UpdateMower(T);
+		else ApplyPoseAt(T);
 	}
 }
 

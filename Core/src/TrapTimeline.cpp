@@ -39,6 +39,7 @@ std::int64_t trapPeriodMs(TrapType type, const std::array<int, 2>& s) {
     case TrapType::PusherWall: return 1000LL * s[1];
     case TrapType::Trapdoor: return kTrapdoorMinClosedMs + 1000LL * s[0] + 1000LL * s[1];
     case TrapType::Banana: return 0;
+    case TrapType::Lawnmower: return 0; // trigger-driven, see Lawnmower.h
     }
     throw std::invalid_argument("unknown trap type");
 }
@@ -79,6 +80,8 @@ TrapPose pose(TrapType type, const std::array<int, 2>& s, double tSeconds) {
     case TrapType::Banana:
         p.extensionMeters = static_cast<double>(s[0]);
         p.count = s[1];
+        break;
+    case TrapType::Lawnmower:
         break;
     }
     return p;

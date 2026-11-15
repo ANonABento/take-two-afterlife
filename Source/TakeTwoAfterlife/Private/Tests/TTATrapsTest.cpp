@@ -82,6 +82,40 @@ bool FTTATrapsDeterministicTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+// Trap swap req 6 in the world: the mower idles, triggers when a runner steps
+// into its zone, drives 4 m along +X with a spinning blade, then stays Spent.
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTTATrapsLawnmowerTest, "TTA.Traps.Lawnmower",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FTTATrapsLawnmowerTest::RunTest(const FString& Parameters)
+{
+	UWorld* World = MakeTestWorld();
+	ATTATrapActor* Mower = World->SpawnActor<ATTATrapActor>();
+	if (TestNotNull(TEXT("mower"), Mower))
+	{
+		tta::Placement P = TrapPlacement(tta::TrapType::Lawnmower, 3, 0);
+		P.settings = {4, 4};
+		Mower->InitFromPlacement(P);
+		Mower->UpdateMower(0.5);
+		TestTrue(TEXT("idle with no runner"), Mower->GetMowerState() == tta::LawnmowerState::Idle);
+		ATTARunnerPawn* Runner = World->SpawnActor<ATTARunnerPawn>(FVector(200.f, 0.f, 200.f), FRotator::ZeroRotator);
+		if (TestNotNull(TEXT("runner"), Runner))
+		{
+			Mower->UpdateMower(1.0);
+			TestTrue(TEXT("driving"), Mower->GetMowerState() == tta::LawnmowerState::Driving);
+			Mower->UpdateMower(1.5);
+			TestTrue(TEXT("deck 2 m forward"), Mower->Moving->GetRelativeTransform().Equals(ATTATrapActor::MowerTransform(2.0), 1e-3f));
+			TestTrue(TEXT("blade spins"), Mower->Blade->GetRelativeTransform().Equals(ATTATrapActor::BladeTransform(tta::LawnmowerState::Driving, 1.5), 1e-3f));
+			Mower->UpdateMower(3.0);
+			TestTrue(TEXT("spent"), Mower->GetMowerState() == tta::LawnmowerState::Spent);
+			TestTrue(TEXT("stopped 4 m out"), Mower->Moving->GetRelativeTransform().Equals(ATTATrapActor::MowerTransform(4.0), 1e-3f));
+			TestTrue(TEXT("blade still"), Mower->Blade->GetRelativeTransform().Equals(FTransform::Identity, 1e-3f));
+		}
+	}
+	DestroyTestWorld(World);
+	return true;
+}
+
 // Server-side hit -> Core replay event with trap id + owner; 20 Hz frames;
 // timeout smites the unfinished runner and points a Heaven Cam at them.
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTTATrapsHitRecordedTest, "TTA.Traps.HitRecorded",

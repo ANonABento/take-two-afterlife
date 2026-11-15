@@ -37,7 +37,7 @@ TEST_CASE("every trap repeats exactly after its period") {
 
 TEST_CASE("moving traps actually move within one period") {
     for (const TrapSpec& spec : trapCatalogue()) {
-        if (spec.type == TrapType::Banana) continue;
+        if (spec.type == TrapType::Banana || spec.type == TrapType::Lawnmower) continue; // static or trigger-driven
         CAPTURE(spec.name);
         const auto s = defaults(spec);
         const double half = trapPeriodMs(spec.type, s) / 2000.0;

@@ -15,7 +15,7 @@ constexpr double kCorridorWidthMeters = 8.0;   // y in [-4, 4]
 constexpr int kBudget = 100;
 constexpr int kCameraCap = 8; // per owner, all cameras
 
-enum class TrapType { Hammer, Cannon, Spinner, PusherWall, Trapdoor, Banana };
+enum class TrapType { Hammer, Cannon, Spinner, PusherWall, Trapdoor, Banana, Lawnmower };
 enum class CameraType { Fixed, Pan, Follow, TrapCam };
 // Only Fixed cameras can be placed; the other types stay for old code and assets.
 constexpr CameraType kPlaceableCamera = CameraType::Fixed;
@@ -36,6 +36,8 @@ struct TrapSpec {
 
 const std::vector<TrapSpec>& trapCatalogue();
 const TrapSpec& trapSpec(TrapType type);
+// False for traps kept in code but out of the build menu and bots (Cannon).
+bool trapPlaceable(TrapType type);
 const char* cameraName(CameraType type);
 
 int snapToCell(double meters);
