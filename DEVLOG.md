@@ -368,3 +368,45 @@ Added `tta::Punch` (wind-up/active/recovery + 1.5 s cooldown) and a PawnLife stu
 
 - 2026-11-15: Narrator VO generated with ElevenLabs (voice George, eleven_multilingual_v2): 60 `VO_*` WAVs, 44.1 kHz mono, -16 LUFS. Unzip into `Content/Audio/VO/` and import over the silent placeholders. `Scripts/tests/test_vo_audio.py` checks names match `AudioCues.cpp`.
 - 2026-11-15: Imported all 76 real sounds over the placeholders with `Scripts/import_audio.py` (headless; sets Looping on `MUS_*`). `ImpactSound` left unset: there is no runner pawn Blueprint and `SFX_ImpactBonk` already plays through the Wipeout cue. `SFX_PunchWhoosh`/`SFX_PunchHit` are still silent placeholders. PIE listen-through pending.
+## Single fixed camera
+Cut placeable cameras to Fixed only, cap 8 per player. Other camera types stay in code/assets but can't be placed.
+## Trap swap task 2 — trap size and pivot check
+- **Prompt:** record each `SM_Trap_*` bounding box plus a 1.0 x 0.6 x 0.5 m lawnmower box; verify exports are within +-10% with the pivot at the origin.
+- **Agent did:** `models/trap_bounds.json` + `models/trap_fit.py`; `verify_traps_cams.py` now fails a trap that is off-size or off-pivot. Unittest `test_trap_bounds.py` (placeholders pass, 2x scale fails).
+- **Failed / fixed by hand:** boxes read from `traps_cams.glb`; the Blender run on the FBX files is still pending.
+
+## Trap swap task 3 — lawnmower core
+- **Prompt:** add a one-shot Lawnmower trap (Idle -> Driving -> Spent, 3 x 1.5 m trigger zone, 4 m at 4 m/s, hits through the existing path) and hide Cannon from placement and bots with `BadItem`.
+- **Agent did:** `tta::Lawnmower` + `TrapType::Lawnmower`, `trapPlaceable()` / `PlaceResult::BadItem`, bots and UE build menu skip the cannon. Doctests in `LawnmowerTests.cpp`.
+- **Failed / fixed by hand:** UE side not compiled here; the mower does not move in game until the UE hookup task.
+
+## Trap swap task 4 — import and fit downloaded traps
+- **Prompt:** import the CC0 trap downloads, rotate/pivot/scale them to the recorded boxes, recolour from palette.md, export as `SM_Trap_*` plus a new `SM_Trap_Lawnmower`; primitives when a file is missing.
+- **Agent did:** `trap_fit.THIRDPARTY` + `fit_matrix` + `palette()`, import step in `build_traps_cams.py`, procedural lawnmower, `fetch_traps.py`, CREDITS rows and a third-party credits rule in `check_credits.py`; unittests in `test_trap_bounds.py`.
+- **Failed / fixed by hand:** downloads blocked (403) in the sandbox; fetch and commit the .glb files locally and check orientation in the preview.
+
+## Lawnmower in UE (trap swap task 6)
+Trap actor steps the Core lawnmower each tick, hits go through TryHit, blade spins while driving; build item mesh is Pallet_Small instead of the cannon barrel.
+## UI redo task 1 — drawn chrome
+Buttons, panel, pill, banner, text field and slider art are now drawn by `Scripts/build_ui_chrome.py` at fixed sizes (all buttons 512x160) with one 6 px Ink outline and 4 px shadow; 9-slice margins are written to `Art/UI/T_UI_Slices.json` and read by `UTTAUIStyle` instead of typed-in fractions. Editor compile + reimport pending.
+
+## UI redo task 2 — same-size icons
+`Scripts/normalize_ui_icons.py` trims faint alpha noise off every `T_UI_Icon*.png` and centres the glyph on a 256x256 canvas with 24 px padding, so icon buttons are all one size. Editor reimport pending.
+
+## UI redo task 3 — one type scale
+Type sizes now have one source: `Docs/design/ui-style.md` Fonts table = `UTTAUIStyle::kTitle/kH1/kH2/kBody/kSmall` (120/96/64/32/24), checked by `test_ui_style_guide`. Old `kTimer` and the menu's private size constants are gone; on-screen px are unchanged. Editor compile still needed.
+
+## UI redo task 4 — title, join, how to play
+Title now sits top-left inside the safe area: logo, then a five-button stack all `kButtonW` wide, drawn with the style-guide button art (`UTTAUIStyle::MakeButton`), Host as the one gold Primary. Join and How to Play are each one centred panel with a heading and Back inside. `test_menu_structure` checks order, equal widths, Primary and safe-area margins. Editor compile + in-game look pending.
+
+## UI redo task 5: lobby player cards
+Lobby text lines replaced by code pill, 4-slot player card row (avatar, name, ready tick) and Customize/Start bottom row; `SetPlayerCards` + structure test. Untested in editor.
+
+
+## Get up where you landed
+StopStun ran on every machine with its own pelvis read and a sweep from the pre-ragdoll capsule, so the sweep got blocked and replication pulled runners back to where they stood. Now the server traces the pelvis to the floor and sends the spot through MulticastGetUp; everyone restores the mesh and teleports the capsule there. Trap path untouched. Static test: Scripts/tests/test_get_up_landing.py. Needs an editor compile and a host+client check.
+
+## Punch arm motion (redo)
+- **Prompt:** replace the wind-up scale stand-in with real bone motion on the right arm, keep the StopStun landing fix.
+- **Agent did:** Core `tta::PunchArmConfig` (UpperArm_R / ForeArm_R; wind-up ends at upper arm (-55, 25, 0) + forearm yaw -120, punch ends at (-80, -10, 0) with a straight forearm, recovery eases to 0) and `punchArmPose(phase, t)` (smoothstep wind-up/recovery, ease-out cubic punch), doctest at start/middle/end of each phase. New `UTTARunnerAnimInstance` (UpperArmRotation, ForearmRotation, PunchArmAlpha); the server mirrors the punch phase into replicated `PunchPhaseRep` and every machine writes the pose each tick. `WindUpScale` and all scale code removed. Static check `Scripts/tests/test_punch_arm.py`.
+- **Failed / fixed by hand:** needs ABP_Angel reparented to `TTARunnerAnimInstance` plus two Transform (Modify) Bone nodes; until then the pawn logs one warning and the arm stays still. Editor compile pending.

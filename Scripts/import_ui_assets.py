@@ -2,7 +2,7 @@
 #   UnrealEditor-Cmd.exe TakeTwoAfterlife.uproject -run=pythonscript -script=Scripts/import_ui_assets.py -unattended -nosplash
 # Imports the generated UI art (Art/UI/T_UI_*.png, alpha PNGs) as UI textures:
 #   /Game/UI/Generated/T_UI_<Name>  (UserInterface2D, no mips, UI group, never streamed)
-# UTTAUIStyle::Brush loads them by that name; docs/design/ui-style.md lists every asset.
+# UTTAUIStyle::Brush loads them by that name; Docs/design/ui-style.md lists every asset.
 import unreal
 from pathlib import Path
 

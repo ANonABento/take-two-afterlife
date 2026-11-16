@@ -362,6 +362,14 @@ bool ATTAGameMode::EndPremiere(const std::map<int, double>& RatingPoints)
 	PremiereDeadline = 0.f;
 	if (Cinema) Cinema->OnStep.RemoveAll(this);
 	Score.addRatings(RatingPoints);
+	// Results and podium read APlayerState::GetScore(); mirror the match totals there.
+	if (AGameStateBase* GS = GetGameState<AGameStateBase>())
+	{
+		for (APlayerState* PS : GS->PlayerArray)
+		{
+			if (PS) PS->SetScore(static_cast<float>(Score.total(PS->GetPlayerId())));
+		}
+	}
 	return RequestPhase(Match.canTransition(tta::Phase::Build) ? ETTAPhase::Build : ETTAPhase::Podium);
 }
 

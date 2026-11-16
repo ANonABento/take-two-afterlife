@@ -7,7 +7,6 @@ constexpr int kBuildAttempts = 64;
 constexpr int kBotCameras = 3;
 constexpr int kCorridorCellsX = static_cast<int>(kCorridorLengthMeters / kGridMeters);
 constexpr int kHalfWidthCells = static_cast<int>(kCorridorWidthMeters / 2 / kGridMeters);
-constexpr int kCameraTypes = 4; // CameraType::Fixed..TrapCam
 } // namespace
 
 BotBrain::BotBrain(int playerId, std::uint64_t seed)
@@ -27,7 +26,8 @@ int BotBrain::range(int lo, int hi) {
 double BotBrain::unit() { return static_cast<double>(next() >> 11) / 9007199254740992.0; }
 
 void BotBrain::build(Layout& layout) {
-    const auto& traps = trapCatalogue();
+    std::vector<TrapSpec> traps;
+    for (const TrapSpec& s : trapCatalogue()) if (trapPlaceable(s.type)) traps.push_back(s);
     for (int i = 0; i < kBuildAttempts; ++i) {
         const TrapSpec& spec = traps[static_cast<size_t>(range(0, static_cast<int>(traps.size()) - 1))];
         if (spec.cost > layout.remaining(playerId_)) continue; // try a cheaper one next
@@ -35,8 +35,7 @@ void BotBrain::build(Layout& layout) {
                          cellToMeters(range(-kHalfWidthCells, kHalfWidthCells)), range(0, kRotationSteps - 1) * 45.0);
     }
     for (int i = 0; i < kBotCameras && layout.cameraCount(playerId_) < kCameraCap; ++i) {
-        const auto type = static_cast<CameraType>(range(0, kCameraTypes - 1));
-        layout.placeCamera(playerId_, type, cellToMeters(range(0, kCorridorCellsX)),
+        layout.placeCamera(playerId_, kPlaceableCamera, cellToMeters(range(0, kCorridorCellsX)),
                            cellToMeters(range(-kHalfWidthCells, kHalfWidthCells)), range(0, kRotationSteps - 1) * 45.0);
     }
 }

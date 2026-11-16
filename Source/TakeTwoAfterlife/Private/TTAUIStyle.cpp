@@ -13,6 +13,11 @@
 #include "Engine/Engine.h"
 #include "Engine/Font.h"
 #include "Engine/Texture2D.h"
+#include "Dom/JsonObject.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
 #include "Styling/CoreStyle.h"
 #include "Styling/SlateTypes.h"
 #include "tta/MenuFlow.h"
@@ -24,33 +29,35 @@ namespace
 const TCHAR* const kGeneratedDir = TEXT("/Game/UI/Generated/");
 constexpr float kSpaceScale[] = {0.f, 4.f, 8.f, 16.f, 24.f, 32.f};
 
-// Fallback colour and 9-slice margins (UV fractions; 0 = drawn whole) per asset.
+// Written by Scripts/build_ui_chrome.py: measured 9-slice margins in px per texture.
+const TCHAR* const kSlicesFile = TEXT("Art/UI/T_UI_Slices.json");
+
+// Fallback colour and whether the asset is 9-sliced (margins come from kSlicesFile).
 struct FAssetSpec
 {
 	ETTAAsset Asset;
 	ETTAColor Fallback;
-	float SliceX;
-	float SliceY;
+	bool bSliced;
 };
 const FAssetSpec kAssets[] = {
-	{ETTAAsset::Button, ETTAColor::Bone, 0.12f, 0.35f},
-	{ETTAAsset::ButtonHover, ETTAColor::Sky, 0.12f, 0.35f},
-	{ETTAAsset::ButtonPressed, ETTAColor::Blue, 0.12f, 0.35f},
-	{ETTAAsset::ButtonPrimary, ETTAColor::Yellow, 0.12f, 0.35f},
-	{ETTAAsset::Panel, ETTAColor::Bone, 0.15f, 0.15f},
-	{ETTAAsset::CodePill, ETTAColor::Yellow, 0.3f, 0.45f},
-	{ETTAAsset::Banner, ETTAColor::Bone, 0.25f, 0.4f},
-	{ETTAAsset::SliderBar, ETTAColor::Sky, 0.1f, 0.45f},
-	{ETTAAsset::SliderKnob, ETTAColor::Yellow, 0.f, 0.f},
-	{ETTAAsset::TextField, ETTAColor::Bone, 0.1f, 0.35f},
-	{ETTAAsset::IconMicOn, ETTAColor::Sky, 0.f, 0.f},
-	{ETTAAsset::IconMicOff, ETTAColor::Ink, 0.f, 0.f},
-	{ETTAAsset::IconCamFixed, ETTAColor::Sky, 0.f, 0.f},
-	{ETTAAsset::IconCamPan, ETTAColor::Sky, 0.f, 0.f},
-	{ETTAAsset::IconCamFollow, ETTAColor::Sky, 0.f, 0.f},
-	{ETTAAsset::IconCamTrap, ETTAColor::Orange, 0.f, 0.f},
-	{ETTAAsset::IconReady, ETTAColor::Grass, 0.f, 0.f},
-	{ETTAAsset::TitleBackdrop, ETTAColor::Sky, 0.f, 0.f},
+	{ETTAAsset::Button, ETTAColor::Bone, true},
+	{ETTAAsset::ButtonHover, ETTAColor::Sky, true},
+	{ETTAAsset::ButtonPressed, ETTAColor::Blue, true},
+	{ETTAAsset::ButtonPrimary, ETTAColor::Yellow, true},
+	{ETTAAsset::Panel, ETTAColor::Bone, true},
+	{ETTAAsset::CodePill, ETTAColor::Yellow, true},
+	{ETTAAsset::Banner, ETTAColor::Bone, true},
+	{ETTAAsset::SliderBar, ETTAColor::Sky, true},
+	{ETTAAsset::SliderKnob, ETTAColor::Yellow, false},
+	{ETTAAsset::TextField, ETTAColor::Bone, true},
+	{ETTAAsset::IconMicOn, ETTAColor::Sky, false},
+	{ETTAAsset::IconMicOff, ETTAColor::Ink, false},
+	{ETTAAsset::IconCamFixed, ETTAColor::Sky, false},
+	{ETTAAsset::IconCamPan, ETTAColor::Sky, false},
+	{ETTAAsset::IconCamFollow, ETTAColor::Sky, false},
+	{ETTAAsset::IconCamTrap, ETTAColor::Orange, false},
+	{ETTAAsset::IconReady, ETTAColor::Grass, false},
+	{ETTAAsset::TitleBackdrop, ETTAColor::Sky, false},
 };
 
 const FAssetSpec& Spec(ETTAAsset Asset)
@@ -61,6 +68,35 @@ const FAssetSpec& Spec(ETTAAsset Asset)
 	}
 	checkNoEntry();
 	return kAssets[0];
+}
+
+// Texture name -> slice margins as UV fractions, loaded once from kSlicesFile.
+const TMap<FString, FMargin>& SliceMargins()
+{
+	static const TMap<FString, FMargin> Margins = []
+	{
+		TMap<FString, FMargin> Out;
+		const FString File = FPaths::ProjectDir() / kSlicesFile;
+		FString Text;
+		TSharedPtr<FJsonObject> Root;
+		const TSharedPtr<FJsonObject>* Assets = nullptr;
+		if (!FFileHelper::LoadFileToString(Text, *File) || !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Root)
+			|| !Root.IsValid() || !Root->TryGetObjectField(TEXT("assets"), Assets))
+		{
+			UE_LOG(LogTTAUIStyle, Error, TEXT("Cannot read slice margins from %s; run Scripts/build_ui_chrome.py"), *File);
+			return Out;
+		}
+		for (const TPair<FString, TSharedPtr<FJsonValue>>& Pair : (*Assets)->Values)
+		{
+			const TSharedPtr<FJsonObject> A = Pair.Value->AsObject();
+			const double W = A->GetNumberField(TEXT("width"));
+			const double H = A->GetNumberField(TEXT("height"));
+			Out.Add(Pair.Key, FMargin(A->GetNumberField(TEXT("left")) / W, A->GetNumberField(TEXT("top")) / H,
+				A->GetNumberField(TEXT("right")) / W, A->GetNumberField(TEXT("bottom")) / H));
+		}
+		return Out;
+	}();
+	return Margins;
 }
 }
 
@@ -75,8 +111,8 @@ FSlateFontInfo UTTAUIStyle::Font(ETTAFont Name)
 {
 	switch (Name)
 	{
-	case ETTAFont::Title: return MakeFont(Get().LoadFont(true), true, kH1);
-	case ETTAFont::H1: return MakeFont(Get().LoadFont(true), true, kTimer);
+	case ETTAFont::Title: return MakeFont(Get().LoadFont(true), true, kTitle);
+	case ETTAFont::H1: return MakeFont(Get().LoadFont(true), true, kH1);
 	case ETTAFont::H2: return MakeFont(Get().LoadFont(true), true, kH2);
 	case ETTAFont::Body: return MakeFont(Get().LoadFont(false), false, kBody);
 	case ETTAFont::Small: return MakeFont(Get().LoadFont(false), false, kSmall);
@@ -108,9 +144,19 @@ FSlateBrush UTTAUIStyle::Brush(ETTAAsset Asset)
 	{
 		Result.SetResourceObject(Texture);
 		Result.ImageSize = FVector2D(Texture->GetSizeX(), Texture->GetSizeY());
-		const bool bSliced = S.SliceX > 0.f || S.SliceY > 0.f;
-		Result.DrawAs = bSliced ? ESlateBrushDrawType::Box : ESlateBrushDrawType::Image;
-		Result.Margin = FMargin(S.SliceX, S.SliceY);
+		Result.DrawAs = ESlateBrushDrawType::Image;
+		if (S.bSliced)
+		{
+			if (const FMargin* Margin = SliceMargins().Find(Name))
+			{
+				Result.DrawAs = ESlateBrushDrawType::Box;
+				Result.Margin = *Margin;
+			}
+			else
+			{
+				UE_LOG(LogTTAUIStyle, Error, TEXT("%s has no slice margins in %s; drawn unsliced"), *Name, kSlicesFile);
+			}
+		}
 		return Result;
 	}
 	UE_LOG(LogTTAUIStyle, Warning, TEXT("UI texture %s not imported; using a flat palette colour"), *Path.ToString());

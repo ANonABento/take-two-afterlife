@@ -80,9 +80,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "TTA") float PunchSpeed = 600.f;
 	UPROPERTY(EditAnywhere, Category = "TTA") float PunchLift = 200.f;
 	// Placeholder wind-up pose: the body swells to this scale over the wind-up, then snaps back.
-	UPROPERTY(EditAnywhere, Category = "TTA") float WindUpScale = 1.15f;
 	// Bone the capsule is snapped to when a stunned runner gets up.
 	UPROPERTY(EditAnywhere, Category = "TTA") FName PelvisBone = TEXT("pelvis");
+	// How far below the pelvis StopStun looks for floor.
+	UPROPERTY(EditAnywhere, Category = "TTA") float GetUpTraceDepth = 500.f;
 
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> Wings;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> Halo;
@@ -124,16 +125,23 @@ private:
 	void Respawn();
 	// Ragdoll off, mesh back on the capsule, collision and walking restored.
 	void RestoreBody();
-	// Get up in place after a punch stun: sweep the capsule to the pelvis, no teleport to start.
+	// Get up in place after a punch stun. Server only: trace the ragdoll pelvis down to the floor
+	// and send that landing spot to everyone through MulticastGetUp. Never the start or an old spot.
 	void StopStun();
+	UFUNCTION(NetMulticast, Reliable) void MulticastGetUp(FVector_NetQuantize Landing);
 	void PunchHitCheck();
 
 	UFUNCTION(Server, Reliable) void ServerPunch();
 	UFUNCTION(NetMulticast, Reliable) void MulticastPunched(FVector_NetQuantizeNormal Direction);
 	// Server -> everyone: a punch started, show the wind-up and play the whoosh.
 	UFUNCTION(NetMulticast, Unreliable) void MulticastWindUp();
-	void UpdateWindUpPose(float WorldDeltaSeconds);
-	float WindUpLeft = 0.f;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	// Arm pose (punch arm task): server mirrors PunchState.phase() here, every machine poses from it.
+	void UpdatePunchArm(float WorldDeltaSeconds);
+	UPROPERTY(Replicated) uint8 PunchPhaseRep = 0;
+	tta::PunchPhase ArmPhase = tta::PunchPhase::Idle;
+	float ArmPhaseTime = 0.f;
+	bool bWarnedAnimClass = false;
 
 	tta::PawnLife Life;
 	tta::Punch PunchState;

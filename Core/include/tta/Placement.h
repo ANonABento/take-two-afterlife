@@ -13,10 +13,12 @@ constexpr int kRotationSteps = 8;            // 45 degree steps
 constexpr double kCorridorLengthMeters = 60.0; // x in [0, 60]
 constexpr double kCorridorWidthMeters = 8.0;   // y in [-4, 4]
 constexpr int kBudget = 100;
-constexpr int kCameraCap = 12;
+constexpr int kCameraCap = 8; // per owner, all cameras
 
-enum class TrapType { Hammer, Cannon, Spinner, PusherWall, Trapdoor, Banana };
+enum class TrapType { Hammer, Cannon, Spinner, PusherWall, Trapdoor, Banana, Lawnmower };
 enum class CameraType { Fixed, Pan, Follow, TrapCam };
+// Only Fixed cameras can be placed; the other types stay for old code and assets.
+constexpr CameraType kPlaceableCamera = CameraType::Fixed;
 
 struct SettingSpec {
     const char* name;
@@ -34,6 +36,8 @@ struct TrapSpec {
 
 const std::vector<TrapSpec>& trapCatalogue();
 const TrapSpec& trapSpec(TrapType type);
+// False for traps kept in code but out of the build menu and bots (Cannon).
+bool trapPlaceable(TrapType type);
 const char* cameraName(CameraType type);
 
 int snapToCell(double meters);
@@ -54,7 +58,7 @@ struct Placement {
     int round = 0;                        // Build it was bought in; only that round's spend counts
 };
 
-enum class PlaceResult { Ok, OutOfBounds, OverBudget, CameraCapReached, BadSetting };
+enum class PlaceResult { Ok, OutOfBounds, OverBudget, CameraCapReached, BadSetting, BadItem };
 
 class Layout {
 public:

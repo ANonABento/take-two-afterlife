@@ -71,3 +71,16 @@ TEST_CASE("window modes follow Unreal's EWindowMode order") {
     CHECK(static_cast<int>(WindowMode::Windowed) == 2);
     CHECK(std::string(kWindowModeNames[1]) == "Windowed Fullscreen");
 }
+
+TEST_CASE("hud timer turns red at ten seconds or less") {
+    CHECK(hudTimerFill(90) == kInk);
+    CHECK(hudTimerFill(kTimerWarnSeconds + 1) == kInk);
+    CHECK(hudTimerFill(kTimerWarnSeconds) == kRed);
+    CHECK(hudTimerFill(0) == kRed);
+}
+
+TEST_CASE("hud budget is grass until spent") {
+    CHECK(hudBudgetFill(100) == kGrass);
+    CHECK(hudBudgetFill(1) == kGrass);
+    CHECK(hudBudgetFill(0) == kRed);
+}

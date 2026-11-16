@@ -17,6 +17,7 @@ const std::vector<TrapSpec>& trapCatalogue() {
         {TrapType::PusherWall, "pusherWall", 15, {{{"force", 1, 5, 3}, {"cycleTime", 1, 5, 3}}}},
         {TrapType::Trapdoor, "trapdoor", 15, {{{"openDelay", 0, 5, 1}, {"openDuration", 1, 5, 2}}}},
         {TrapType::Banana, "banana", 5, {{{"slideDistance", 1, 5, 3}, {"count", 1, 3, 1}}}},
+        {TrapType::Lawnmower, "lawnmower", 25, {{{"speed", 1, 8, 4}, {"travel", 1, 8, 4}}}},
     };
     return kTraps;
 }
@@ -25,6 +26,8 @@ const TrapSpec& trapSpec(TrapType type) {
     for (const TrapSpec& s : trapCatalogue()) if (s.type == type) return s;
     throw std::invalid_argument("unknown trap type");
 }
+
+bool trapPlaceable(TrapType type) { return type != TrapType::Cannon; }
 
 namespace {
 constexpr CameraType kCameraTypes[] = {CameraType::Fixed, CameraType::Pan, CameraType::Follow, CameraType::TrapCam};
@@ -75,8 +78,10 @@ PlaceResult Layout::add(Placement p, double xMeters, double yMeters, double degr
 PlaceResult Layout::canPlace(int owner, bool isCamera, TrapType trap, double xMeters, double yMeters,
                              CameraType camera) const {
     if (!inCorridor(snapToCell(xMeters), snapToCell(yMeters))) return PlaceResult::OutOfBounds;
+    if (!isCamera && !trapPlaceable(trap)) return PlaceResult::BadItem;
     if (isCamera) {
-        if (cameraCount(owner, camera) >= kCameraCap) return PlaceResult::CameraCapReached;
+        if (camera != kPlaceableCamera) return PlaceResult::BadItem;
+        if (cameraCount(owner) >= kCameraCap) return PlaceResult::CameraCapReached;
     } else if (trapSpec(trap).cost > remaining(owner)) {
         return PlaceResult::OverBudget;
     }

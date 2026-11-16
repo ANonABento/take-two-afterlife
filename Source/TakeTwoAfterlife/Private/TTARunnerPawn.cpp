@@ -6,6 +6,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "CollisionQueryParams.h"
+#include "Engine/HitResult.h"
 #include "Engine/OverlapResult.h"
 #include "Engine/World.h"
 #include "Components/InputComponent.h"
@@ -27,6 +28,9 @@
 #include "tta/MenuFlow.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Animation/AnimInstance.h"
+#include "Net/UnrealNetwork.h"
+#include "TTARunnerAnimInstance.h"
+#include "tta/PunchArm.h"
 
 namespace
 {
@@ -219,18 +223,46 @@ void ATTARunnerPawn::ServerPunch_Implementation()
 
 void ATTARunnerPawn::MulticastWindUp_Implementation()
 {
-	WindUpLeft = static_cast<float>(tta::kPunchWindUpSeconds);
 	GetWorld()->GetSubsystem<UTTAAudioDirector>()->PlayEvent(tta::AudioEvent::PunchWindUp);
 }
 
-void ATTARunnerPawn::UpdateWindUpPose(float WorldDeltaSeconds)
+void ATTARunnerPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	if (WindUpLeft <= 0.f) return;
-	WindUpLeft = FMath::Max(0.f, WindUpLeft - WorldDeltaSeconds);
-	const bool bShow = WindUpLeft > 0.f && Life.state() == tta::LifeState::Alive;
-	if (!bShow) WindUpLeft = 0.f;
-	const float Alpha = bShow ? 1.f - WindUpLeft / static_cast<float>(tta::kPunchWindUpSeconds) : 0.f;
-	GetMesh()->SetRelativeScale3D(MeshRelative.GetScale3D() * FMath::Lerp(1.f, WindUpScale, Alpha));
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ATTARunnerPawn, PunchPhaseRep);
+}
+
+void ATTARunnerPawn::UpdatePunchArm(float WorldDeltaSeconds)
+{
+	const tta::PunchPhase Phase = Life.state() == tta::LifeState::Alive
+		? static_cast<tta::PunchPhase>(PunchPhaseRep) : tta::PunchPhase::Idle;
+	if (Phase != ArmPhase)
+	{
+		ArmPhase = Phase;
+		ArmPhaseTime = 0.f;
+	}
+	else
+	{
+		ArmPhaseTime += WorldDeltaSeconds;
+	}
+	UTTARunnerAnimInstance* Anim = Cast<UTTARunnerAnimInstance>(GetMesh()->GetAnimInstance());
+	if (!Anim)
+	{
+		if (!bWarnedAnimClass)
+		{
+			bWarnedAnimClass = true;
+			UE_LOG(LogTemp, Warning, TEXT("ATTARunnerPawn: %s AnimBP is not a UTTARunnerAnimInstance; punch arm pose disabled"), *GetName());
+		}
+		return;
+	}
+	const tta::PunchArmConfig Config;
+	const double Length = tta::punchPhaseSeconds(Phase);
+	const tta::PunchArmPose Pose = tta::punchArmPose(Phase, Length > 0.0 ? ArmPhaseTime / Length : 0.0, Config);
+	Anim->UpperArmBone = FName(Config.upperArmBone);
+	Anim->ForearmBone = FName(Config.forearmBone);
+	Anim->UpperArmRotation = FRotator(Pose.upperArm.pitch, Pose.upperArm.yaw, Pose.upperArm.roll);
+	Anim->ForearmRotation = FRotator(Pose.forearm.pitch, Pose.forearm.yaw, Pose.forearm.roll);
+	Anim->PunchArmAlpha = static_cast<float>(Pose.alpha);
 }
 
 void ATTARunnerPawn::AdvancePunch(float WorldDeltaSeconds)
@@ -321,11 +353,12 @@ void ATTARunnerPawn::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	// DeltaSeconds is scaled by CustomTimeDilation (0 while frozen); timers need world time.
 	AdvanceLife(GetWorld()->GetDeltaSeconds());
-	UpdateWindUpPose(GetWorld()->GetDeltaSeconds());
 	if (HasAuthority())
 	{
 		AdvancePunch(GetWorld()->GetDeltaSeconds());
+		PunchPhaseRep = static_cast<uint8>(PunchState.phase());
 	}
+	UpdatePunchArm(GetWorld()->GetDeltaSeconds());
 }
 
 void ATTARunnerPawn::AdvanceLife(float WorldDeltaSeconds)
@@ -376,12 +409,25 @@ void ATTARunnerPawn::Respawn()
 
 void ATTARunnerPawn::StopStun()
 {
-	// Read the pelvis before the mesh snaps back onto the capsule.
+	// Every machine reaches GetUp on its own timer, but each ragdoll lands somewhere slightly
+	// different. Only the server picks the spot; everyone else stays ragdolled until it arrives.
+	if (!HasAuthority()) return;
 	const FVector Pelvis = GetMesh()->GetBoneLocation(PelvisBone);
+	FHitResult Floor;
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(TTAGetUp), false, this);
+	const float HalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+	const bool bFloor = GetWorld()->LineTraceSingleByChannel(Floor, Pelvis + FVector(0.f, 0.f, HalfHeight),
+		Pelvis - FVector(0.f, 0.f, GetUpTraceDepth), ECC_Visibility, Params);
+	const FVector Ground = bFloor ? Floor.ImpactPoint : Pelvis - FVector(0.f, 0.f, HalfHeight);
+	MulticastGetUp(Ground + FVector(0.f, 0.f, HalfHeight));
+}
+
+void ATTARunnerPawn::MulticastGetUp_Implementation(FVector_NetQuantize Landing)
+{
+	// Mesh back on the capsule, then move the capsule to the server's landing spot (teleport, no
+	// sweep: a sweep from the pre-ragdoll capsule gets blocked and leaves the runner where they stood).
 	RestoreBody();
-	// Sweep (not teleport) so a ragdoll that ended against a wall doesn't stand up inside it.
-	const FVector Target = Pelvis + FVector(0.f, 0.f, GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
-	SetActorLocation(Target, true, nullptr, ETeleportType::TeleportPhysics);
+	SetActorLocation(Landing, false, nullptr, ETeleportType::TeleportPhysics);
 }
 
 void ATTARunnerPawn::RestoreBody()

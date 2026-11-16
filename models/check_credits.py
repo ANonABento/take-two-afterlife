@@ -10,6 +10,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 CREDITS = REPO / "CREDITS.md"
 CSV = Path(__file__).with_name("audio_credits.csv")
+THIRDPARTY = Path(__file__).with_name("thirdparty")
 BEGIN, END = "<!-- audio-rows:begin -->", "<!-- audio-rows:end -->"
 PLACEHOLDER = re.compile(r"fill in|TODO|TBD|check terms", re.I)
 
@@ -38,6 +39,12 @@ def write():
     CREDITS.write_text(text, encoding="utf-8")
 
 
+def thirdparty_problems(text, root=THIRDPARTY):
+    """Every downloaded model file under models/thirdparty/ must be named (`file`) in CREDITS.md."""
+    files = sorted(p for p in root.rglob("*") if p.is_file()) if root.is_dir() else []
+    return [f"no credits row: models/thirdparty/{p.relative_to(root).as_posix()}" for p in files if f"`{p.name}`" not in text]
+
+
 def problems():
     text = CREDITS.read_text(encoding="utf-8")
     p = [f"placeholder: {line.strip()[:80]}" for line in text.splitlines() if PLACEHOLDER.search(line)]
@@ -51,7 +58,7 @@ def problems():
     for need in ("KayKit Prototype Bits", "City Kit (Suburban)", "Nature Kit", "Nunito"):
         if need not in text:
             p.append(f"no credits row: {need}")
-    return p
+    return p + thirdparty_problems(text)
 
 
 if __name__ == "__main__":

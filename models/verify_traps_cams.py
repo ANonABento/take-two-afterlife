@@ -1,5 +1,8 @@
 import bpy, sys, os, glob
 from mathutils import Vector
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import trap_fit
+BOUNDS = trap_fit.load_bounds()
 d = os.path.abspath(sys.argv[sys.argv.index('--')+1])
 bad = 0
 for f in sorted(glob.glob(os.path.join(d, '*.fbx'))):
@@ -13,6 +16,9 @@ for f in sorted(glob.glob(os.path.join(d, '*.fbx'))):
     tris = len(me.loop_triangles); name = os.path.basename(f)[:-4]
     ok = tris < 2500 and len(obs) == 1 and all(abs(p) <= 2 for p in piv)
     if name.startswith('SM_Trap_') and name != 'SM_Trap_CannonBall': ok = ok and max(dims) <= 100.01
+    fit = trap_fit.check_trap(name, mn, mx, piv, BOUNDS) if name.startswith('SM_Trap_') else []
+    ok = ok and not fit
     bad += not ok
     print('CHK %-20s %s tris=%4d pivot=(%.1f,%.1f,%.1f) min=(%.1f,%.1f,%.1f) max=(%.1f,%.1f,%.1f) dims=(%.1f,%.1f,%.1f)' % ((name, 'OK ' if ok else 'BAD', tris) + tuple(piv) + tuple(mn) + tuple(mx) + tuple(dims)))
+    for p in fit: print('    FIT', name, p)
 print('FAILS', bad)

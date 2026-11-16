@@ -43,7 +43,7 @@ class ExportedMembers(unittest.TestCase):
 
     def test_ui_style_sizes_unchanged(self):
         h = (SRC / "TakeTwoAfterlife/Public/TTAUIStyle.h").read_text(encoding="utf-8-sig")
-        for name, val in [("kH1", "120"), ("kH2", "64"), ("kTimer", "96"), ("kBody", "32"), ("kSmall", "24"),
+        for name, val in [("kTitle", "120"), ("kH1", "96"), ("kH2", "64"), ("kBody", "32"), ("kSmall", "24"),
                           ("kDesignHeight", "1080.f"), ("kOutline", "6.f"), ("kCardPadding", "24.f")]:
             self.assertRegex(h, rf"static constexpr \w+ {name} = {re.escape(val)};")
 

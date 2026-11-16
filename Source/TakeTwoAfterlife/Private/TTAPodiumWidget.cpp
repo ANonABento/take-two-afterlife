@@ -38,7 +38,7 @@ void UTTAPodiumWidget::NativeOnInitialized()
 	BoxSlot->SetPadding(Style.SafeArea);
 	BoxSlot->SetHorizontalAlignment(HAlign_Center);
 	BoxSlot->SetVerticalAlignment(VAlign_Bottom);
-	UTTAUIStyle::AddLabel(WidgetTree, Box, TEXT("AND THE WINNER IS..."), UTTAUIStyle::kH2, true, tta::kBone);
+	Box->AddChild(UTTAUIStyle::MakeBanner(WidgetTree, FText::FromString(TEXT("AND THE WINNER IS..."))));
 	Steps = WidgetTree->ConstructWidget<UHorizontalBox>();
 	Box->AddChild(Steps);
 }

@@ -15,10 +15,16 @@ TODO: confirm the KayKit/Kenney mesh names and pack versions once `fetch_assets.
 | City Kit (Suburban): `building-type-a`, `building-type-b`, `building-type-c`, `building-type-d`, `building-type-e`, `building-type-f`, `fence`, `planter`, `tree-large`, `tree-small` (Backyard map; materials replaced with M_TTA_Toon) | Kenney | CC0 1.0 | https://kenney.nl/assets/city-kit-suburban |
 | Nature Kit: `flower_redA`, `flower_yellowA`, `plant_bushLarge`, `rock_smallA` (Backyard map; materials replaced with M_TTA_Toon) | Kenney | CC0 1.0 | https://kenney.nl/assets/nature-kit |
 | Backyard props: `SM_Backyard_Gnome`, `SM_Backyard_Grill`, `SM_Backyard_KiddiePool`, `SM_Backyard_PicnicTable`, `SM_Backyard_Shed`, `SM_Backyard_Trampoline` (Backyard map) | Take Two: Afterlife team, scripted in Blender | own work | models/build_backyard_props.py |
+| Trapdoor `trapdoor_quaternius.glb` (`SM_Trap_Trapdoor`, recoloured from palette.md) | Quaternius | CC0 1.0 | https://poly.pizza/m/Ph6MpmwySS |
+| Banana `banana_kenney.glb`, Food Kit (`SM_Trap_Banana`, recoloured from palette.md) | Kenney | CC0 1.0 | https://poly.pizza/m/5Z07I9KMob |
+| Doublesided Hammer `hammer_quaternius.glb` (`SM_Trap_Hammer`, recoloured from palette.md) | Quaternius | CC0 1.0 | https://poly.pizza/m/UIXvQ73DS1 |
+| Saw Blade `sawblade_quaternius.glb` (`SM_Trap_Spinner`, recoloured from palette.md) | Quaternius | CC0 1.0 | https://poly.pizza/m/HLOlecPOVD |
+| Traps: `SM_Trap_Lawnmower`, `SM_Trap_PusherWall`, `SM_Trap_Cannon` and primitive fallbacks for the four above | Take Two: Afterlife team, scripted in Blender | own work | models/build_traps_cams.py |
 | Course kit: `SM_Course_GateFinish` (Backyard finish arch) | Take Two: Afterlife team, scripted in Blender | own work | models/build_course_kit.py |
 
 ## Audio
 Music and SFX WAVs in `Content/Audio/` are built by `Scripts/build_audio.py`. Narrator VO WAVs ship separately (`VO_wavs.zip`, unzip into `Content/Audio/VO/`).
+Music and SFX WAVs in `Content/Audio/` are built by `Scripts/build_audio.py`. Narrator VO is not recorded yet; the game shows captions only.
 | Asset | Author | License | Source |
 |---|---|---|---|
 | Narrator voice, 60 lines `VO_*` (script exported by `Core/tools/vo_script.cpp` → `build/tta_vo_script`; voice: George `JBFqnCBsd6RMkjVDRZzb`, model `eleven_multilingual_v2`) | ElevenLabs text-to-speech, script by Kevin | ElevenLabs Free tier: attribution required ("Voice generated with ElevenLabs, elevenlabs.io") | https://elevenlabs.io |
