@@ -127,10 +127,38 @@ void ATTARunnerPawn::BeginPlay()
 	}
 }
 
-void ATTARunnerPawn::DressHat(UStaticMeshComponent* HatComp, USceneComponent* Body, FName Socket, const FTTACosmeticRow& Row)
+const FTTACosmeticRow* ATTARunnerPawn::FindCosmeticRow(const UDataTable* Table, int32 Index)
+{
+	if (!Table || Index < 0 || Index >= static_cast<int32>(tta::kHats.size())) return nullptr;
+	const FString Want = FString::Printf(TEXT("SM_Hat_%s"), UTF8_TO_TCHAR(tta::kHats[Index]));
+	const FName LookName(*FString::Printf(TEXT("Look%d"), Index));
+	const FTTACosmeticRow* Named = Table->FindRow<FTTACosmeticRow>(LookName, TEXT("TTACosmetic"));
+	if (Named && Named->HatMesh.ToSoftObjectPath().GetAssetName() == Want) return Named;
+	for (const TPair<FName, uint8*>& Pair : Table->GetRowMap())
+	{
+		const FTTACosmeticRow* Row = reinterpret_cast<const FTTACosmeticRow*>(Pair.Value);
+		if (Row && Row->HatMesh.ToSoftObjectPath().GetAssetName() == Want) return Row;
+	}
+	if (Named)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TTA cosmetics: Look%d is %s, menu slot %d is %s"),
+			Index, *Named->HatMesh.ToSoftObjectPath().GetAssetName(), Index, *Want);
+	}
+	return Named;
+}
+
+UStaticMesh* ATTARunnerPawn::LoadHatMesh(int32 HatIndex)
+{
+	if (HatIndex < 0 || HatIndex >= static_cast<int32>(tta::kHats.size())) return nullptr;
+	const FString Name = UTF8_TO_TCHAR(tta::kHats[HatIndex]);
+	return LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("/Game/Characters/Hats/SM_Hat_%s.SM_Hat_%s"), *Name, *Name));
+}
+
+void ATTARunnerPawn::DressHat(UStaticMeshComponent* HatComp, USceneComponent* Body, FName Socket, const FTTACosmeticRow& Row, UStaticMesh* MeshOverride)
 {
 	if (!HatComp || !Body) return;
-	HatComp->SetStaticMesh(Row.HatMesh.LoadSynchronous());
+	UStaticMesh* MeshAsset = MeshOverride ? MeshOverride : Row.HatMesh.LoadSynchronous();
+	HatComp->SetStaticMesh(MeshAsset);
 	HatComp->AttachToComponent(Body, FAttachmentTransformRules::KeepRelativeTransform, Socket);
 	// World scale, not the head bone's scale. A relative scale inherits that and the hat fills the screen.
 	HatComp->SetUsingAbsoluteScale(true);
@@ -159,16 +187,25 @@ void ATTARunnerPawn::ApplyLook(int32 HatIndex, int32 FaceIndex)
 		UE_LOG(LogTemp, Error, TEXT("ATTARunnerPawn: CosmeticsTable %s failed to load"), *CosmeticsTable.ToString());
 		return;
 	}
-	const TArray<FName> Rows = Table->GetRowNames();
-	const FTTACosmeticRow* HatRow = Rows.IsValidIndex(HatIndex) ? Table->FindRow<FTTACosmeticRow>(Rows[HatIndex], TEXT("Hat")) : nullptr;
-	const FTTACosmeticRow* FaceRow = Rows.IsValidIndex(FaceIndex) ? Table->FindRow<FTTACosmeticRow>(Rows[FaceIndex], TEXT("Face")) : nullptr;
-	if (!HatRow || !FaceRow)
+	const FTTACosmeticRow* HatRow = FindCosmeticRow(Table, HatIndex);
+	const FTTACosmeticRow* FaceRow = FindCosmeticRow(Table, FaceIndex);
+	UStaticMesh* HatMesh = LoadHatMesh(HatIndex);
+	if (!HatRow && !HatMesh)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ATTARunnerPawn: no cosmetic row for hat %d / face %d (%d rows)"), HatIndex, FaceIndex, Rows.Num());
-		return;
+		UE_LOG(LogTemp, Warning, TEXT("ATTARunnerPawn: no cosmetic row or mesh for hat %d"), HatIndex);
 	}
-	DressHat(Hat, GetMesh(), HatSocket, *HatRow);
-	UTexture2D* Face = FaceRow->FaceTexture.LoadSynchronous();
+	else
+	{
+		const FTTACosmeticRow Fallback;
+		DressHat(Hat, GetMesh(), HatSocket, HatRow ? *HatRow : Fallback, HatMesh);
+	}
+	UTexture2D* Face = nullptr;
+	if (FaceIndex >= 0 && FaceIndex < static_cast<int32>(tta::kFaces.size()))
+	{
+		const FString FaceName = UTF8_TO_TCHAR(tta::kFaces[FaceIndex]);
+		Face = LoadObject<UTexture2D>(nullptr, *FString::Printf(TEXT("/Game/Characters/Faces/T_Face_%s.T_Face_%s"), *FaceName, *FaceName));
+	}
+	if (!Face && FaceRow) Face = FaceRow->FaceTexture.LoadSynchronous();
 	const FLinearColor FaceDrop(0.f, TTAFaceDropV, 0.f, 1.f);
 	for (UMaterialInstanceDynamic* Material : FlashMaterials)
 	{

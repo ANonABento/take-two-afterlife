@@ -51,9 +51,12 @@ public:
 
 	virtual void Tick(float DeltaSeconds) override;
 
-	// Build phase only: how close counts as at a spot, and how long the bot stands there.
-	UPROPERTY(EditAnywhere, Category = "TTA") float BuildArriveCm = 80.f;
-	UPROPERTY(EditAnywhere, Category = "TTA") float BuildPauseSeconds = 0.6f;
+	// Build phase only: the bot's angel flies to each of its spots, and the trap or camera shows
+	// up when it gets there. How close counts as there, and how long it hovers before moving on.
+	UPROPERTY(EditAnywhere, Category = "TTA") float BuildArriveCm = 30.f;
+	UPROPERTY(EditAnywhere, Category = "TTA") float BuildPauseSeconds = 0.8f;
+	UPROPERTY(EditAnywhere, Category = "TTA") float BuildFlySpeedCm = 900.f;
+	UPROPERTY(EditAnywhere, Category = "TTA") float BuildHoverCm = 170.f;
 
 	// How far ahead of the runner the floor probe looks for a gap.
 	UPROPERTY(EditAnywhere, Category = "TTA") float ProbeAheadCm = 120.f;
@@ -65,11 +68,17 @@ private:
 	bool bRacing = false;
 	std::optional<tta::EditList> Cut;
 	tta::RunnerPlan Plan;
-	// Walks the runner to each of its own placements in turn so building reads on screen.
+	// Flies the runner to each of its own placements in turn and shows each one on arrival.
 	void WalkBuildStops(float DeltaSeconds);
-	TArray<FVector> BuildStops;
+	struct FBuildStop
+	{
+		FVector At;
+		int32 Id;
+	};
+	TArray<FBuildStop> BuildStops;
 	int32 BuildStop = 0;
 	float BuildPause = 0.f;
+	bool bBuildFlying = false;
 	bool bBuiltThisRound = false;
 	bool bWasGroundAhead = true;
 	bool bSkipThisGap = false;

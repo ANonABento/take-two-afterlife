@@ -43,9 +43,9 @@ class MaterialGuardTests(unittest.TestCase):
         for need in ("GetSkeletalMeshAsset()", "GetNumMaterials()", "GetMaterial(Slot)"):
             self.assertIn(need, before)
 
-    def test_hat_mid_guarded(self):
-        b = self.cpp
-        self.assertIn("Hat->GetNumMaterials() > 0 && Hat->GetMaterial(0) ? Hat->CreateAndSetMaterialInstanceDynamic(0)", b)
+    def test_hat_has_no_dynamic_material(self):
+        """Hats use their painted materials as imported; an unguarded MID on the hat logged the same error."""
+        self.assertNotIn("Hat->CreateAndSetMaterialInstanceDynamic", self.cpp)
 
     def test_runner_mesh_is_sk_angel(self):
         ini = (ROOT / "Config/DefaultGame.ini").read_text()

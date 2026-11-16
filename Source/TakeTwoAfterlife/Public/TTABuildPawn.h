@@ -6,6 +6,8 @@
 #include "Engine/HitResult.h"
 #include "TTABuildPawn.generated.h"
 
+class ATTARunnerPawn;
+
 // Free-fly Build camera (DefaultPawn WASD/E/Q + mouse look) with a ghost preview of the
 // selected item snapped to the grid under the crosshair. All changes go through server RPCs
 // to ATTAGameMode, which applies the Core rules.
@@ -18,7 +20,12 @@ public:
 	ATTABuildPawn(const FObjectInitializer& ObjectInitializer);
 
 	virtual void Tick(float DeltaSeconds) override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	// The runner Build mode just unpossessed. It flies beside the camera instead of staying at the start.
+	void CarryBody(ATTARunnerPawn* Runner);
 
 	int32 GetSelectedItem() const { return SelectedItem; }
 	int32 GetSelectedPlacement() const { return SelectedPlacement; }
@@ -55,10 +62,18 @@ private:
 	void Setting2Down() { AdjustSetting(1, -1); }
 	void Setting2Up() { AdjustSetting(1, 1); }
 
+	void FollowBody();
+
 	UFUNCTION(Server, Reliable) void ServerPlace(int32 Item, FVector_NetQuantize WorldCm, float YawDeg);
 	UFUNCTION(Server, Reliable) void ServerRemove(int32 Id);
 	UFUNCTION(Server, Reliable) void ServerSetSetting(int32 Id, int32 Index, int32 Value);
+	UFUNCTION(Server, Unreliable) void ServerCarryBody(FVector_NetQuantize Loc, float Yaw);
 	UFUNCTION(Client, Reliable) void ClientResult(ETTAPlaceOutcome Outcome, int32 Id);
+
+	void ParkBody();
+	UFUNCTION() void OnRep_Body();
+
+	UPROPERTY(ReplicatedUsing = OnRep_Body) TObjectPtr<ATTARunnerPawn> Body;
 
 	int32 SelectedItem = 0;
 	int32 RotationStep = 0;

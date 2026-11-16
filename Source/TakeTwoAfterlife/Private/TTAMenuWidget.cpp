@@ -24,6 +24,7 @@
 #include "Components/WidgetSwitcherSlot.h"
 #include "Brushes/SlateRoundedBoxBrush.h"
 #include "Engine/Texture2D.h"
+#include "Engine/World.h"
 #include "GameFramework/GameUserSettings.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Misc/Paths.h"

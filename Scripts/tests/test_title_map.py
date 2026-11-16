@@ -30,7 +30,8 @@ def _fake_unreal(exists=True):
     spawned, world = [], _Obj("WorldSettings")
     for n in ["DirectionalLight", "SkyLight", "SkyAtmosphere", "ExponentialHeightFog", "CameraActor", "StaticMeshActor"]:
         setattr(u, n, n)
-    u.Vector = u.Rotator = lambda *a: a
+    u.Vector = lambda *a: a
+    u.Rotator = lambda *a, **k: (a, k)
     u.log = lambda m: spawned.append(("log", m))
     u.load_class = lambda outer, path: path.rsplit(".", 1)[-1]
 
@@ -120,6 +121,19 @@ class TitleMapTest(unittest.TestCase):
         self.assertIn("SetupLoadingScreen", cpp)
         self.assertIn("LOADING", cpp)
         self.assertIn("MoviePlayer", (SRC / "TakeTwoAfterlife.Build.cs").read_text())
+
+
+class TitleBackdropScriptTest(unittest.TestCase):
+    def test_backdrop_stands_up_and_is_saved(self):
+        create = (SCRIPTS / "create_title_map.py").read_text()
+        apply = (SCRIPTS / "apply_title_backdrop.py").read_text()
+        # Rotator is (roll, pitch, yaw) positionally; a bare (0, 0, 90) left the plane lying flat.
+        self.assertNotRegex(create + apply, r"Rotator\(\s*[-\d*]")
+        self.assertIn('plane("Backdrop", (2600, 0, 400), (72, 48, 1), roll=90.0, yaw=90.0)', create)
+        self.assertNotIn('plane("Ground"', create)
+        self.assertIn("unreal.Rotator(roll=90.0, pitch=0.0, yaw=90.0)", apply)
+        # The painting has to be saved into the map, not just set on the open level.
+        self.assertLess(apply.index("set_material(0, mi)"), apply.index("level.save_current_level()"))
 
 
 if __name__ == "__main__":

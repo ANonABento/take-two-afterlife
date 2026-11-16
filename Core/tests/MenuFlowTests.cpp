@@ -24,10 +24,14 @@ TEST_CASE("look carousels wrap both ways") {
     PlayerLook look;
     look = cycleLook(look, LookPart::Colour, -1);
     CHECK(look.colour == 3);
-    look = cycleLook(look, LookPart::Hat, 7);
+    look = cycleLook(look, LookPart::Hat, static_cast<int>(kHats.size()) + 1);
     CHECK(look.hat == 1);
-    look = cycleLook(look, LookPart::Face, 5);
-    CHECK(look.face == 0);
+    const int face = look.face;
+    look = cycleLook(look, LookPart::Face, static_cast<int>(kFaces.size()));
+    CHECK(look.face == face);
+    look.face = 0;
+    look = cycleLook(look, LookPart::Face, -1);
+    CHECK(look.face == static_cast<int>(kFaces.size()) - 1);
 }
 
 TEST_CASE("settings clamp, start gate and mic meter") {

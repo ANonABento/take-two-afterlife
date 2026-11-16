@@ -6,6 +6,7 @@
 #include "TTAHeavenWatch.generated.h"
 
 class ACameraActor;
+class ATTACinema;
 class ASceneCapture2D;
 class ATTAFinishGate;
 class UImage;
@@ -30,9 +31,10 @@ private:
 	UPROPERTY() TObjectPtr<UImage> Image;
 };
 
-// Couch, cloud and TV spawned in the sky of the race map. The player's view sits
-// on the couch; the screen cycles the race cameras. Not ATTACinema: that actor
-// switches the whole-world look, which would tint the course.
+// The heaven TV in the race map. The game mode streams Heaven.umap into the sky and
+// hands its ATTACinema to UseStage: the feed goes on that screen, the player sits on
+// that couch, and the map's own gate starts the next round. With no stage (the map
+// failed to load) the actor shows a stand-in built from engine shapes in the same layout.
 UCLASS()
 class TAKETWOAFTERLIFE_API ATTAHeavenWatch : public AActor
 {
@@ -43,6 +45,9 @@ public:
 
 	// Views are world transforms for the feed camera (location + look rotation).
 	void Start(const TArray<FTransform>& InViews);
+	// Move onto the streamed Heaven map's cinema and hide the stand-in.
+	void UseStage(ATTACinema* InStage);
+	bool HasStage() const { return Stage != nullptr; }
 	AActor* GetSeatCamera();
 	// Where the dead angel stands, facing the TV. The seat camera stays behind them.
 	FTransform GetSeatTransform() const;
@@ -50,7 +55,8 @@ public:
 	void ShowTexture(UTexture* Texture);
 	// Where the player stands once the reel is over, facing the continue gate.
 	FTransform GetWalkTransform() const;
-	// A walkable pad and a gate. Walking through the gate asks the game mode for the next round.
+	// Stand-in only: a gate whose trigger asks the game mode for the next round. On the
+	// Heaven map the pearly gate is already there, so this does nothing.
 	void SpawnContinueGate();
 	void ClearContinueGate();
 
@@ -58,14 +64,18 @@ public:
 
 private:
 	void ShowView(int32 Index);
+	// Seat camera and screen widget onto their spots.
+	void PlaceRig();
+	// Cinema-space cm to world.
+	FVector Spot(const FVector& Local) const;
 
+	UPROPERTY() TObjectPtr<ATTACinema> Stage;
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> Cloud;
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> Couch;
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> Screen;
 	UPROPERTY() TObjectPtr<UWidgetComponent> ScreenWidget;
 	UPROPERTY() TObjectPtr<UTTACamFeedWidget> Feed;
 	UPROPERTY() TObjectPtr<ACameraActor> SeatCamera;
-	UPROPERTY() TObjectPtr<UStaticMeshComponent> WalkFloor;
 	UPROPERTY() TObjectPtr<ATTAFinishGate> ContinueGate;
 	UPROPERTY() TObjectPtr<ASceneCapture2D> FeedCam;
 	UPROPERTY() TObjectPtr<UTextureRenderTarget2D> Target;

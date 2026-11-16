@@ -25,7 +25,7 @@ bool FTTABuildPlaceReplicateTest::RunTest(const FString& Parameters)
 	if (!TestNotNull(TEXT("marker Data exists"), DataProp)) return false;
 	TestTrue(TEXT("Data replicates"), DataProp->HasAnyPropertyFlags(CPF_Net));
 	TestTrue(TEXT("Data has RepNotify"), DataProp->HasAnyPropertyFlags(CPF_RepNotify));
-	TestEqual(TEXT("10 build items (6 traps + 4 cameras)"), TTABuildItem::Count(), 10);
+	TestEqual(TEXT("7 build items (6 traps + the one placeable camera)"), TTABuildItem::Count(), 7);
 
 	UWorld* World = UWorld::CreateWorld(EWorldType::Game, false);
 	FWorldContext& Context = GEngine->CreateNewWorldContext(EWorldType::Game);

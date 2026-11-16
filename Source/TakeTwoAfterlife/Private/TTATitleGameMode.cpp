@@ -24,6 +24,7 @@
 #include "TTARunnerPawn.h"
 #include "TTAMenuWidget.h"
 #include "TTASessionSubsystem.h"
+#include "tta/MenuFlow.h"
 
 namespace
 {
@@ -31,13 +32,15 @@ const FName FaceParam(TEXT("FaceTexture"));
 const FName FaceOffsetParam(TEXT("FaceUVOffset"));
 const FName HatSocket(TEXT("head"));
 
-void DressAngel(ASkeletalMeshActor* Angel, const UDataTable* Table, const TArray<FName>& Rows, int32 HatIndex, int32 FaceIndex)
+void DressAngel(ASkeletalMeshActor* Angel, const UDataTable* Table, int32 HatIndex, int32 FaceIndex)
 {
-	if (!Angel || !Table || !Rows.IsValidIndex(HatIndex) || !Rows.IsValidIndex(FaceIndex)) return;
-	const FTTACosmeticRow* HatRow = Table->FindRow<FTTACosmeticRow>(Rows[HatIndex], TEXT("TitleHat"));
-	const FTTACosmeticRow* FaceRow = Table->FindRow<FTTACosmeticRow>(Rows[FaceIndex], TEXT("TitleFace"));
+	if (!Angel || !Table) return;
+	const FTTACosmeticRow* HatRow = ATTARunnerPawn::FindCosmeticRow(Table, HatIndex);
+	const FTTACosmeticRow* FaceRow = ATTARunnerPawn::FindCosmeticRow(Table, FaceIndex);
+	UStaticMesh* HatMesh = ATTARunnerPawn::LoadHatMesh(HatIndex);
+	if (!HatRow && !HatMesh) return;
 	USkeletalMeshComponent* Body = Angel->GetSkeletalMeshComponent();
-	if (!HatRow || !FaceRow || !Body) return;
+	if (!Body) return;
 
 	UStaticMeshComponent* Hat = NewObject<UStaticMeshComponent>(Angel);
 	Hat->SetMobility(EComponentMobility::Movable);
@@ -53,9 +56,16 @@ void DressAngel(ASkeletalMeshActor* Angel, const UDataTable* Table, const TArray
 		}
 	}
 	Hat->RegisterComponent();
-	ATTARunnerPawn::DressHat(Hat, Body, bSocket ? HatSocket : NAME_None, *HatRow);
+	const FTTACosmeticRow Fallback;
+	ATTARunnerPawn::DressHat(Hat, Body, bSocket ? HatSocket : NAME_None, HatRow ? *HatRow : Fallback, HatMesh);
 
-	UTexture2D* Face = FaceRow->FaceTexture.LoadSynchronous();
+	UTexture2D* Face = nullptr;
+	if (FaceIndex >= 0 && FaceIndex < static_cast<int32>(tta::kFaces.size()))
+	{
+		const FString FaceName = UTF8_TO_TCHAR(tta::kFaces[FaceIndex]);
+		Face = LoadObject<UTexture2D>(nullptr, *FString::Printf(TEXT("/Game/Characters/Faces/T_Face_%s.T_Face_%s"), *FaceName, *FaceName));
+	}
+	if (!Face && FaceRow) Face = FaceRow->FaceTexture.LoadSynchronous();
 	const FLinearColor FaceDrop(0.f, TTAFaceDropV, 0.f, 1.f);
 	const int32 NumSlots = Body->GetNumMaterials();
 	for (int32 Slot = 0; Slot < NumSlots; ++Slot)
@@ -79,8 +89,8 @@ void SpawnTitleChoir(UWorld* World)
 	}
 	UClass* Anim = LoadClass<UAnimInstance>(nullptr, TEXT("/Game/Characters/Angel/Anims/ABP_Angel.ABP_Angel_C"));
 	const UDataTable* Looks = LoadObject<UDataTable>(nullptr, TEXT("/Game/Data/DT_Cosmetics.DT_Cosmetics"));
-	const TArray<FName> Rows = Looks ? Looks->GetRowNames() : TArray<FName>();
-	if (Rows.IsEmpty())
+	const int32 HatCount = static_cast<int32>(tta::kHats.size());
+	if (!Looks || HatCount <= 0)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Title choir: DT_Cosmetics has no rows; angels spawn without hats or faces"));
 	}
@@ -101,9 +111,9 @@ void SpawnTitleChoir(UWorld* World)
 		Body->SetRelativeRotation(FRotator(0.f, 180.f, 0.f));
 		Body->SetRelativeScale3D(FVector(Rng.FRandRange(0.85f, 1.35f)));
 		if (Anim) Body->SetAnimInstanceClass(Anim);
-		if (!Rows.IsEmpty())
+		if (Looks && HatCount > 0)
 		{
-			DressAngel(Angel, Looks, Rows, Rng.RandHelper(Rows.Num()), Rng.RandHelper(Rows.Num()));
+			DressAngel(Angel, Looks, Rng.RandHelper(HatCount), Rng.RandHelper(static_cast<int32>(tta::kFaces.size())));
 		}
 	}
 }

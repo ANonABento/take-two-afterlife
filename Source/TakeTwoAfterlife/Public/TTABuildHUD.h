@@ -30,7 +30,7 @@ private:
 	float DrawBuildTiles(float X, float Y, int32 Selected);
 	// Tile art: the item mesh rendered once, framed to the square, cached per build item.
 	UTexture* TrapThumbnail(int32 Item);
-	UPROPERTY() TMap<int32, TObjectPtr<class UTextureRenderTarget2D>> TrapThumbnails;
+	UPROPERTY() TMap<int32, TObjectPtr<class UTexture2D>> TrapThumbnails;
 	void ShowResults();
 	// Kahoot-style bars during each cut's Reveal (ATTACinema::GetScoreBoard).
 	void DrawScoreBoard();

@@ -25,6 +25,8 @@ ATTAEditStage::ATTAEditStage()
 	Capture->SetupAttachment(RootComponent);
 	Capture->bCaptureEveryFrame = false;
 	Capture->bCaptureOnMovement = false;
+	// Same as the heaven TV feed: the outline pass can ink a whole view black.
+	Capture->ShowFlags.SetPostProcessMaterial(false);
 }
 
 void ATTAEditStage::Init(const tta::Replay& InReplay, const TArray<FTransform>& InViews, USkeletalMesh* PuppetMesh)

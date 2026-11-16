@@ -15,6 +15,7 @@
 #include "TTAPlacementMarker.h"
 #include "Engine/Font.h"
 #include "Engine/Texture2D.h"
+#include "TextureResource.h"
 #include "EngineUtils.h"
 #include "TTABuildPawn.h"
 #include "TTACinema.h"
@@ -270,8 +271,8 @@ float ATTABuildHUD::DrawBuildTiles(float X, float Y, int32 Selected)
 		if (UTexture* Icon = TrapThumbnail(Item))
 		{
 			const float Side = kTileSize - 2 * kTileIconInset;
-			DrawTexture(Icon, (TileX + kTileIconInset) * S, (Y + kTileIconInset) * S, Side * S, Side * S,
-				0.f, 0.f, 1.f, 1.f, FLinearColor::White, BLEND_Opaque);
+			// Default blend is translucent: the thumbnail is a cut-out over the tile card.
+			DrawTexture(Icon, (TileX + kTileIconInset) * S, (Y + kTileIconInset) * S, Side * S, Side * S, 0.f, 0.f, 1.f, 1.f);
 		}
 		else
 		{
@@ -286,66 +287,121 @@ float ATTABuildHUD::DrawBuildTiles(float X, float Y, int32 Selected)
 
 UTexture* ATTABuildHUD::TrapThumbnail(int32 Item)
 {
-	if (const TObjectPtr<UTextureRenderTarget2D>* Cached = TrapThumbnails.Find(Item)) return *Cached;
+	if (const TObjectPtr<UTexture2D>* Cached = TrapThumbnails.Find(Item)) return *Cached;
+	// A failed capture is cached as null, so the tile keeps its number instead of retrying every frame.
+	TrapThumbnails.Add(Item, nullptr);
 	UStaticMesh* Mesh = GetDefault<ATTAPlacementMarker>()->MeshForItem(Item);
 	UWorld* World = GetWorld();
 	if (!Mesh || !World) return nullptr;
-	// Just under the course. ShowOnly hides the level; staying near the origin keeps the
-	// depth buffer precise so the outline pass cannot ink the whole mesh one flat colour.
+	// Under the course, where the show-only list leaves nothing else in frame.
 	const FVector At(0.f, 0.f, -3000.f);
 	FActorSpawnParameters Params;
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	AStaticMeshActor* Prop = World->SpawnActor<AStaticMeshActor>(At, FRotator(-22.f, 38.f, 0.f), Params);
+	AStaticMeshActor* Prop = World->SpawnActor<AStaticMeshActor>(At, FRotator(0.f, 35.f, 0.f), Params);
 	Prop->SetMobility(EComponentMobility::Movable);
 	UStaticMeshComponent* PropMesh = Prop->GetStaticMeshComponent();
 	PropMesh->SetStaticMesh(Mesh);
 	PropMesh->UpdateBounds();
-	// Orthographic fit to the rotated bounds so a hammer and a banana fill the same square.
-	const FBox Box = PropMesh->Bounds.GetBox();
-	const FVector Center = Box.GetCenter();
-	const float Span = Box.GetExtent().GetMax() * 2.f * 1.08f;
-	const FVector Eye = Center + FVector(-1.f, -0.65f, 0.55f).GetSafeNormal() * Span;
-	// ShowOnly drops every light that is not in the list, which left these lit meshes a flat gray.
-	ADirectionalLight* Key = World->SpawnActor<ADirectionalLight>(Center, FRotator(-50.f, -35.f, 0.f), Params);
-	ADirectionalLight* Fill = World->SpawnActor<ADirectionalLight>(Center, FRotator(-15.f, 145.f, 0.f), Params);
+	const FVector Center = PropMesh->Bounds.Origin;
+	const float Radius = FMath::Max(PropMesh->Bounds.SphereRadius, 1.f);
+	// 40 degree lens, far enough back that the whole bounding sphere is in frame.
+	const FVector Eye = Center + FVector(-1.f, -0.6f, 0.7f).GetSafeNormal() * Radius * 3.2f;
+	ADirectionalLight* Key = World->SpawnActor<ADirectionalLight>(Center, FRotator(-50.f, 35.f, 0.f), Params);
+	ADirectionalLight* Fill = World->SpawnActor<ADirectionalLight>(Center, FRotator(-15.f, -120.f, 0.f), Params);
 	for (ADirectionalLight* Light : {Key, Fill})
 	{
-		UDirectionalLightComponent* Comp = Light->GetComponent();
+		UDirectionalLightComponent* Comp = Cast<UDirectionalLightComponent>(Light->GetLightComponent());
 		Comp->SetMobility(EComponentMobility::Movable);
 		Comp->SetCastShadows(false);
-		Comp->SetIntensity(Light == Key ? 12.f : 5.f);
-		Comp->SetLightColor(FLinearColor::White);
+		Comp->SetIntensity(Light == Key ? 3.f : 1.2f);
 	}
 	ASceneCapture2D* Cam = World->SpawnActor<ASceneCapture2D>(Eye, (Center - Eye).Rotation(), Params);
-	UTextureRenderTarget2D* Target = UKismetRenderingLibrary::CreateRenderTarget2D(this, 256, 256, RTF_RGBA8);
-	Target->ClearColor = UTTAUIStyle::Colour(tta::kBone);
+	// Raw scene colour into a float target: no tonemapper, exposure or outline pass to turn the
+	// picture black. Brightness and the cut-out are worked out from the pixels below instead.
+	constexpr int32 Shot = 256;
+	UTextureRenderTarget2D* Target = UKismetRenderingLibrary::CreateRenderTarget2D(this, Shot, Shot, RTF_RGBA16f);
 	USceneCaptureComponent2D* Capture = Cam->GetCaptureComponent2D();
 	Capture->PrimitiveRenderMode = ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
 	Capture->ShowOnlyActors.Add(Prop);
-	Capture->ShowOnlyActors.Add(Key);
-	Capture->ShowOnlyActors.Add(Fill);
-	Capture->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
+	Capture->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
 	Capture->bCaptureEveryFrame = false;
-	Capture->ProjectionType = ECameraProjectionMode::Orthographic;
-	Capture->OrthoWidth = Span;
-	Capture->bUpdateOrthoPlanes = true;
-	Capture->ShowFlags.SetPostProcessMaterial(false);
-	Capture->ShowFlags.SetEyeAdaptation(false);
+	Capture->bCaptureOnMovement = false;
+	Capture->FOVAngle = 40.f;
 	Capture->ShowFlags.SetFog(false);
 	Capture->ShowFlags.SetAtmosphere(false);
-	Capture->PostProcessBlendWeight = 1.f;
-	Capture->PostProcessSettings.bOverride_AutoExposureMethod = true;
-	Capture->PostProcessSettings.AutoExposureMethod = EAutoExposureMethod::AEM_Manual;
-	Capture->PostProcessSettings.bOverride_AutoExposureBias = true;
-	Capture->PostProcessSettings.AutoExposureBias = 0.6f;
-	Capture->PostProcessSettings.bOverride_AutoExposureApplyPhysicalCameraExposure = true;
-	Capture->PostProcessSettings.AutoExposureApplyPhysicalCameraExposure = false;
 	Capture->TextureTarget = Target;
 	Capture->CaptureScene();
+	TArray<FLinearColor> Pixels;
+	FTextureRenderTargetResource* Resource = Target->GameThread_GetRenderTargetResource();
+	const bool bRead = Resource && Resource->ReadLinearColorPixels(Pixels) && Pixels.Num() == Shot * Shot;
 	Prop->Destroy();
 	Key->Destroy();
 	Fill->Destroy();
 	Cam->Destroy();
-	TrapThumbnails.Add(Item, Target);
-	return Target;
+	if (!bRead)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ATTABuildHUD: thumbnail %d could not be read back"), Item);
+		return nullptr;
+	}
+
+	// The corner is always background. A pixel belongs to the prop when its alpha differs from the
+	// corner (scene-colour alpha is inverse opacity), or, if alpha is flat, when its colour does.
+	const FLinearColor Corner = Pixels[0];
+	bool bAlphaVaries = false;
+	for (const FLinearColor& Pixel : Pixels) bAlphaVaries |= FMath::Abs(Pixel.A - Corner.A) > 0.5f;
+	auto IsProp = [&](const FLinearColor& Pixel)
+	{
+		if (bAlphaVaries) return FMath::Abs(Pixel.A - Corner.A) > 0.5f;
+		return FMath::Abs(Pixel.R - Corner.R) + FMath::Abs(Pixel.G - Corner.G) + FMath::Abs(Pixel.B - Corner.B) > 0.01f;
+	};
+	int32 MinX = Shot, MinY = Shot, MaxX = -1, MaxY = -1;
+	float Peak = 0.f;
+	for (int32 Y = 0; Y < Shot; ++Y)
+	{
+		for (int32 X = 0; X < Shot; ++X)
+		{
+			const FLinearColor& Pixel = Pixels[Y * Shot + X];
+			if (!IsProp(Pixel)) continue;
+			MinX = FMath::Min(MinX, X);
+			MaxX = FMath::Max(MaxX, X);
+			MinY = FMath::Min(MinY, Y);
+			MaxY = FMath::Max(MaxY, Y);
+			Peak = FMath::Max(Peak, FMath::Max3(Pixel.R, Pixel.G, Pixel.B));
+		}
+	}
+	if (MaxX < MinX || Peak <= 0.f)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ATTABuildHUD: thumbnail %d came back empty (peak %.3f)"), Item, Peak);
+		return nullptr;
+	}
+	// Square crop around the prop so a hammer and a banana fill the same tile, levelled so the
+	// brightest pixel is just under white whatever lights the level adds.
+	constexpr int32 Side = 128;
+	const float Span = FMath::Max(MaxX - MinX, MaxY - MinY) * 1.1f + 2.f;
+	const float MidX = 0.5f * (MinX + MaxX), MidY = 0.5f * (MinY + MaxY);
+	const float Gain = 0.95f / Peak;
+	UTexture2D* Thumb = UTexture2D::CreateTransient(Side, Side, PF_B8G8R8A8);
+	if (!Thumb) return nullptr;
+	FColor* Out = static_cast<FColor*>(Thumb->GetPlatformData()->Mips[0].BulkData.Lock(LOCK_READ_WRITE));
+	for (int32 Y = 0; Y < Side; ++Y)
+	{
+		for (int32 X = 0; X < Side; ++X)
+		{
+			const int32 SX = FMath::RoundToInt(MidX + ((X + 0.5f) / Side - 0.5f) * Span);
+			const int32 SY = FMath::RoundToInt(MidY + ((Y + 0.5f) / Side - 0.5f) * Span);
+			FColor Texel(0, 0, 0, 0);
+			if (SX >= 0 && SY >= 0 && SX < Shot && SY < Shot && IsProp(Pixels[SY * Shot + SX]))
+			{
+				const FLinearColor& Pixel = Pixels[SY * Shot + SX];
+				FLinearColor Lit = Pixel * Gain;
+				Lit.A = 1.f;
+				Texel = Lit.ToFColor(true);
+			}
+			Out[Y * Side + X] = Texel;
+		}
+	}
+	Thumb->GetPlatformData()->Mips[0].BulkData.Unlock();
+	Thumb->UpdateResource();
+	TrapThumbnails.Add(Item, Thumb);
+	return Thumb;
 }

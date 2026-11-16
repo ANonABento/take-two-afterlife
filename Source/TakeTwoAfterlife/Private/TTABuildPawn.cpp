@@ -1,14 +1,26 @@
 #include "TTABuildPawn.h"
 
+#include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/CollisionProfile.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Net/UnrealNetwork.h"
 #include "TTAGameMode.h"
+#include "TTARunnerPawn.h"
 #include "CollisionQueryParams.h"
 #include "Engine/HitResult.h"
+
+namespace
+{
+// Beside the crosshair: far enough forward to read as flying with you, low enough to clear the aim ray.
+constexpr float kBodyForwardCm = 200.f;
+constexpr float kBodyRightCm = 80.f;
+constexpr float kBodyDownCm = 110.f;
+}
 
 ATTABuildPawn::ATTABuildPawn(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer.DoNotCreateDefaultSubobject(ADefaultPawn::MeshComponentName))
@@ -79,6 +91,7 @@ bool ATTABuildPawn::TraceCursor(FHitResult& Hit) const
 	FRotator View;
 	PC->GetPlayerViewPoint(Eye, View);
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(TTABuildTrace), false, this);
+	if (Body) Params.AddIgnoredActor(Body);
 	return GetWorld()->LineTraceSingleByChannel(Hit, Eye, Eye + View.Vector() * TraceDistanceCm, ECC_Visibility, Params);
 }
 
@@ -89,9 +102,65 @@ ATTAPlacementMarker* ATTABuildPawn::OwnMarkerUnderCursor() const
 	return Marker && Marker->GetData().Owner == ATTAPlacementMarker::PlayerIdOf(this) ? Marker : nullptr;
 }
 
+void ATTABuildPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ATTABuildPawn, Body);
+}
+
+void ATTABuildPawn::ParkBody()
+{
+	if (!Body) return;
+	Body->SitOut();
+	Body->SetActorEnableCollision(false);
+	if (UCharacterMovementComponent* Move = Body->GetCharacterMovement())
+	{
+		Move->DisableMovement();
+		Move->SetComponentTickEnabled(false);
+	}
+}
+
+void ATTABuildPawn::CarryBody(ATTARunnerPawn* Runner)
+{
+	Body = Runner;
+	ParkBody();
+}
+
+void ATTABuildPawn::OnRep_Body()
+{
+	ParkBody();
+}
+
+void ATTABuildPawn::FollowBody()
+{
+	if (!Body) return;
+	const FRotator Yaw(0.f, GetActorRotation().Yaw, 0.f);
+	const FVector Pos = GetActorLocation() + Yaw.RotateVector(FVector(kBodyForwardCm, kBodyRightCm, -kBodyDownCm));
+	Body->SetActorLocationAndRotation(Pos, Yaw, false, nullptr, ETeleportType::TeleportPhysics);
+	ServerCarryBody(Pos, Yaw.Yaw);
+}
+
+void ATTABuildPawn::ServerCarryBody_Implementation(FVector_NetQuantize Loc, float Yaw)
+{
+	if (!Body) return;
+	Body->SetActorLocationAndRotation(Loc, FRotator(0.f, Yaw, 0.f), false, nullptr, ETeleportType::TeleportPhysics);
+	Body->ForceNetUpdate();
+}
+
+void ATTABuildPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (HasAuthority() && Body)
+	{
+		Body->Destroy();
+		Body = nullptr;
+	}
+	Super::EndPlay(EndPlayReason);
+}
+
 void ATTABuildPawn::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	if (IsLocallyControlled()) FollowBody();
 	if (!IsLocallyControlled()) return;
 	FHitResult Hit;
 	bGhostOnFloor = TraceCursor(Hit);

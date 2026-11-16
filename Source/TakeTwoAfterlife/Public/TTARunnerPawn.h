@@ -15,6 +15,7 @@ class UVOIPTalker;
 class UTTAMicRecorder;
 class UMaterialInstanceDynamic;
 class USoundBase;
+class UStaticMesh;
 class UStaticMeshComponent;
 class UDataTable;
 
@@ -51,8 +52,13 @@ public:
 	UFUNCTION(BlueprintCallable) void SetForm(ETTAForm NewForm);
 	// Hat mesh/transform from DT_Cosmetics row HatIndex, face texture from row FaceIndex.
 	UFUNCTION(BlueprintCallable) void ApplyLook(int32 HatIndex, int32 FaceIndex);
+	// Row Look{Index} when its mesh is SM_Hat_{kHats[Index]}. Otherwise the row that actually has that mesh.
+	static const FTTACosmeticRow* FindCosmeticRow(const UDataTable* Table, int32 Index);
+	// SM_Hat_{kHats[HatIndex]}. This is the mesh the menu icon names, whatever the table row points at.
+	static UStaticMesh* LoadHatMesh(int32 HatIndex);
 	// Mesh, absolute scale (so a scaled head bone cannot blow the hat up) and the painted MI_Hat_*.
-	static void DressHat(UStaticMeshComponent* HatComp, USceneComponent* Body, FName Socket, const FTTACosmeticRow& Row);
+	// MeshOverride wins over the row's soft pointer.
+	static void DressHat(UStaticMeshComponent* HatComp, USceneComponent* Body, FName Socket, const FTTACosmeticRow& Row, UStaticMesh* MeshOverride = nullptr);
 	// Podium statue: angel form with this hat, face and body colour, no controller,
 	// no movement, animation paused on its current pose.
 	void FreezeAsStatue(int32 HatIndex, int32 FaceIndex, int32 Colour);

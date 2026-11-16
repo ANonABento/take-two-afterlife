@@ -34,7 +34,8 @@ class BotsRound(unittest.TestCase):
 
     def test_run_ends_into_edit_and_bots_get_cuts(self):
         s = read(SRC + "TTAGameMode.cpp")
-        self.assertRegex(s, r"AllFinished\(\)\s*\|\|\s*TimedOutFor >= SmiteHoldSeconds\) EndRun\(\)")
+        # The demo loops back through heaven instead; a real match still ends the run into Edit.
+        self.assertRegex(s, r"AllFinished\(\)\s*\|\|\s*TimedOutFor >= SmiteHoldSeconds\)\s*\{[^}]*else EndRun\(\);")
         end = re.search(r"void ATTAGameMode::EndRun\(\).*?\n\}", s, re.S).group(0)
         self.assertIn("FillCut(", end)
         self.assertIn("StopRun()", end)

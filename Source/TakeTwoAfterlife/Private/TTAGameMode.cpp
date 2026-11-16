@@ -43,12 +43,27 @@
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/PlayerStart.h"
 #include "tta/SpawnPlacement.h"
+#include "Components/SkyAtmosphereComponent.h"
+#include "Engine/ExponentialHeightFog.h"
+#include "Engine/Level.h"
+#include "Engine/LevelStreamingDynamic.h"
+#include "Engine/Light.h"
+#include "Engine/PostProcessVolume.h"
+#include "Engine/SkyLight.h"
+#include "Materials/MaterialParameterCollection.h"
+#include "TTAWorldLook.h"
 
 #include <algorithm>
 #include <stdexcept>
 
 namespace
 {
+// Where Heaven.umap is streamed into the race map: off to the side of the course, well above it.
+const FVector HeavenSetLocation(0.f, 14000.f, 7000.f);
+// A runner this far under the cloud top has fallen off heaven.
+constexpr float HeavenFallCm = 400.f;
+// Heaven.umap's PlayerStarts, ATTACinema space (Scripts/dress_heaven.py).
+const FVector HeavenLobbySpot(-300.f, 0.f, 100.f);
 // Many rounds so Premiere keeps returning to Build. The heaven gate is what stops a run.
 const char* DemoSettingsJson = "{\"rounds\":999,\"buildSeconds\":40,\"runSeconds\":50}";
 }
@@ -503,6 +518,7 @@ void ATTAGameMode::StartPlay()
 	if (bDemo && IsOnMap(BackyardMap) && Match.phase() == tta::Phase::Lobby)
 	{
 		UE_LOG(LogTemp, Log, TEXT("ATTAGameMode: demo build then race, %d bots"), BotCount);
+		LoadHeavenSet(); // streams in during the build, long before anyone dies
 		RequestPhase(ETTAPhase::Build);
 		return;
 	}
@@ -578,6 +594,8 @@ void ATTAGameMode::EnterRun()
 		bool bGate = false;
 		for (TActorIterator<ATTAFinishGate> It(GetWorld()); It; ++It)
 		{
+			// The streamed heaven set has a gate too; the race ends at the course's own.
+			if (It->GetLevel() != GetWorld()->PersistentLevel) continue;
 			Gate = It->GetActorLocation();
 			bGate = true;
 			break;
@@ -629,6 +647,8 @@ void ATTAGameMode::SpawnTraps()
 void ATTAGameMode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	AdoptHeavenSet();
+	RescueHeavenFallers();
 	if (bRestartQueued)
 	{
 		bRestartQueued = false;
@@ -708,13 +728,116 @@ bool ATTAGameMode::TryHeaven(ATTARunnerPawn* Runner)
 	return false;
 }
 
-void ATTAGameMode::OpenHeaven(APlayerController* PC)
+void ATTAGameMode::LoadHeavenSet()
 {
+	if (HeavenLevel || HeavenMap.IsEmpty()) return;
+	bool bLoading = false;
+	HeavenLevel = ULevelStreamingDynamic::LoadLevelInstance(this, HeavenMap, HeavenSetLocation, FRotator::ZeroRotator, bLoading);
+	if (!bLoading || !HeavenLevel)
+	{
+		HeavenLevel = nullptr;
+		UE_LOG(LogTemp, Error, TEXT("ATTAGameMode: could not stream %s; heaven uses the stand-in set"), *HeavenMap);
+	}
+}
+
+void ATTAGameMode::AdoptHeavenSet()
+{
+	if (bHeavenSet || !HeavenLevel || !HeavenLevel->IsLevelVisible()) return;
+	ULevel* Level = HeavenLevel->GetLoadedLevel();
+	if (!Level) return;
+	// The race map already has a sun, sky, fog, post process and PlayerStarts. Heaven's copies would
+	// light the course twice and let racers spawn on the cloud.
+	ATTACinema* Stage = nullptr;
+	TArray<AActor*> Extra;
+	for (AActor* Actor : Level->Actors)
+	{
+		if (!Actor) continue;
+		if (ATTACinema* Found = Cast<ATTACinema>(Actor))
+		{
+			Stage = Found;
+		}
+		else if (Actor->IsA<ALight>() || Actor->IsA<ASkyLight>() || Actor->IsA<ASkyAtmosphere>()
+			|| Actor->IsA<AExponentialHeightFog>() || Actor->IsA<APostProcessVolume>() || Actor->IsA<APlayerStart>())
+		{
+			Extra.Add(Actor);
+		}
+	}
+	for (AActor* Actor : Extra) Actor->Destroy();
+	if (!Stage)
+	{
+		UE_LOG(LogTemp, Error, TEXT("ATTAGameMode: %s has no ATTACinema; heaven uses the stand-in set"), *HeavenMap);
+		HeavenLevel = nullptr;
+		return;
+	}
+	bHeavenSet = true;
 	if (!HeavenWatch)
 	{
 		FActorSpawnParameters Params;
 		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		HeavenWatch = GetWorld()->SpawnActor<ATTAHeavenWatch>(FVector(0.f, 14000.f, 7000.f), FRotator::ZeroRotator, Params);
+		HeavenWatch = GetWorld()->SpawnActor<ATTAHeavenWatch>(Stage->GetActorLocation(), Stage->GetActorRotation(), Params);
+	}
+	if (HeavenWatch) HeavenWatch->UseStage(Stage);
+	UE_LOG(LogTemp, Log, TEXT("ATTAGameMode: heaven set streamed in, %d sky/light/start actors removed"), Extra.Num());
+}
+
+void ATTAGameMode::ApplyHeavenLook(bool bHeaven)
+{
+	if (!bHeavenSet) return; // the stand-in keeps the course look
+	UMaterialParameterCollection* Collection = GetDefault<ATTACinema>()->WorldCollection.LoadSynchronous();
+	if (!Collection) return;
+	UTTAWorldLookLibrary::ApplyWorldLook(this, Collection, bHeaven ? ETTAWorld::Heaven : ETTAWorld::Course);
+}
+
+void ATTAGameMode::RescueHeavenFallers()
+{
+	FTransform Back;
+	if (bHeavenChoice && HeavenWatch)
+	{
+		Back = HeavenWatch->GetWalkTransform(); // demo hub: back in front of the gate
+	}
+	else if (!bDemo && IsOnMap(HeavenMap))
+	{
+		// Heaven as the lobby map: back to where the PlayerStarts stand, facing the screen.
+		const ATTACinema* Stage = nullptr;
+		for (TActorIterator<ATTACinema> It(GetWorld()); It; ++It)
+		{
+			Stage = *It;
+			break;
+		}
+		if (!Stage) return;
+		const FTransform Frame(Stage->GetActorRotation(), Stage->GetActorLocation());
+		Back = FTransform(Stage->GetActorRotation(), Frame.TransformPosition(HeavenLobbySpot));
+	}
+	else
+	{
+		return;
+	}
+	// Both spots stand above the cloud top, so "under the spot by more than the margin" is off the cloud.
+	const float FloorZ = Back.GetLocation().Z - HeavenFallCm;
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		APlayerController* PC = It->Get();
+		ATTARunnerPawn* Body = PC ? Cast<ATTARunnerPawn>(PC->GetPawn()) : nullptr;
+		if (!Body || Body->GetActorLocation().Z > FloorZ) continue;
+		Body->WalkHeaven(); // stops the fall and puts the angel back on its feet
+		Body->SetActorLocationAndRotation(Back.GetLocation(), Back.Rotator(), false, nullptr, ETeleportType::TeleportPhysics);
+		PC->SetControlRotation(Back.Rotator());
+	}
+}
+
+void ATTAGameMode::OpenHeaven(APlayerController* PC)
+{
+	if (HeavenLevel && !bHeavenSet)
+	{
+		// Died before the stream finished: wait for it here instead of showing the stand-in.
+		GetWorld()->FlushLevelStreaming(EFlushLevelStreamingType::Full);
+		AdoptHeavenSet();
+	}
+	if (!HeavenWatch)
+	{
+		FActorSpawnParameters Params;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		HeavenWatch = GetWorld()->SpawnActor<ATTAHeavenWatch>(HeavenSetLocation, FRotator::ZeroRotator, Params);
 	}
 	if (HeavenWatch) HeavenWatch->Start(CollectDemoViews());
 	if (PC && HeavenWatch && HeavenWatch->GetSeatCamera())
@@ -726,6 +849,7 @@ void ATTAGameMode::OpenHeaven(APlayerController* PC)
 void ATTAGameMode::SeatInHeaven(APlayerController* PC, ATTARunnerPawn* Runner)
 {
 	OpenHeaven(PC);
+	ApplyHeavenLook(true);
 	bWatching = true;
 	if (Runner && HeavenWatch)
 	{
@@ -905,6 +1029,8 @@ void ATTAGameMode::OpenHeavenHub()
 		{
 			Body->SetActorLocationAndRotation(Walk.GetLocation(), Walk.Rotator(), false, nullptr, ETeleportType::TeleportPhysics);
 		}
+		// The follow camera looks down the carpet at the gate.
+		if (Human) Human->SetControlRotation(Walk.Rotator());
 		HeavenWatch->SpawnContinueGate();
 	}
 	if (Human && Body) Human->SetViewTargetWithBlend(Body, 0.f);
@@ -918,6 +1044,7 @@ void ATTAGameMode::StartNextDemoRound()
 	bWatching = false;
 	bHeavenChoice = false;
 	if (HeavenWatch) HeavenWatch->ClearContinueGate();
+	ApplyHeavenLook(false);
 	TimedOutFor = 0.f;
 	ClearDemoRunners();
 	ClearPlacements();
@@ -939,6 +1066,7 @@ void ATTAGameMode::RestartDemoNow()
 	}
 	ReelPlayer = nullptr;
 	if (HeavenWatch) HeavenWatch->ClearContinueGate();
+	ApplyHeavenLook(false);
 	TimedOutFor = 0.f;
 	ClearDemoRunners();
 	ClearPlacements();
@@ -1033,20 +1161,67 @@ void ATTAGameMode::EnterBuild()
 		FActorSpawnParameters Params;
 		Params.Owner = PC;
 		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		ATTARunnerPawn* Body = Cast<ATTARunnerPawn>(PC->GetPawn());
 		ATTABuildPawn* Pawn = GetWorld()->SpawnActor<ATTABuildPawn>(BuildPawnClass, BuildCameraStart, Params);
 		check(Pawn);
+		Pawn->CarryBody(Body);
 		PC->Possess(Pawn);
 		PC->SetViewTarget(Pawn);
 	}
 	if (bDemo) ApplyDemoBotBudgets();
-	for (TActorIterator<ATTABotController> It(GetWorld()); It; ++It) It->BuildTraps(Layout);
-	for (const tta::Placement& P : Layout.all()) SyncMarker(P.id);
+	int32 Lane = 0;
+	for (TActorIterator<ATTABotController> It(GetWorld()); It; ++It, ++Lane)
+	{
+		// After round 1 the last race's bodies are gone, so each bot gets a fresh angel to build with.
+		if (!Cast<ATTARunnerPawn>(It->GetPawn()))
+		{
+			const AActor* Start = FindPlayerStart(*It);
+			FTransform At = Start ? Start->GetActorTransform() : FTransform::Identity;
+			FindSafeSpawn(*It, At);
+			At.SetScale3D(FVector::OneVector);
+			At.AddToTranslation(FVector(0.f, (Lane - 2.5f) * 70.f, 0.f));
+			FActorSpawnParameters Params;
+			Params.Owner = *It;
+			Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+			if (ATTARunnerPawn* Runner = GetWorld()->SpawnActor<ATTARunnerPawn>(RunnerPawnClass, At, Params))
+			{
+				Runner->SetForm(ETTAForm::Human);
+				It->Possess(Runner);
+			}
+		}
+		It->BuildTraps(Layout);
+	}
+	for (const tta::Placement& P : Layout.all())
+	{
+		SyncMarker(P.id);
+		// A bot's new piece stays out of sight until its angel flies there (ShowBotPlacement).
+		if (P.owner < ATTABotController::FirstBotId || P.round != Layout.round()) continue;
+		if (ATTAPlacementMarker* Marker = FindMarker(P.id))
+		{
+			Marker->SetActorHiddenInGame(true);
+			Marker->SetActorEnableCollision(false);
+		}
+	}
+}
+
+void ATTAGameMode::ShowBotPlacement(int32 Id)
+{
+	if (ATTAPlacementMarker* Marker = FindMarker(Id))
+	{
+		Marker->SetActorHiddenInGame(false);
+		Marker->SetActorEnableCollision(true);
+	}
 }
 
 void ATTAGameMode::RevealPlacements()
 {
 	Layout.revealAll();
-	for (const TPair<int32, TObjectPtr<ATTAPlacementMarker>>& Pair : Markers) SyncMarker(Pair.Key);
+	for (const TPair<int32, TObjectPtr<ATTAPlacementMarker>>& Pair : Markers)
+	{
+		SyncMarker(Pair.Key);
+		// Whatever a bot's angel did not reach in time is on the course anyway.
+		ShowBotPlacement(Pair.Key);
+	}
 }
 
 ATTAPlacementMarker* ATTAGameMode::FindMarker(int32 Id) const

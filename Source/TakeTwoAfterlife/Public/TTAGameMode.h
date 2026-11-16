@@ -25,6 +25,7 @@ class ATTAHeavenWatch;
 class ATTARunDirector;
 class ATTARunnerPawn;
 class ATTATrapActor;
+class ULevelStreamingDynamic;
 class UTTACutPlayer;
 
 // Match player controller. Title uses ATTATitlePlayerController instead.
@@ -102,6 +103,8 @@ public:
 	ETTAPlaceOutcome RemovePlacement(const AController* By, int32 Id);
 	const tta::Layout& GetLayout() const { return Layout; }
 	ATTAPlacementMarker* FindMarker(int32 Id) const;
+	// Build: a bot's angel reached this placement, so its marker comes into view.
+	void ShowBotPlacement(int32 Id);
 
 	// Match totals by PlayerState id.
 	const tta::MatchScore& GetScore() const { return Score; }
@@ -168,6 +171,15 @@ private:
 	void OpenHeavenHub();
 	void StartNextDemoRound();
 	void RestartDemoNow();
+	// Demo heaven is Heaven.umap streamed into the sky of the race map, so the TV can film the
+	// live race. Load starts the stream; Adopt runs once it is visible: removes the map's sun,
+	// sky, fog, post process and PlayerStarts and points the watch at its cinema.
+	void LoadHeavenSet();
+	void AdoptHeavenSet();
+	// Pastel heaven look while the player is up there, course look when the next build starts.
+	void ApplyHeavenLook(bool bHeaven);
+	// A player who walks off the cloud is put back on it (demo hub and the Heaven lobby map).
+	void RescueHeavenFallers();
 	void OpenHeaven(APlayerController* PC);
 	void SeatInHeaven(APlayerController* PC, ATTARunnerPawn* Runner);
 	void StartDeathReel();
@@ -209,6 +221,8 @@ private:
 	bool bContinueQueued = false;
 	bool bRestartQueued = false;
 	UPROPERTY() TObjectPtr<ATTAHeavenWatch> HeavenWatch;
+	UPROPERTY() TObjectPtr<ULevelStreamingDynamic> HeavenLevel;
+	bool bHeavenSet = false;
 	UPROPERTY() TObjectPtr<ATTAEditStage> ReelStage;
 	UPROPERTY() TObjectPtr<UTTACutPlayer> ReelPlayer;
 	bool bReel = false;

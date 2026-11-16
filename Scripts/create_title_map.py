@@ -34,14 +34,15 @@ if not mode:
 world.get_world_settings().set_editor_property("default_game_mode", mode)
 
 
-def spawn(cls, label, loc=(0, 0, 0), rot=(0.0, 0.0, 0.0)):
-    actor = actors.spawn_actor_from_class(cls, unreal.Vector(*loc), unreal.Rotator(*rot))
+def spawn(cls, label, loc=(0, 0, 0), roll=0.0, pitch=0.0, yaw=0.0):
+    # Rotator takes roll, pitch, yaw positionally, so always name them.
+    actor = actors.spawn_actor_from_class(cls, unreal.Vector(*loc), unreal.Rotator(roll=roll, pitch=pitch, yaw=yaw))
     actor.set_actor_label(label)
     return actor
 
 
-def plane(label, loc, rot, scale):
-    actor = spawn(unreal.StaticMeshActor, label, loc, rot)
+def plane(label, loc, scale, **rot):
+    actor = spawn(unreal.StaticMeshActor, label, loc, **rot)
     actor.set_actor_scale3d(unreal.Vector(*scale))
     mesh = actor.static_mesh_component
     mesh.set_static_mesh(EAL.load_asset(PLANE))
@@ -50,15 +51,16 @@ def plane(label, loc, rot, scale):
     return actor
 
 
-spawn(unreal.DirectionalLight, "Sun", (0, 0, 1000), (0.0, -40.0, 30.0))
+spawn(unreal.DirectionalLight, "Sun", (0, 0, 1000), pitch=-40.0, yaw=30.0)
 spawn(unreal.SkyLight, "SkyLight", (0, 0, 500))
 spawn(unreal.SkyAtmosphere, "SkyAtmosphere")
 spawn(unreal.ExponentialHeightFog, "HeightFog")
-# Stood up facing the title camera, past the choir (angels spawn out to about x=1520).
-plane("Backdrop", (2600, 0, 400), (0.0, 0.0, 90.0), (48, 72, 1))
-plane("Ground", (600, 0, 0), (0.0, 0.0, 0.0), (40, 40, 1))
+# Stood up facing the title camera, past the choir (angels spawn out to about x=1520): yaw 90 +
+# roll 90 puts the plane's U across the screen, V down it and its face toward -X. 72 x 48 m is the
+# painting's 3:2. No ground plane: it would cover the painted meadow.
+plane("Backdrop", (2600, 0, 400), (72, 48, 1), roll=90.0, yaw=90.0)
 
-camera = spawn(unreal.CameraActor, "TitleCamera", (-200, 0, 250), (-5.0, 0.0, 0.0))
+camera = spawn(unreal.CameraActor, "TitleCamera", (-200, 0, 250), pitch=-5.0)
 camera.set_editor_property("tags", [CAMERA_TAG])
 
 if not level.save_current_level():

@@ -2,10 +2,28 @@
 
 Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prompt, what the agent did, what failed, what was fixed by hand.
 
+## Bots build on screen, thumbnails, black TV camera
+- **Prompt:** build thumbnails are black; after round 1 no angels build and the traps are all there before you load in; the heaven TV sometimes shows every asset black except the sky.
+- **Agent did:** `EnterBuild` gives every bot without a body a fresh angel (round 2+ had none), hides each bot's new markers, and `WalkBuildStops` flies the angel down the course and calls `ShowBotPlacement` at each spot; anything not reached shows at Run. Tile thumbnails are raw scene colour in a float target, read back, cut out, cropped and levelled on the CPU into a `UTexture2D` (the tonemapped orthographic capture was black). The heaven TV feed and the reel capture skip post-process materials, so the outline pass cannot ink a whole view. Tests: `test_bot_build_show.py`, `test_hud_layout.py`.
+- **Failed / fixed by hand:** not compiled or played by the agent (editor with Live Coding was open). The black TV view was not reproduced; turning the outline off in the capture is the fix for the likeliest cause.
+
+## Menu painting actually shows
+The saved Title map never had the painting: `apply_title_backdrop.py` set the material on the open level and did not save it, the Backdrop plane lay flat (`Rotator(0, 0, 90)` is yaw, not pitch), and the ground plane was still there. Both title scripts now name roll/pitch/yaw, the plane stands at yaw 90 + roll 90 scaled 72 x 48, the ground is gone, the camera pitches -5 instead of rolling, and the apply script opens Title and saves it. Run `apply_title_backdrop.py` once in the editor.
+
+## Demo heaven is the real Heaven map
+- **Prompt:** heaven in the current game leads to the wrong heaven; port the nice heaven map over, with a respawn when you fall off it, the gate as the round starter, and a working TV.
+- **Agent did:** the demo never loaded `Heaven.umap`. It spawned `ATTAHeavenWatch`, a cylinder and two cubes, in the Backyard sky. The game mode now streams `/Game/Maps/Heaven` into the Backyard at the same spot (`LoadLevelInstance` at StartPlay), so the race keeps running for the live TV. Once the level shows, it deletes that map's sun, skylight, sky atmosphere, fog, post-process volume and PlayerStarts, and points the watch at the map's `ATTACinema`: the player stands on the pink couch, the feed is on the gold-framed screen, and the pearly gate on the red carpet starts the next round. Bots only run at the course's own gate. Walking off the cloud puts you back in front of the gate (also on the Heaven lobby map, back at the PlayerStarts). The pastel heaven look is on while you are up there and the course look returns with the next build. The TV widget is now opaque and no longer scaled by its parent. Test: `Scripts/tests/test_heaven_stream.py`.
+- **Failed / fixed by hand:** not compiled and not played. The editor was open with Live Coding, which blocks `Build.bat`. Python suite: 5 failures, all there before this change (bots-round regex, hat material guard, `TTAMenuWidget` include, `EngineAssociation` GUID in the uproject, a named engine colour in the UI). Core: 1 failure, also there before.
+
 ## Build phase: rotate key, hammer under the floor
 - **Prompt:** keys 6 and 7 don't select the lawnmower and camera, the camera still has legs, the hammer looks upside down, rotation stopped working. Is it a script I forgot to run?
 - **Agent did:** keys 6/7 and the legless camera were already in the source but the open editor predates them (DLL built 21:17, edits and `SM_Cam_FixedBody` came later), so they need an editor restart and rebuild, not a script. Rotation was a real bug: the controller's R (demo restart) is read before the build pawn and consumed the key; it no longer consumes it. The hammer mesh pivots at its hinge and hangs 91 cm down, so at floor height the mallet was underground. The hinge is now lifted 130 cm (`ATTAPlacementMarker::HammerHingeCm`) on the ghost, the marker and the trap, and the trap's hitbox rides the mallet head. The marker actor stays on the floor; its mesh is a child. `EngineAssociation` is back to `"5.5"`.
 - **Failed / fixed by hand:** not compiled. `Build.bat` stops at "Unable to build while Live Coding is active" with the editor open. Python suite has 7 failures and Core has 1 (`MenuFlowTests` look carousels); they are in the menu/looks, `TTAHeavenWatch`, `TTAGameMode` end-run regex and the tile `FLinearColor::White`, not in these files.
+
+## Build camera takes the angel with it
+- **Prompt:** one angel always sits at the start in build mode; that one is me, and it should follow the camera.
+- **Agent did:** `EnterBuild` keeps the runner that was just unpossessed and parks it beside the fly camera (collision off, so the crosshair still hits the course). The race spawn destroys that body with the camera and makes a fresh runner at the start. Test: `Scripts/tests/test_build_body.py`.
+- **Failed / fixed by hand:** nothing yet.
 
 ## Build tile thumbnails in colour
 - **Prompt:** the trap thumbnails show the shape, but each one is a single shade of gray.

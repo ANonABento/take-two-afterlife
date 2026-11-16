@@ -1,0 +1,80 @@
+﻿[2026.11.15-21.05.56:766][  0]LogConfig: Branch 'Crypto' had been unloaded. Reloading on-demand took 3.32ms
+[2026.11.15-21.05.57:148][  0]LogConfig: Applying CVar settings from Section [/Script/NNEDenoiser.NNEDenoiserSettings] File [Engine]
+[2026.11.15-21.05.57:328][  0]LogUObjectArray: 43168 objects as part of root set at end of initial load.
+[2026.11.15-21.05.57:328][  0]LogUObjectArray: CloseDisregardForGC: 0/0 objects in disregard for GC pool
+[2026.11.15-21.05.57:352][  0]LogStreaming: Display: AsyncLoading2 - NotifyRegistrationComplete: Registered 36473 public script object entries (988.40 KB)
+[2026.11.15-21.05.57:352][  0]LogStreaming: Display: AsyncLoading2 - Thread Started: false, IsInitialLoad: false
+[2026.11.15-21.05.57:352][  0]LogInit: Executing Class /Script/PythonScriptPlugin.PythonScriptCommandlet
+[2026.11.15-21.05.57:352][  0]LogInit: Initializing Editor Engine...
+[2026.11.15-21.05.57:353][  0]LogEngine: Initializing Engine...
+[2026.11.15-21.05.57:362][  0]LogStats: UGameplayTagsManager::InitializeManager -  0.000 s
+[2026.11.15-21.05.57:466][  0]LogAssetRegistry: Display: Asset registry cache read as 36.2 MiB from ../../../../../../Users/kevbe/take-two-afterlife/Intermediate/CachedAssetRegistry_0.bin
+[2026.11.15-21.05.57:466][  0]LogAssetRegistry: Display: AssetDataGatherer spent 0.058s loading caches ../../../../../../Users/kevbe/take-two-afterlife/Intermediate/CachedAssetRegistry_*.bin.
+[2026.11.15-21.05.57:504][  0]LogChaosDD: Not creating Chaos Debug Draw Scene for world Untitled
+[2026.11.15-21.05.57:513][  0]LogNiagara: UAV Float16 is not supported, compressed GPU emitters will be disabled.
+[2026.11.15-21.05.57:521][  0]LogNetVersion: Set ProjectVersion to 1.0.0.0. Version Checksum will be recalculated on next use.
+[2026.11.15-21.05.57:522][  0]LogInit: Texture streaming: Disabled
+[2026.11.15-21.05.57:535][  0]LogCsvProfiler: Display: Metadata set : largeworldcoordinates="1"
+[2026.11.15-21.05.57:539][  0]LogInit: Initializing Editor Engine Completed
+[2026.11.15-21.05.57:543][  0]LogNNEDenoiser: Ray Tracing is not enabled, therefore NNEDenoiser is not registered!
+[2026.11.15-21.05.57:550][  0]LogPython: Using Python 3.11.8
+[2026.11.15-21.05.59:195][  0]LogPython: Display: No enabled plugins with python dependencies found, skipping
+[2026.11.15-21.05.59:309][  0]LogLevelSequenceEditor: LevelSequenceEditor subsystem initialized.
+[2026.11.15-21.05.59:465][  0]LogEditorDataStorage: Initializing
+[2026.11.15-21.05.59:465][  0]LogEditorDataStorage: Initialized
+[2026.11.15-21.05.59:467][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.5/Engine/Plugins/Animation/ControlRig/Content/Python/init_unreal.py... started...
+[2026.11.15-21.05.59:519][  0]LogPython: registering <class 'ControlRigWorkflows.workflow_deformation_rig_preset.provider'>
+
+
+[2026.11.15-21.05.59:524][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.5/Engine/Plugins/Animation/ControlRig/Content/Python/init_unreal.py... took 56.722 ms
+[2026.11.15-21.05.59:525][  0]LogPythonScriptCommandlet: Display: Running Python script: C:/Users/kevbe/take-two-afterlife/Scripts/build_backyard_map.py
+[2026.11.15-21.05.59:582][  0]LogPython: 0 mesh misses, see C:\Users\kevbe\take-two-afterlife\Saved\backyard_miss_report.txt
+[2026.11.15-21.05.59:582][  0]Cmd: MAP LOAD FILE="../../../../../../Users/kevbe/take-two-afterlife/Content/Maps/Backyard.umap" TEMPLATE=0 SHOWPROGRESS=1 FEATURELEVEL=4
+[2026.11.15-21.05.59:604][  0]LogUObjectHash: Compacting FUObjectHashTables data took   0.62ms
+[2026.11.15-21.05.59:671][  0]LogChaosDD: Not creating Chaos Debug Draw Scene for world Backyard
+[2026.11.15-21.05.59:681][  0]LogEditorServer: Finished looking for orphan Actors (0.000 secs)
+[2026.11.15-21.05.59:695][  0]LogUObjectHash: Compacting FUObjectHashTables data took   0.69ms
+[2026.11.15-21.05.59:696][  0]Cmd: MAP CHECKDEP NOCLEARLOG
+[2026.11.15-21.05.59:696][  0]MapCheck: Map check complete: 0 Error(s), 0 Warning(s), took 0.169ms to complete.
+[2026.11.15-21.05.59:712][  0]LogPython: removed 346 old TTA_Layout actors
+[2026.11.15-21.06.02:227][  0]LogWindows: Error: === Critical error: ===
+[2026.11.15-21.06.02:227][  0]LogWindows: Error: 
+[2026.11.15-21.06.02:227][  0]LogWindows: Error: Fatal error!
+[2026.11.15-21.06.02:227][  0]LogWindows: Error: 
+[2026.11.15-21.06.02:227][  0]LogWindows: Error: Unhandled Exception: EXCEPTION_ACCESS_VIOLATION reading address 0x0000000000000040
+[2026.11.15-21.06.02:227][  0]LogWindows: Error: 
+[2026.11.15-21.06.02:227][  0]LogWindows: Error: [Callstack] 0x00007ffc0cb25ca8 UnrealEditor-EditorFramework.dll!UnknownFunction []
+[2026.11.15-21.06.02:227][  0]LogWindows: Error: [Callstack] 0x00007ffb872610f8 UnrealEditor-UnrealEd.dll!UnknownFunction []
+[2026.11.15-21.06.02:227][  0]LogWindows: Error: [Callstack] 0x00007ffb87ee4043 UnrealEditor-UnrealEd.dll!UnknownFunction []
+[2026.11.15-21.06.02:227][  0]LogWindows: Error: [Callstack] 0x00007ffb87ee3556 UnrealEditor-UnrealEd.dll!UnknownFunction []
+[2026.11.15-21.06.02:227][  0]LogWindows: Error: [Callstack] 0x00007ffb883a675f UnrealEditor-UnrealEd.dll!UnknownFunction []
+[2026.11.15-21.06.02:227][  0]LogWindows: Error: [Callstack] 0x00007ffb883a6b39 UnrealEditor-UnrealEd.dll!UnknownFunction []
+[2026.11.15-21.06.02:229][  0]LogWindows: Error: [Callstack] 0x00007ffb870bedb8 UnrealEditor-UnrealEd.dll!UnknownFunction []
+[2026.11.15-21.06.02:229][  0]LogWindows: Error: [Callstack] 0x00007ffc0b6003c3 UnrealEditor-CoreUObject.dll!UnknownFunction []
+[2026.11.15-21.06.02:229][  0]LogWindows: Error: [Callstack] 0x00007ffc0b9f879e UnrealEditor-CoreUObject.dll!UnknownFunction []
+[2026.11.15-21.06.02:229][  0]LogWindows: Error: [Callstack] 0x0000025e81df6b12 UnrealEditor-PythonScriptPlugin.dll!UnknownFunction []
+[2026.11.15-21.06.02:229][  0]LogWindows: Error: [Callstack] 0x0000025e81e4252d UnrealEditor-PythonScriptPlugin.dll!UnknownFunction []
+[2026.11.15-21.06.02:229][  0]LogWindows: Error: [Callstack] 0x0000025e81e4163e UnrealEditor-PythonScriptPlugin.dll!UnknownFunction []
+[2026.11.15-21.06.02:229][  0]LogWindows: Error: [Callstack] 0x0000025e81e438f5 UnrealEditor-PythonScriptPlugin.dll!UnknownFunction []
+[2026.11.15-21.06.02:230][  0]LogWindows: Error: [Callstack] 0x0000025e81d7383e UnrealEditor-PythonScriptPlugin.dll!UnknownFunction []
+[2026.11.15-21.06.02:230][  0]LogWindows: Error: [Callstack] 0x00007ffb6c351263 python311.dll!UnknownFunction []
+[2026.11.15-21.06.02:230][  0]LogWindows: Error: [Callstack] 0x00007ffb6c3548df python311.dll!UnknownFunction []
+[2026.11.15-21.06.02:230][  0]LogWindows: Error: [Callstack] 0x00007ffb6c3560b2 python311.dll!UnknownFunction []
+[2026.11.15-21.06.02:231][  0]LogWindows: Error: [Callstack] 0x00007ffb6c3b56bf python311.dll!UnknownFunction []
+[2026.11.15-21.06.02:231][  0]LogWindows: Error: [Callstack] 0x00007ffb6c3b70bf python311.dll!UnknownFunction []
+[2026.11.15-21.06.02:231][  0]LogWindows: Error: [Callstack] 0x0000025e81ddfcfe UnrealEditor-PythonScriptPlugin.dll!UnknownFunction []
+[2026.11.15-21.06.02:231][  0]LogWindows: Error: [Callstack] 0x0000025e81e0eb6e UnrealEditor-PythonScriptPlugin.dll!UnknownFunction []
+[2026.11.15-21.06.02:232][  0]LogWindows: Error: [Callstack] 0x0000025e81de0169 UnrealEditor-PythonScriptPlugin.dll!UnknownFunction []
+[2026.11.15-21.06.02:232][  0]LogWindows: Error: [Callstack] 0x0000025e81df976a UnrealEditor-PythonScriptPlugin.dll!UnknownFunction []
+[2026.11.15-21.06.02:232][  0]LogWindows: Error: [Callstack] 0x00007ff70fb0eb4e UnrealEditor-Cmd.exe!UnknownFunction []
+[2026.11.15-21.06.02:232][  0]LogWindows: Error: [Callstack] 0x00007ff70fb05566 UnrealEditor-Cmd.exe!UnknownFunction []
+[2026.11.15-21.06.02:232][  0]LogWindows: Error: [Callstack] 0x00007ff70fb0589a UnrealEditor-Cmd.exe!UnknownFunction []
+[2026.11.15-21.06.02:233][  0]LogWindows: Error: [Callstack] 0x00007ff70fb09114 UnrealEditor-Cmd.exe!UnknownFunction []
+[2026.11.15-21.06.02:233][  0]LogWindows: Error: [Callstack] 0x00007ff70fb1bd04 UnrealEditor-Cmd.exe!UnknownFunction []
+[2026.11.15-21.06.02:234][  0]LogWindows: Error: [Callstack] 0x00007ff70fb1e422 UnrealEditor-Cmd.exe!UnknownFunction []
+[2026.11.15-21.06.02:234][  0]LogWindows: Error: [Callstack] 0x00007ffc9bf9dda7 KERNEL32.DLL!UnknownFunction []
+[2026.11.15-21.06.02:234][  0]LogWindows: Error: 
+[2026.11.15-21.06.02:248][  0]LogExit: Executing StaticShutdownAfterError
+[2026.11.15-21.06.02:250][  0]LogWindows: FPlatformMisc::RequestExit(1, LaunchWindowsStartup.ExceptionHandler)
+[2026.11.15-21.06.02:250][  0]LogWindows: FPlatformMisc::RequestExitWithStatus(1, 3, LaunchWindowsStartup.ExceptionHandler)
+[2026.11.15-21.06.02:250][  0]LogCore: Engine exit requested (reason: Win RequestExit)

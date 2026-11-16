@@ -1,6 +1,7 @@
 #include "TTACinema.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
+#include "Engine/Level.h"
 
 #include "Components/StaticMeshComponent.h"
 #include "Materials/MaterialParameterCollection.h"
@@ -56,6 +57,9 @@ void ATTACinema::BeginPlay()
 	// Cloud scale is absolute-scaled for children, so place them in actor space now.
 	Couch->SetWorldLocation(GetActorTransform().TransformPosition(FVector(0.f, 0.f, SeatHeight)));
 	Screen->SetWorldLocation(GetActorTransform().TransformPosition(ScreenLocation));
+	// Streamed into the race map as the demo's heaven set: the look is one global collection, so
+	// the game mode switches it when the player is actually up here.
+	if (GetLevel() != GetWorld()->PersistentLevel) return;
 	if (UMaterialParameterCollection* Collection = WorldCollection.LoadSynchronous())
 	{
 		UTTAWorldLookLibrary::ApplyWorldLook(this, Collection, ETTAWorld::Heaven);

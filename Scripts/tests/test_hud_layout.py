@@ -33,12 +33,17 @@ class HudLayoutTests(unittest.TestCase):
 
     def test_thumbnails_are_framed_to_the_tile(self):
         shot = self.hud[self.hud.index("UTexture* ATTABuildHUD::TrapThumbnail"):]
-        self.assertIn("ECameraProjectionMode::Orthographic", shot)
-        self.assertIn("OrthoWidth = Span", shot)
+        # Raw scene colour read back and cut out on the CPU: the tonemapped orthographic capture
+        # came out black in game.
+        self.assertIn("SCS_SceneColorHDR", shot)
+        self.assertNotIn("SCS_FinalColorLDR", shot)
+        self.assertIn("ReadLinearColorPixels", shot)
+        self.assertIn("UTexture2D::CreateTransient", shot)
         self.assertIn("ADirectionalLight", shot)
         self.assertIn("SetCastShadows(false)", shot)
-        self.assertIn("SetEyeAdaptation(false)", shot)
-        self.assertIn("SetPostProcessMaterial(false)", shot)
+        # Cropped to the prop and levelled to its brightest pixel.
+        self.assertIn("const float Gain = 0.95f / Peak;", shot)
+        self.assertIn("TrapThumbnails.Add(Item, nullptr);", shot)
 
     def test_number_keys_cover_lawnmower_and_camera(self):
         pawn = (SRC / "Private" / "TTABuildPawn.cpp").read_text(encoding="utf-8")

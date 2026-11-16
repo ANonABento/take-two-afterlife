@@ -31,15 +31,19 @@ void ATTABotController::BuildTraps(tta::Layout& Layout)
 	if (bBuiltThisRound) return;
 	Brain->build(Layout);
 	bBuiltThisRound = true;
-	// Placement is instant in Core; the walk to each spot is only for show during Build.
+	// Placement is instant in Core. On screen the angel flies down the course and each piece
+	// appears when it reaches the spot (the game mode keeps the markers hidden until then).
 	BuildStops.Reset();
 	for (const tta::Placement& P : Layout.all())
 	{
 		if (P.owner == Brain->playerId() && P.round == Layout.round())
-			BuildStops.Add(ATTAPlacementMarker::WorldTransform(FTTAPlacementRep::FromCore(P)).GetLocation());
+			BuildStops.Add({ATTAPlacementMarker::WorldTransform(FTTAPlacementRep::FromCore(P)).GetLocation(), P.id});
 	}
+	BuildStops.Sort([](const FBuildStop& A, const FBuildStop& B) { return A.At.X < B.At.X; });
 	BuildStop = 0;
-	BuildPause = 0.f;
+	bBuildFlying = false;
+	// Bots set off one after another instead of as one clump.
+	BuildPause = 0.5f * (Brain->playerId() - FirstBotId);
 }
 
 void ATTABotController::StartRun(const FVector& InGateCm)
@@ -164,17 +168,27 @@ void ATTABotController::WalkBuildStops(float DeltaSeconds)
 {
 	ATTARunnerPawn* Runner = Cast<ATTARunnerPawn>(GetPawn());
 	if (!Runner || BuildStops.Num() == 0) return;
+	if (!bBuildFlying)
+	{
+		// Flying, like the player's own build body: no gravity, and nothing to bump into.
+		Runner->SitOut();
+		Runner->SetActorEnableCollision(false);
+		bBuildFlying = true;
+	}
 	if (BuildPause > 0.f)
 	{
 		BuildPause -= DeltaSeconds;
 		return;
 	}
-	const FVector ToStop = BuildStops[BuildStop] - Runner->GetActorLocation();
-	if (ToStop.Size2D() <= BuildArriveCm)
-	{
-		BuildPause = BuildPauseSeconds; // stands there "placing" it
-		BuildStop = (BuildStop + 1) % BuildStops.Num();
-		return;
-	}
-	Runner->AddMovementInput(ToStop.GetSafeNormal2D());
+	if (BuildStop >= BuildStops.Num()) return; // everything is down: hovers over the last piece
+	const FVector Target = BuildStops[BuildStop].At + FVector(0.f, 0.f, BuildHoverCm);
+	const FVector Pos = Runner->GetActorLocation();
+	const FVector Next = FMath::VInterpConstantTo(Pos, Target, DeltaSeconds, BuildFlySpeedCm);
+	const FVector Heading = (Target - Pos).GetSafeNormal2D();
+	const FRotator Face = Heading.IsNearlyZero() ? Runner->GetActorRotation() : FRotator(0.f, Heading.Rotation().Yaw, 0.f);
+	Runner->SetActorLocationAndRotation(Next, Face, false, nullptr, ETeleportType::TeleportPhysics);
+	if (FVector::Dist(Next, Target) > BuildArriveCm) return;
+	if (ATTAGameMode* Mode = GetWorld()->GetAuthGameMode<ATTAGameMode>()) Mode->ShowBotPlacement(BuildStops[BuildStop].Id);
+	BuildPause = BuildPauseSeconds; // hovers there "placing" it
+	++BuildStop;
 }
