@@ -1,92 +1,155 @@
 {
-  "outline": 6,
-  "shadow": 4,
+  "outline": 0,
+  "shadow": 0,
   "assets": {
     "T_UI_Button": {
-      "width": 512,
-      "height": 160,
-      "radius": 32,
-      "left": 38,
-      "top": 38,
-      "right": 38,
-      "bottom": 42
+      "width": 379,
+      "height": 110,
+      "radius": 34,
+      "left": 39,
+      "top": 34,
+      "right": 40,
+      "bottom": 31
     },
     "T_UI_ButtonHover": {
-      "width": 512,
-      "height": 160,
-      "radius": 32,
-      "left": 38,
-      "top": 38,
-      "right": 38,
-      "bottom": 42
+      "width": 378,
+      "height": 118,
+      "radius": 37,
+      "left": 39,
+      "top": 37,
+      "right": 39,
+      "bottom": 36
     },
     "T_UI_ButtonPressed": {
-      "width": 512,
-      "height": 160,
-      "radius": 32,
-      "left": 38,
-      "top": 38,
-      "right": 38,
-      "bottom": 42
+      "width": 379,
+      "height": 107,
+      "radius": 19,
+      "left": 23,
+      "top": 19,
+      "right": 24,
+      "bottom": 19
     },
     "T_UI_ButtonPrimary": {
-      "width": 512,
-      "height": 160,
-      "radius": 32,
-      "left": 38,
-      "top": 38,
-      "right": 38,
-      "bottom": 42
-    },
-    "T_UI_Panel": {
-      "width": 256,
-      "height": 256,
-      "radius": 32,
-      "left": 38,
-      "top": 38,
-      "right": 38,
-      "bottom": 42
-    },
-    "T_UI_CodePill": {
-      "width": 384,
+      "width": 379,
       "height": 128,
-      "radius": 56,
-      "left": 62,
-      "top": 62,
-      "right": 62,
-      "bottom": 66
-    },
-    "T_UI_Banner": {
-      "width": 512,
-      "height": 128,
-      "radius": 24,
-      "left": 30,
-      "top": 30,
-      "right": 30,
+      "radius": 34,
+      "left": 39,
+      "top": 34,
+      "right": 40,
       "bottom": 34
     },
-    "T_UI_TextField": {
-      "width": 512,
-      "height": 128,
-      "radius": 20,
-      "left": 26,
-      "top": 26,
-      "right": 26,
-      "bottom": 30
+    "T_UI_Panel": {
+      "width": 320,
+      "height": 298,
+      "radius": 35,
+      "left": 35,
+      "top": 50,
+      "right": 36,
+      "bottom": 45
+    },
+    "T_UI_CodePill": {
+      "width": 316,
+      "height": 121,
+      "radius": 41,
+      "left": 50,
+      "top": 41,
+      "right": 49,
+      "bottom": 40
+    },
+    "T_UI_Banner": {
+      "width": 380,
+      "height": 83,
+      "radius": 18,
+      "left": 70,
+      "top": 18,
+      "right": 70,
+      "bottom": 24
     },
     "T_UI_SliderBar": {
-      "width": 512,
-      "height": 48,
-      "radius": 16,
-      "left": 22,
-      "top": 22,
-      "right": 22,
-      "bottom": 26
+      "width": 379,
+      "height": 26,
+      "radius": 9,
+      "left": 12,
+      "top": 9,
+      "right": 12,
+      "bottom": 9
     },
     "T_UI_SliderKnob": {
-      "width": 96,
-      "height": 100,
-      "radius": 48,
+      "width": 127,
+      "height": 129,
+      "radius": 0,
+      "left": 0,
+      "top": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "T_UI_TextField": {
+      "width": 380,
+      "height": 82,
+      "radius": 20,
+      "left": 23,
+      "top": 20,
+      "right": 23,
+      "bottom": 19
+    },
+    "T_UI_IconMicOn": {
+      "width": 256,
+      "height": 256,
+      "radius": 0,
+      "left": 0,
+      "top": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "T_UI_IconMicOff": {
+      "width": 256,
+      "height": 256,
+      "radius": 0,
+      "left": 0,
+      "top": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "T_UI_IconCamFixed": {
+      "width": 256,
+      "height": 256,
+      "radius": 0,
+      "left": 0,
+      "top": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "T_UI_IconCamPan": {
+      "width": 256,
+      "height": 256,
+      "radius": 0,
+      "left": 0,
+      "top": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "T_UI_IconCamFollow": {
+      "width": 256,
+      "height": 256,
+      "radius": 0,
+      "left": 0,
+      "top": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "T_UI_IconCamTrap": {
+      "width": 256,
+      "height": 256,
+      "radius": 0,
+      "left": 0,
+      "top": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "T_UI_IconReady": {
+      "width": 256,
+      "height": 256,
+      "radius": 0,
       "left": 0,
       "top": 0,
       "right": 0,

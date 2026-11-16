@@ -20,10 +20,12 @@
 class ATTABotController;
 class ATTABuildPawn;
 class ATTACinema;
+class ATTAEditStage;
 class ATTAHeavenWatch;
 class ATTARunDirector;
 class ATTARunnerPawn;
 class ATTATrapActor;
+class UTTACutPlayer;
 
 // Match player controller. Title uses ATTATitlePlayerController instead.
 UCLASS()
@@ -117,8 +119,9 @@ public:
 	static constexpr int32 DemoBotCount = 6;
 	bool IsDemo() const { return bDemo; }
 	bool IsWatching() const { return bWatching; }
-	// Demo death: the human goes to the heaven TV, a bot stays down. False outside the demo
-	// (normal hits still respawn). True means the caller must not teleport the pawn home.
+	// Demo death: the human stands on the heaven couch and watches the TV. A bot stays down.
+	// False outside the demo (normal hits still respawn at the start). True means the caller
+	// must not teleport the pawn home.
 	bool TryHeaven(ATTARunnerPawn* Runner);
 	// Spawns bots with fixed ids (ATTABotController::FirstBotId + n) and lobby runners.
 	void AddBots(int32 Count);
@@ -152,6 +155,10 @@ private:
 	void EndDemoRound();
 	void ClearPlacements();
 	void OpenHeaven(APlayerController* PC);
+	void SeatInHeaven(APlayerController* PC, ATTARunnerPawn* Runner);
+	void StartDeathReel();
+	void AdvanceDeathReel(float DeltaSeconds);
+	void FinishDeathReel();
 	TArray<FTransform> CollectDemoViews() const;
 	// Floor trace + capsule test under the chosen PlayerStart, then the others (tta::pickSpawn).
 	bool FindSafeSpawn(AController* Controller, FTransform& Out);
@@ -186,6 +193,9 @@ private:
 	bool bWatching = false;
 	bool bDemoClosing = false;
 	UPROPERTY() TObjectPtr<ATTAHeavenWatch> HeavenWatch;
+	UPROPERTY() TObjectPtr<ATTAEditStage> ReelStage;
+	UPROPERTY() TObjectPtr<UTTACutPlayer> ReelPlayer;
+	bool bReel = false;
 	tta::HeavenGate Gate;
 	bool bGateTravelled = false;
 	float TimedOutFor = 0.f;

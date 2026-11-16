@@ -55,7 +55,7 @@ Corner radius: baked into the generated art (no code-drawn corners). Brushes kee
 ## Assets
 
 Source PNGs (with alpha) live in `Art/UI/`; `Scripts/import_ui_assets.py` imports them to `/Game/UI/Generated/` as UserInterface2D, no mips. `UTTAUIStyle::Brush(ETTAAsset)` loads `T_UI_<Name>`; when it fails to load, the brush is the fallback palette colour and a warning is logged.
-Chrome (buttons, panel, pill, banner, text field, slider) is drawn by `Scripts/build_ui_chrome.py`: rounded rectangle, palette fill, 6 px Ink outline, 4 px Ink shadow below; all button states are 512x160. Sliced assets take their 9-slice margins from `Art/UI/T_UI_Slices.json`, written by the same script (corner radius + outline on each side, plus the shadow at the bottom). Unsliced assets are drawn whole.
+Chrome and icons are cut from `Art/UI/ref/assets_contact.png` by `Scripts/cut_ui_sheet.py` (flat background keyed out). Sliced assets take their 9-slice margins from `Art/UI/T_UI_Slices.json`, written by that script. Icons are centred on a 256 canvas. The title backdrop stays the large painting; the sheet only has a small copy of it.
 
 | Asset | Sliced | Fallback | Use |
 |---|---|---|---|
@@ -76,7 +76,7 @@ Chrome (buttons, panel, pill, banner, text field, slider) is drawn by `Scripts/b
 | `T_UI_IconCamFollow` | no | Sky | Follow camera |
 | `T_UI_IconCamTrap` | no | Orange | Trap camera |
 | `T_UI_IconReady` | no | Grass | Ready tick |
-| `T_UI_TitleBackdrop` | no | Sky | Title screen backdrop |
+| `T_UI_TitleBackdrop` | no | Sky | Title painting, on the backdrop plane behind the angels |
 
 ## Builders
 

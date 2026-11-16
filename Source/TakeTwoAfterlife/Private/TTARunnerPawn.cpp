@@ -37,6 +37,7 @@ namespace
 {
 const FName FlashParam(TEXT("Flash")); // M_TTA_Toon emissive override (task 11b)
 const FName FaceParam(TEXT("FaceTexture")); // runner material face texture slot
+const FName FaceOffsetParam(TEXT("FaceUVOffset")); // R = U, G = V; see TTAFaceDropV
 const FName TintParam(TEXT("Tint"));
 }
 
@@ -154,9 +155,12 @@ void ATTARunnerPawn::ApplyLook(int32 HatIndex, int32 FaceIndex)
 		}
 	}
 	UTexture2D* Face = FaceRow->FaceTexture.LoadSynchronous();
+	const FLinearColor FaceDrop(0.f, TTAFaceDropV, 0.f, 1.f);
 	for (UMaterialInstanceDynamic* Material : FlashMaterials)
 	{
-		if (Material && Face) Material->SetTextureParameterValue(FaceParam, Face);
+		if (!Material) continue;
+		Material->SetVectorParameterValue(FaceOffsetParam, FaceDrop);
+		if (Face) Material->SetTextureParameterValue(FaceParam, Face);
 	}
 }
 
@@ -207,6 +211,11 @@ void ATTARunnerPawn::Dive()
 		return;
 	}
 	LaunchCharacter(GetActorForwardVector() * DiveSpeed + FVector(0.f, 0.f, DiveLift), true, true);
+}
+
+bool ATTARunnerPawn::CanPunch() const
+{
+	return Life.state() == tta::LifeState::Alive && PunchState.phase() == tta::PunchPhase::Idle && PunchState.cooldownLeft() <= 0.0;
 }
 
 void ATTARunnerPawn::Punch()
@@ -322,11 +331,11 @@ void ATTARunnerPawn::MulticastPunched_Implementation(FVector_NetQuantizeNormal D
 void ATTARunnerPawn::SetForm(ETTAForm NewForm)
 {
 	Form = NewForm;
-	const tta::Form CoreForm = NewForm == ETTAForm::Angel ? tta::Form::Angel : tta::Form::Human;
 	// Gen 3 angel: wings are built into SK_Angel and there is no halo.
+	// Hat stays on in both forms so lobby angels, statues and racers keep the cosmetic.
 	Wings->SetVisibility(false);
 	Halo->SetVisibility(false);
-	Hat->SetVisibility(CoreForm == tta::Form::Human);
+	Hat->SetVisibility(true);
 }
 
 void ATTARunnerPawn::Hit()
@@ -402,11 +411,18 @@ void ATTARunnerPawn::StartRagdoll()
 	Body->WakeAllRigidBodies();
 }
 
+void ATTARunnerPawn::SitOut()
+{
+	RestoreBody();
+	GetCharacterMovement()->DisableMovement();
+	GetCharacterMovement()->StopMovementImmediately();
+}
+
 void ATTARunnerPawn::Respawn()
 {
 	if (ATTAGameMode* Mode = GetWorld()->GetAuthGameMode<ATTAGameMode>())
 	{
-		if (Mode->TryHeaven(this)) return; // demo: stay down; the human watches from heaven
+		if (Mode->TryHeaven(this)) return; // demo: the angel stands up in heaven instead of the start
 	}
 	RestoreBody();
 	SetActorLocation(StartLocation, false, nullptr, ETeleportType::TeleportPhysics);

@@ -38,11 +38,13 @@ public:
 
 	// A trap or ball hit this runner. Ignored unless alive.
 	UFUNCTION(BlueprintCallable) void Hit();
+	// Ragdoll off and movement off. Demo death uses this to stand the angel on the heaven couch.
+	void SitOut();
 	// Forward lunge; only from the ground while alive.
 	UFUNCTION(BlueprintCallable) void Dive();
 	// [LMB]/[Gamepad right face] punch (punch plan req 1-5). Asks the server to start it.
 	UFUNCTION(BlueprintCallable) void Punch();
-	// Angel shows wings + halo; human (runner) form hides both and shows the hat.
+	// Gen 3 mesh already has wings. Both forms keep the hat.
 	UFUNCTION(BlueprintCallable) void SetForm(ETTAForm NewForm);
 	// Hat mesh/transform/tint from DT_Cosmetics row HatIndex, face texture from row FaceIndex.
 	UFUNCTION(BlueprintCallable) void ApplyLook(int32 HatIndex, int32 FaceIndex);
@@ -59,6 +61,7 @@ public:
 
 	tta::LifeState GetLifeState() const { return Life.state(); }
 	tta::PunchPhase GetPunchPhase() const { return PunchState.phase(); }
+	bool CanPunch() const;
 	bool IsPunchImmune() const { return Life.punchImmune(); }
 	FVector GetStartLocation() const { return StartLocation; }
 	float GetFlash() const { return Flash; }

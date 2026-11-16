@@ -2,7 +2,7 @@
 
 #include "Net/UnrealNetwork.h"
 
-void ATTAPlayerState::ServerSetLook_Implementation(int32 NewColour, int32 NewHat, int32 NewFace)
+void ATTAPlayerState::AssignLook(int32 NewColour, int32 NewHat, int32 NewFace)
 {
 	const bool bValid = NewColour >= 0 && NewColour < static_cast<int32>(tta::kPlayerColours.size())
 		&& NewHat >= 0 && NewHat < static_cast<int32>(tta::kHats.size())
@@ -15,6 +15,11 @@ void ATTAPlayerState::ServerSetLook_Implementation(int32 NewColour, int32 NewHat
 	Colour = NewColour;
 	Hat = NewHat;
 	Face = NewFace;
+}
+
+void ATTAPlayerState::ServerSetLook_Implementation(int32 NewColour, int32 NewHat, int32 NewFace)
+{
+	AssignLook(NewColour, NewHat, NewFace);
 }
 
 void ATTAPlayerState::CopyProperties(APlayerState* PlayerState)

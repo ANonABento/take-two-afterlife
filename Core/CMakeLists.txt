@@ -23,7 +23,7 @@ add_library(tta_core
   src/AudioCues.cpp
   src/MatchFlow.cpp
   src/BotBrain.cpp
-  src/BotRoute.cpp
+  src/BotRace.cpp
   src/HeavenGate.cpp
   src/ScoreBoard.cpp
   src/PodiumShow.cpp
@@ -59,7 +59,7 @@ add_executable(tta_core_tests
   tests/AudioCuesTests.cpp
   tests/MatchFlowTests.cpp
   tests/BotBrainTests.cpp
-  tests/BotRouteTests.cpp
+  tests/BotRaceTests.cpp
   tests/HeavenGateTests.cpp
   tests/ScoreBoardTests.cpp
   tests/PodiumShowTests.cpp

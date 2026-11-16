@@ -123,6 +123,8 @@ private:
 	UPROPERTY() TObjectPtr<UVerticalBox> CustomizePanel;
 	UPROPERTY() TObjectPtr<UTextBlock> LookText;
 	UPROPERTY() TObjectPtr<UBorder> LookSwatch;
+	UPROPERTY() TObjectPtr<UTextBlock> SettingsLookText;
+	UPROPERTY() TObjectPtr<UBorder> SettingsLookSwatch;
 	UPROPERTY() TObjectPtr<UButton> StartButton;
 	UPROPERTY() TObjectPtr<UProgressBar> MicMeter;
 	// One per ClientSettings field, in RefreshSettings order (master, music, vo, sfx, sensitivity).

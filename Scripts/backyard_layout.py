@@ -120,7 +120,7 @@ def _water():
     return props
 
 
-ROUTE_TAG = "TTARoute"  # ATTABotController::RouteTag: bots walk these markers start to gate
+ROUTE_TAG = "TTARoute"  # visual stepping stones; bots race the finish gate and do not follow these
 
 
 def _markers():

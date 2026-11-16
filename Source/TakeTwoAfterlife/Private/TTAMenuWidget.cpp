@@ -38,7 +38,8 @@ constexpr int32 kCode = 160;
 constexpr float kScreenW = 520.f, kWideW = 2 * kScreenW + 40.f;
 constexpr float kButtonW = 480.f, kButtonH = 72.f, kGap = 12.f, kCorner = 18.f;
 constexpr float kRowLabelW = 180.f, kRowControlW = 280.f;  // fits inside a Card (520 - 2 * 30)
-constexpr float kTitleTilt = -4.f, kSkyOpacity = 0.5f;
+// The title painting is the 3D backdrop. This wash sits on top of it and the angels, so it stays faint.
+constexpr float kTitleTilt = -4.f, kSkyOpacity = 0.12f;
 constexpr float kHoverDarken = 0.25f, kPressedDarken = 0.45f;  // lerp toward Ink
 
 
@@ -300,6 +301,12 @@ void UTTAMenuWidget::NativeOnInitialized()
 		UBorder* Face = Card(Box, tta::kBone);
 		UVerticalBox* Inner = WidgetTree->ConstructWidget<UVerticalBox>();
 		Face->SetContent(Inner);
+		Label(Inner, TEXT("LOOK"), UTTAUIStyle::kH2, true);
+		SettingsLookSwatch = Card(Inner, tta::kRed);
+		SettingsLookText = Label(SettingsLookSwatch, TEXT(""), UTTAUIStyle::kBody, true);
+		MenuButton(Inner, TEXT("COLOUR >"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnColourNext);
+		MenuButton(Inner, TEXT("HAT >"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnHatNext);
+		MenuButton(Inner, TEXT("FACE >"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnFaceNext);
 		SettingSlider(Inner, TEXT("Master"), Settings.master / kVolumeSliderMax)->OnValueChanged.AddDynamic(this, &UTTAMenuWidget::OnMasterChanged);
 		SettingSlider(Inner, TEXT("Music"), Settings.music / kVolumeSliderMax)->OnValueChanged.AddDynamic(this, &UTTAMenuWidget::OnMusicChanged);
 		SettingSlider(Inner, TEXT("Voice"), Settings.vo / kVolumeSliderMax)->OnValueChanged.AddDynamic(this, &UTTAMenuWidget::OnVoChanged);
@@ -365,7 +372,7 @@ void UTTAMenuWidget::HideUnreachableTitleEntries()
 		if (!Text) continue;
 		const FString Label = Text->GetText().ToString();
 		if (Label == TEXT("PLAY SOLO")) Text->SetText(FText::FromString(TEXT("PLAY")));
-		if (Label == TEXT("HOST GAME") || Label.StartsWith(TEXT("JOIN")) || Label == TEXT("SETTINGS"))
+		if (Label == TEXT("HOST GAME") || Label.StartsWith(TEXT("JOIN")))
 		{
 			ButtonBox->SetVisibility(ESlateVisibility::Collapsed);
 		}
@@ -411,7 +418,7 @@ void UTTAMenuWidget::Host()
 
 void UTTAMenuWidget::PlaySolo()
 {
-	if (!Open(tta::MenuScreen::Lobby)) return;
+	// Travel straight to the race. Opening the lobby first showed "Need at least 2 players".
 	bHost = true;
 	OnPlaySolo.ExecuteIfBound();
 }
@@ -508,9 +515,12 @@ FLinearColor UTTAMenuWidget::GetLookColour() const
 
 void UTTAMenuWidget::RefreshLook()
 {
+	const FText Line = FText::FromString(FString::Printf(TEXT("Hat: %s  Face: %s"),
+		UTF8_TO_TCHAR(tta::kHats[Look.hat]), UTF8_TO_TCHAR(tta::kFaces[Look.face])));
 	LookSwatch->SetBrushColor(GetLookColour());
-	LookText->SetText(FText::FromString(FString::Printf(TEXT("Hat: %s  Face: %s"),
-		UTF8_TO_TCHAR(tta::kHats[Look.hat]), UTF8_TO_TCHAR(tta::kFaces[Look.face]))));
+	LookText->SetText(Line);
+	if (SettingsLookSwatch) SettingsLookSwatch->SetBrushColor(GetLookColour());
+	if (SettingsLookText) SettingsLookText->SetText(Line);
 }
 
 void UTTAMenuWidget::SetSettings(const tta::ClientSettings& InSettings)

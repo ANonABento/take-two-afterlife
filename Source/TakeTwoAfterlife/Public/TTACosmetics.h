@@ -23,3 +23,7 @@ struct TAKETWOAFTERLIFE_API FTTACosmeticRow : public FTableRowBase
 	// Hat tint, index into tta::kPaletteHex.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) int32 PaletteIndex = 0;
 };
+
+// M_TTA_Angel FaceUVOffset.G. Positive moves the sample up the texture, which drops the
+// painted face on the gen 3 head (the face island sits high).
+static constexpr float TTAFaceDropV = 0.20f;

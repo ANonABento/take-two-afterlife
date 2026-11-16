@@ -31,6 +31,8 @@ public:
 	bool AllOut() const;
 	void RecordHit(const tta::Placement& Trap, ATTARunnerPawn* Victim);
 
+	// Drops the recorder so Tick stops sampling. GetReplay is invalid after this.
+	void EndRecording();
 	bool IsRunning() const { return Recorder.IsValid(); }
 	bool IsTimedOut() const { return IsRunning() && Recorder->timedOut(); }
 	bool AllFinished() const { return IsRunning() && Finished.Num() == Runners.Num(); }

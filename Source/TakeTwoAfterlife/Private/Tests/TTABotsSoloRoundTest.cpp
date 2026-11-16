@@ -22,9 +22,9 @@
 
 #if WITH_DEV_AUTOMATION_TESTS
 
-// Play Solo on the server: one player + 3 bots on a flat route. Bots get fixed ids, build
-// within budget, run the TTARoute markers toward the gate, get an auto-edited cut when Run
-// ends, and vote on someone else's cut in the cinema's rating screen.
+// Play Solo on the server: one player + 3 bots on a flat floor. Bots get fixed ids, build
+// within budget, race the finish gate, get an auto-edited cut when Run ends, and vote on
+// someone else's cut in the cinema's rating screen.
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTTABotsSoloRoundTest, "TTA.Bots.SoloRound",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
@@ -46,18 +46,12 @@ bool FTTABotsSoloRoundTest::RunTest(const FString& Parameters)
 	UStaticMesh* Cube = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube"));
 	if (TestNotNull(TEXT("game mode"), Mode) && TestNotNull(TEXT("game state"), State) && TestNotNull(TEXT("cube"), Cube))
 	{
-		// 40 m x 8 m floor, start at x=0, markers every 4 m, gate at 16 m.
+		// 40 m x 8 m floor, start at x=0, gate at 16 m. No route markers.
 		AStaticMeshActor* Floor = World->SpawnActor<AStaticMeshActor>(FVector(1500.f, 0.f, -50.f), FRotator::ZeroRotator);
 		Floor->GetStaticMeshComponent()->SetStaticMesh(Cube);
 		Floor->SetActorScale3D(FVector(40.f, 8.f, 1.f));
 		World->SpawnActor<APlayerStart>(FVector(0.f, 0.f, 100.f), FRotator::ZeroRotator);
-		for (float X : {400.f, 800.f, 1200.f})
-		{
-			AStaticMeshActor* Marker = World->SpawnActor<AStaticMeshActor>(FVector(X, 0.f, 0.f), FRotator::ZeroRotator);
-			Marker->Tags.Add(ATTABotController::RouteTag);
-		}
 		World->SpawnActor<ATTAFinishGate>(FVector(1600.f, 0.f, 0.f), FRotator::ZeroRotator);
-		TestEqual(TEXT("route = 3 markers + gate"), ATTABotController::FindRoute(World).Num(), 4);
 
 		APlayerController* Human = World->SpawnActor<APlayerController>();
 		Human->InitPlayerState();

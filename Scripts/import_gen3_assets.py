@@ -27,7 +27,7 @@ HAT_SRC = REPO / "models" / "angel-v2" / "hats"
 GEN3_HATS = ["crown", "halo", "devil-horns", "propeller-beanie", "party-cone", "viking-helmet", "bunny-ears", "traffic-cone"]
 # Hat slot mapping lives in Scripts/build_cosmetics_table.py (HAT_MAP).
 SLOT_COLOURS = {"body": (0.886, 0.871, 0.831), "outfit": (0.397, 0.564, 0.768)}  # linear of #F2F0EC / #A9C6E3
-FACE_UV = (1.0, 1.0, 0.0, 0.0)  # scale u, scale v, offset u, offset v; tweak on MI_Angel_Face if the face sits wrong
+FACE_UV = (1.0, 1.0, 0.0, 0.20)  # scale u, scale v, offset u, offset v; +V drops the face on the head (TTAFaceDropV)
 REIMPORT_ANGEL = False  # True to re-import SK_Angel.fbx; False keeps your existing clean import
 
 
@@ -123,6 +123,8 @@ def instance(parent, name, colour, use_face):
     MEL.set_material_instance_parent(mi, parent)
     MEL.set_material_instance_vector_parameter_value(mi, "Tint", unreal.LinearColor(*colour, 1))
     MEL.set_material_instance_scalar_parameter_value(mi, "UseFace", 1.0 if use_face else 0.0)
+    MEL.set_material_instance_vector_parameter_value(mi, "FaceUVScale", unreal.LinearColor(FACE_UV[0], FACE_UV[1], 0, 1))
+    MEL.set_material_instance_vector_parameter_value(mi, "FaceUVOffset", unreal.LinearColor(FACE_UV[2], FACE_UV[3], 0, 1))
     face = EAL.load_asset(f"{FACES}/T_Face_Default") or next(
         (EAL.load_asset(p) for p in EAL.list_assets(FACES, False) if "T_Face_" in p), None)
     if face:

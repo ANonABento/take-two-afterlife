@@ -4,7 +4,9 @@
 #include "Engine/Canvas.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Engine/SceneCapture2D.h"
+#include "Engine/StaticMesh.h"
 #include "Engine/StaticMeshActor.h"
+#include "Engine/World.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Kismet/KismetRenderingLibrary.h"
 #include "TTAPlacementMarker.h"
@@ -168,7 +170,7 @@ void ATTABuildHUD::DrawHUD()
 	}
 	if (Mode && Mode->IsWatching())
 	{
-		DrawStyledText(TEXT("Watch the TV. When this race ends you place traps again, unless the match is over."),
+		DrawStyledText(TEXT("You're in heaven. The TV shows the race, then the death reel."),
 			tta::kBone, Left, Y, UTTAUIStyle::kSmall, false);
 	}
 

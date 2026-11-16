@@ -1,5 +1,6 @@
 #include "TTAPlacementMarker.h"
 
+#include "TTABotController.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
@@ -131,9 +132,11 @@ void ATTAPlacementMarker::Refresh()
 	bool bShow = Data.bRevealed;
 	if (!bShow)
 	{
-		// Listen-server host holds every marker; draw only the local player's own.
+		// Listen-server host holds every marker. Draw the local player's own, and every bot's:
+		// bots spend the Build phase dropping traps and cameras on the course in the open.
 		const APlayerController* Local = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
-		bShow = Local && Local->IsLocalController() && PlayerIdOf(Local) == Data.Owner;
+		const bool bOwn = Local && Local->IsLocalController() && PlayerIdOf(Local) == Data.Owner;
+		bShow = bOwn || Data.Owner >= ATTABotController::FirstBotId;
 	}
 	Mesh->SetVisibility(bShow);
 	Mesh->SetCollisionEnabled(bShow ? ECollisionEnabled::QueryOnly : ECollisionEnabled::NoCollision);
@@ -141,7 +144,7 @@ void ATTAPlacementMarker::Refresh()
 
 bool ATTAPlacementMarker::IsNetRelevantFor(const AActor* RealViewer, const AActor* ViewTarget, const FVector& SrcLocation) const
 {
-	return Data.bRevealed || PlayerIdOf(RealViewer) == Data.Owner;
+	return Data.bRevealed || Data.Owner >= ATTABotController::FirstBotId || PlayerIdOf(RealViewer) == Data.Owner;
 }
 
 void ATTAPlacementMarker::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

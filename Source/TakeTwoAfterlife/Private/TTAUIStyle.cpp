@@ -29,7 +29,7 @@ namespace
 const TCHAR* const kGeneratedDir = TEXT("/Game/UI/Generated/");
 constexpr float kSpaceScale[] = {0.f, 4.f, 8.f, 16.f, 24.f, 32.f};
 
-// Written by Scripts/build_ui_chrome.py: measured 9-slice margins in px per texture.
+// Written by Scripts/cut_ui_sheet.py: measured 9-slice margins in px per texture.
 const TCHAR* const kSlicesFile = TEXT("Art/UI/T_UI_Slices.json");
 
 // Fallback colour and whether the asset is 9-sliced (margins come from kSlicesFile).
@@ -83,7 +83,7 @@ const TMap<FString, FMargin>& SliceMargins()
 		if (!FFileHelper::LoadFileToString(Text, *File) || !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Root)
 			|| !Root.IsValid() || !Root->TryGetObjectField(TEXT("assets"), Assets))
 		{
-			UE_LOG(LogTTAUIStyle, Error, TEXT("Cannot read slice margins from %s; run Scripts/build_ui_chrome.py"), *File);
+			UE_LOG(LogTTAUIStyle, Error, TEXT("Cannot read slice margins from %s; run Scripts/cut_ui_sheet.py"), *File);
 			return Out;
 		}
 		for (const TPair<FString, TSharedPtr<FJsonValue>>& Pair : (*Assets)->Values)

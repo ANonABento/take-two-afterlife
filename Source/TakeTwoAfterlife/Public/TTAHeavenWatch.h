@@ -43,6 +43,10 @@ public:
 	// Views are world transforms for the feed camera (location + look rotation).
 	void Start(const TArray<FTransform>& InViews);
 	AActor* GetSeatCamera();
+	// Where the dead angel stands, facing the TV. The seat camera stays behind them.
+	FTransform GetSeatTransform() const;
+	// Swap the screen off the live race and onto a replay render target. Stops camera cycling.
+	void ShowTexture(UTexture* Texture);
 
 	virtual void Tick(float DeltaSeconds) override;
 
@@ -60,4 +64,5 @@ private:
 	TArray<FTransform> Views;
 	float SwitchIn = 0.f;
 	int32 ViewIndex = 0;
+	bool bLive = true;
 };

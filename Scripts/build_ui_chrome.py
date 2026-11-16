@@ -1,12 +1,13 @@
 """Draws the UI chrome textures (buttons, panels, pills, fields, slider) into Art/UI/.
 
 Engine-free (Pillow). Each texture is a rounded rectangle in a palette colour from
-Docs/design/ui-style.md with a 6 px Ink outline and a 4 px Ink drop shadow below it.
+Docs/design/ui-style.md with an Ink outline and an Ink drop shadow below it, drawn at 4x.
 Corners are measured back from the drawn pixels; the 9-slice margins (corner radius +
 outline, plus the shadow on the bottom edge) go to Art/UI/T_UI_Slices.json, which
 UTTAUIStyle::Brush reads.
 
-Run: python Scripts/build_ui_chrome.py, then Scripts/import_ui_assets.py in the editor.
+The shipped chrome is cut from Art/UI/ref/assets_contact.png by Scripts/cut_ui_sheet.py.
+Running this file as a script does not overwrite those textures.
 """
 import json
 import re
@@ -19,23 +20,29 @@ ART = ROOT / "Art" / "UI"
 STYLE_DOC = ROOT / "Docs" / "design" / "ui-style.md"
 SLICES_NAME = "T_UI_Slices.json"
 
-OUTLINE = 6
-SHADOW = 4
+# Drawn at 4x the old canvases so 9-slice corners stay sharp when a panel is larger than
+# the source. On-screen widget sizes are unchanged; slice UVs stay the same fraction.
+SCALE = 4
+OUTLINE = 6 * SCALE
+SHADOW = 4 * SCALE
 SHADOW_ALPHA = 110
-BUTTON_SIZE = (512, 160)
+BUTTON_SIZE = (512 * SCALE, 160 * SCALE)
+
+def s(n):
+    return n * SCALE
 
 # name: (canvas size, corner radius, palette token, sliced)
 CHROME = {
-    "T_UI_Button": (BUTTON_SIZE, 32, "Bone", True),
-    "T_UI_ButtonHover": (BUTTON_SIZE, 32, "Sky", True),
-    "T_UI_ButtonPressed": (BUTTON_SIZE, 32, "Blue", True),
-    "T_UI_ButtonPrimary": (BUTTON_SIZE, 32, "Yellow", True),
-    "T_UI_Panel": ((256, 256), 32, "Bone", True),
-    "T_UI_CodePill": ((384, 128), 56, "Yellow", True),
-    "T_UI_Banner": ((512, 128), 24, "Bone", True),
-    "T_UI_TextField": ((512, 128), 20, "Bone", True),
-    "T_UI_SliderBar": ((512, 48), 16, "Sky", True),
-    "T_UI_SliderKnob": ((96, 100), 48, "Yellow", False),
+    "T_UI_Button": (BUTTON_SIZE, s(32), "Bone", True),
+    "T_UI_ButtonHover": (BUTTON_SIZE, s(32), "Sky", True),
+    "T_UI_ButtonPressed": (BUTTON_SIZE, s(32), "Blue", True),
+    "T_UI_ButtonPrimary": (BUTTON_SIZE, s(32), "Yellow", True),
+    "T_UI_Panel": ((s(256), s(256)), s(32), "Bone", True),
+    "T_UI_CodePill": ((s(384), s(128)), s(56), "Yellow", True),
+    "T_UI_Banner": ((s(512), s(128)), s(24), "Bone", True),
+    "T_UI_TextField": ((s(512), s(128)), s(20), "Bone", True),
+    "T_UI_SliderBar": ((s(512), s(48)), s(16), "Sky", True),
+    "T_UI_SliderKnob": ((s(96), s(100)), s(48), "Yellow", False),
 }
 
 
@@ -98,5 +105,4 @@ def build(out_dir=ART):
 
 
 if __name__ == "__main__":
-    for asset, entry in build()["assets"].items():
-        print(asset, entry)
+    raise SystemExit("UI chrome is cut by Scripts/cut_ui_sheet.py; this drawer would overwrite it.")

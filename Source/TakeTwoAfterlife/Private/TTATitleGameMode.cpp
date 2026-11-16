@@ -4,21 +4,72 @@
 #include "Animation/SkeletalMeshActor.h"
 #include "Camera/CameraActor.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Engine/DataTable.h"
 #include "Engine/GameInstance.h"
 #include "Engine/SkeletalMesh.h"
+#include "Engine/StaticMesh.h"
+#include "Engine/Texture2D.h"
+#include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/HUD.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
 #include "OnlineSubsystem.h"
 #include "TimerManager.h"
+#include "TTACosmetics.h"
 #include "TTAGameMode.h"
 #include "TTAMenuWidget.h"
 #include "TTASessionSubsystem.h"
 
 namespace
 {
+const FName FaceParam(TEXT("FaceTexture"));
+const FName FaceOffsetParam(TEXT("FaceUVOffset"));
+const FName HatSocket(TEXT("head"));
+
+void DressAngel(ASkeletalMeshActor* Angel, const UDataTable* Table, const TArray<FName>& Rows, int32 HatIndex, int32 FaceIndex)
+{
+	if (!Angel || !Table || !Rows.IsValidIndex(HatIndex) || !Rows.IsValidIndex(FaceIndex)) return;
+	const FTTACosmeticRow* HatRow = Table->FindRow<FTTACosmeticRow>(Rows[HatIndex], TEXT("TitleHat"));
+	const FTTACosmeticRow* FaceRow = Table->FindRow<FTTACosmeticRow>(Rows[FaceIndex], TEXT("TitleFace"));
+	USkeletalMeshComponent* Body = Angel->GetSkeletalMeshComponent();
+	if (!HatRow || !FaceRow || !Body) return;
+
+	UStaticMeshComponent* Hat = NewObject<UStaticMeshComponent>(Angel);
+	Hat->SetMobility(EComponentMobility::Movable);
+	Hat->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Hat->SetStaticMesh(HatRow->HatMesh.LoadSynchronous());
+	const bool bSocket = Body->DoesSocketExist(HatSocket);
+	if (!bSocket)
+	{
+		static bool bLogged = false;
+		if (!bLogged)
+		{
+			bLogged = true;
+			UE_LOG(LogTemp, Warning, TEXT("Title choir: SK_Angel has no 'head' socket; hats sit on the mesh origin"));
+		}
+	}
+	Hat->SetupAttachment(Body, bSocket ? HatSocket : NAME_None);
+	Hat->SetRelativeTransform(FTransform(HatRow->Rotation, HatRow->SocketOffset, HatRow->Scale));
+	Hat->RegisterComponent();
+
+	UTexture2D* Face = FaceRow->FaceTexture.LoadSynchronous();
+	const FLinearColor FaceDrop(0.f, TTAFaceDropV, 0.f, 1.f);
+	const int32 NumSlots = Body->GetNumMaterials();
+	for (int32 Slot = 0; Slot < NumSlots; ++Slot)
+	{
+		if (!Body->GetMaterial(Slot)) continue;
+		if (UMaterialInstanceDynamic* Mid = Body->CreateAndSetMaterialInstanceDynamic(Slot))
+		{
+			Mid->SetVectorParameterValue(FaceOffsetParam, FaceDrop);
+			if (Face) Mid->SetTextureParameterValue(FaceParam, Face);
+		}
+	}
+}
+
 void SpawnTitleChoir(UWorld* World)
 {
 	USkeletalMesh* Mesh = LoadObject<USkeletalMesh>(nullptr, TEXT("/Game/Characters/Angel/SK_Angel.SK_Angel"));
@@ -28,6 +79,12 @@ void SpawnTitleChoir(UWorld* World)
 		return;
 	}
 	UClass* Anim = LoadClass<UAnimInstance>(nullptr, TEXT("/Game/Characters/Angel/Anims/ABP_Angel.ABP_Angel_C"));
+	const UDataTable* Looks = LoadObject<UDataTable>(nullptr, TEXT("/Game/Data/DT_Cosmetics.DT_Cosmetics"));
+	const TArray<FName> Rows = Looks ? Looks->GetRowNames() : TArray<FName>();
+	if (Rows.IsEmpty())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Title choir: DT_Cosmetics has no rows; angels spawn without hats or faces"));
+	}
 	FRandomStream Rng(2026);
 	for (int32 i = 0; i < 40; ++i)
 	{
@@ -45,6 +102,10 @@ void SpawnTitleChoir(UWorld* World)
 		Body->SetRelativeRotation(FRotator(0.f, 180.f, 0.f));
 		Body->SetRelativeScale3D(FVector(Rng.FRandRange(0.85f, 1.35f)));
 		if (Anim) Body->SetAnimInstanceClass(Anim);
+		if (!Rows.IsEmpty())
+		{
+			DressAngel(Angel, Looks, Rows, Rng.RandHelper(Rows.Num()), Rng.RandHelper(Rows.Num()));
+		}
 	}
 }
 }

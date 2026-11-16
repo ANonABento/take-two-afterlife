@@ -21,10 +21,14 @@ class BotsTest(unittest.TestCase):
             with self.subTest(wrapper=wrapper):
                 self.assertIn(f"Core/src/{src.name}", read(wrapper))
 
-    def test_route_tag_matches_bot_controller(self):
+    def test_bots_race_the_finish_gate(self):
         cpp = read("Source/TakeTwoAfterlife/Private/TTABotController.cpp")
-        self.assertIn(f'RouteTag(TEXT("{L.ROUTE_TAG}"))', cpp)
-        self.assertIn("L.ROUTE_TAG", read("Scripts/build_backyard_map.py"))
+        header = read("Source/TakeTwoAfterlife/Public/TTABotController.h")
+        self.assertIn("tta::BotRace", header)
+        self.assertIn("StartRun(Gate)", read("Source/TakeTwoAfterlife/Private/TTAGameMode.cpp"))
+        self.assertNotIn("TTARoute", cpp)
+        self.assertIn("Sense.hazards", cpp)
+        self.assertIn("Runner->Punch()", cpp)
         markers = [p for p in L.props() if p.role == "marker"]
         self.assertGreater(len(markers), 2)
 
@@ -34,6 +38,11 @@ class BotsTest(unittest.TestCase):
         self.assertIn('"?bots=%d"', read("Source/TakeTwoAfterlife/Private/TTASessionSubsystem.cpp"))
         self.assertRegex(read("Source/TakeTwoAfterlife/Public/TTAGameMode.h"), r"MaxBots = 3;")
         self.assertIn('"AIModule"', read("Source/TakeTwoAfterlife/TakeTwoAfterlife.Build.cs"))
+
+    def test_bot_placements_are_visible_during_build(self):
+        cpp = read("Source/TakeTwoAfterlife/Private/TTAPlacementMarker.cpp")
+        self.assertIn("Data.Owner >= ATTABotController::FirstBotId", cpp)
+        self.assertIn('#include "TTABotController.h"', cpp)
 
     def test_devlog_lists_solo_checks(self):
         devlog = read("DEVLOG.md")

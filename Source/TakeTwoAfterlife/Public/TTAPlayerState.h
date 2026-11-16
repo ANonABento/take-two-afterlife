@@ -13,6 +13,8 @@ class TAKETWOAFTERLIFE_API ATTAPlayerState : public APlayerState
 
 public:
 	tta::PlayerLook GetLook() const { return tta::PlayerLook{Colour, Hat, Face}; }
+	// Writes immediately. Ignored (with a warning) when an index is out of range.
+	void AssignLook(int32 NewColour, int32 NewHat, int32 NewFace);
 	// Ignored (with a warning) when an index is out of range.
 	UFUNCTION(Server, Reliable) void ServerSetLook(int32 NewColour, int32 NewHat, int32 NewFace);
 

@@ -620,7 +620,27 @@ Scored 1-5 by judges on: ambition/innovation, theme, fun, gameplay, visuals, lev
 - Left: editor playtest (fly, place, timer starts the race, death TV, second build). Recook Dist before re-uploading. Edit screen and cinema premiere are still skipped.
 - Surprises: bots refuse a second BuildTraps until StartRun clears `bBuiltThisRound`, which the race already does.
 
+### UI from the contact sheet handoff
+- Done: `Scripts/cut_ui_sheet.py` keys `Art/UI/ref/assets_contact.png` and writes the button, panel, code pill, ribbon banner, slider, text field and seven icon PNGs. Icons go through the existing 256 normaliser (mic on was two pieces on the sheet and is cropped as one). Slice margins are measured from the silhouette; the ribbon's tails are pinned with a fixed cap so the white centre stretches. `T_UI_TitleBackdrop.png` is unchanged (the sheet copy is ~380 px). `build_ui_chrome.py` no longer overwrites art when run. Tests: `test_ui_chrome`, `test_ui_icons`, `test_ui_style_guide`.
+- Left: in the open editor run `py C:/Users/kevbe/take-two-afterlife/Scripts/import_ui_assets.py`, then look at the title buttons, a lobby card and the build-phase camera icons. The panel's centre notch stretches when a card is much wider than the source.
+- Surprises: the contact sheet crops the top of the white button by a pixel. The pressed (blue) button is a flatter shape than the other three, so its corner cap is smaller.
+
+### UI chrome resolution handoff
+- Done: checked `Art/UI`, `Content/UI`, and `Downloads` (KayKit, Kenney City, Kenney Nature, fonts). No higher-resolution UI pack to swap in. Icons (256) and `T_UI_TitleBackdrop` (1536x1024) left as the existing made art. `Scripts/build_ui_chrome.py` now draws chrome at 4x (`SCALE = 4`: buttons 2048x640, panel 1024, outline 24, shadow 16). `Art/UI/T_UI_Slices.json` and `Docs/design/ui-style.md` updated. `test_ui_chrome` and `test_ui_style_guide` pass.
+- Left: run `Scripts/import_ui_assets.py` in the editor so `/Game/UI/Generated` replaces the old 512 px textures. Look at a large panel and the title buttons after that.
+- Surprises: slice UVs are margin/size, so 4x does not change the on-screen corner fraction until the new textures are imported. Kenney packs in Downloads are world meshes, not UI.
+
 ### Demo cut handoff: Play / Quit, backyard race, heaven TV
 - Done: Title collapses Host, Join and Settings (code remains). Play travels to Backyard `?demo=1` with 6 bots, bot-placed traps and cameras, two 50s races. Death parks the human on a sky couch; the TV scene-captures course cameras until someone finishes, the timer ends, or everyone is out. Then round 2, then Title. Forty angels spawn on the title. `-autodemo` presses Play after 2s.
 - Left: editor compile, then play Title → Play. Confirm bots run the stones, a fall opens the TV, and round 2 starts. Record with the game launched `-autodemo` if a capture is still needed.
 - Surprises: `ATTACinema` retints the whole world, so the watch set is a separate actor. Bots that fall stay down instead of respawning, demo only.
+
+### Handoff: bots race the gate
+- Done: `tta::BotRace` (Core, doctest `BotRaceTests.cpp`) replaces marker-to-marker `BotRoute`. Bots run at the finish gate, dodge traps by skill, jump gaps, punch rivals through `CanPunch`, and chase a runner ahead. Game mode passes only the gate. Visual stepping stones stay; the `TTARoute` tag is no longer read.
+- Left: editor compile, then Play. Bots should spread around traps and shove each other on the way to the arch.
+- Surprises: build placement is still the random `BotBrain::build`.
+
+### Handoff: bot build items visible
+- Done: merged PR 35 (`1cbce2b`: build-phase walk, trap tile thumbnails, keys 1–5 / Z X C V). Bot placements from `BotBrain::build` now draw during Build (`Data.Owner >= FirstBotId` in `Refresh` and `IsNetRelevantFor`). Test: `Scripts/tests/test_bots.py`.
+- Left: editor compile, then Play and confirm the yard fills with bot traps and cameras during the 40 s build, and the bots walk those spots.
+- Surprises: the PR places everything the moment Build starts, then walks; the meshes were already spawned, just hidden from anyone who did not own them.

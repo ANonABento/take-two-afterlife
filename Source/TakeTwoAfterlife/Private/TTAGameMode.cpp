@@ -1,9 +1,15 @@
 #include "TTAGameMode.h"
 #include "TTACinema.h"
+#include "TTACutPlayer.h"
+#include "TTAEditStage.h"
 #include "TTAHeavenWatch.h"
+#include "Engine/SkeletalMesh.h"
+#include "Engine/TextureRenderTarget2D.h"
+#include "tta/EditList.h"
 #include "EngineUtils.h"
 #include "Kismet/GameplayStatics.h"
 #include "TTABotController.h"
+#include "TTAFinishGate.h"
 #include "Engine/GameInstance.h"
 #include "GameFramework/PlayerState.h"
 #pragma warning(disable: 4458) // local Owner shadows AActor::Owner
@@ -500,6 +506,14 @@ void ATTAGameMode::AddBots(int32 Count)
 		ATTABotController* Bot = GetWorld()->SpawnActor<ATTABotController>(ATTABotController::StaticClass(), FTransform::Identity, Params);
 		check(Bot);
 		Bot->InitBrain(ATTABotController::FirstBotId + i, static_cast<uint64>(FDateTime::UtcNow().GetTicks()) + i);
+		if (ATTAPlayerState* PS = Bot->GetPlayerState<ATTAPlayerState>())
+		{
+			const int32 HatCount = static_cast<int32>(tta::kHats.size());
+			const int32 FaceCount = static_cast<int32>(tta::kFaces.size());
+			const int32 ColourCount = static_cast<int32>(tta::kPlayerColours.size());
+			// Step by 5 so the first six bots each get a different hat and a different face.
+			PS->AssignLook(i % ColourCount, (i * 5 + 1) % HatCount, (i * 5 + 3) % FaceCount);
+		}
 		RestartPlayer(Bot);
 		if (GetGameState<ATTAGameState>()->GetPhase() == ETTAPhase::Build)
 		{
@@ -545,14 +559,21 @@ void ATTAGameMode::EnterRun()
 	}
 	if (Bots.Num() > 0)
 	{
-		const TArray<FVector> Route = ATTABotController::FindRoute(GetWorld());
-		if (Route.IsEmpty())
+		FVector Gate = FVector::ZeroVector;
+		bool bGate = false;
+		for (TActorIterator<ATTAFinishGate> It(GetWorld()); It; ++It)
 		{
-			UE_LOG(LogTemp, Error, TEXT("ATTAGameMode: no TTARoute markers or finish gate; bots stand still"));
+			Gate = It->GetActorLocation();
+			bGate = true;
+			break;
+		}
+		if (!bGate)
+		{
+			UE_LOG(LogTemp, Error, TEXT("ATTAGameMode: no finish gate; bots stand still"));
 		}
 		else
 		{
-			for (ATTABotController* Bot : Bots) Bot->StartRun(Route);
+			for (ATTABotController* Bot : Bots) Bot->StartRun(Gate);
 		}
 	}
 	RunPlayerIds = tta::runPlayers(RunnerIds, Layout);
@@ -595,6 +616,11 @@ void ATTAGameMode::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	const ATTAGameState* State = GetGameState<ATTAGameState>();
 	if (!State) return;
+	if (bReel)
+	{
+		AdvanceDeathReel(DeltaSeconds);
+		return;
+	}
 	if (State->GetPhase() == ETTAPhase::Lobby && !bGateTravelled)
 	{
 		SyncGate();
@@ -642,13 +668,7 @@ bool ATTAGameMode::TryHeaven(ATTARunnerPawn* Runner)
 	if (APlayerController* PC = Cast<APlayerController>(Runner->GetController()))
 	{
 		if (Director) Director->MarkEliminated(Runner);
-		if (!bWatching) OpenHeaven(PC);
-		bWatching = true;
-		PC->UnPossess();
-		if (HeavenWatch && HeavenWatch->GetSeatCamera())
-		{
-			PC->SetViewTargetWithBlend(HeavenWatch->GetSeatCamera(), 0.45f);
-		}
+		SeatInHeaven(PC, Runner);
 		return true;
 	}
 	if (ATTABotController* Bot = Cast<ATTABotController>(Runner->GetController()))
@@ -672,6 +692,148 @@ void ATTAGameMode::OpenHeaven(APlayerController* PC)
 	if (PC && HeavenWatch && HeavenWatch->GetSeatCamera())
 	{
 		PC->SetViewTargetWithBlend(HeavenWatch->GetSeatCamera(), 0.45f);
+	}
+}
+
+void ATTAGameMode::SeatInHeaven(APlayerController* PC, ATTARunnerPawn* Runner)
+{
+	OpenHeaven(PC);
+	bWatching = true;
+	if (Runner && HeavenWatch)
+	{
+		Runner->SitOut();
+		const FTransform Seat = HeavenWatch->GetSeatTransform();
+		Runner->SetActorLocationAndRotation(Seat.GetLocation(), Seat.Rotator(), false, nullptr, ETeleportType::TeleportPhysics);
+	}
+	if (PC && HeavenWatch && HeavenWatch->GetSeatCamera())
+	{
+		PC->SetViewTargetWithBlend(HeavenWatch->GetSeatCamera(), 0.45f);
+	}
+}
+
+void ATTAGameMode::StartDeathReel()
+{
+	if (bReel || bDemoClosing) return;
+	APlayerController* Human = nullptr;
+	ATTARunnerPawn* Body = nullptr;
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		Human = It->Get();
+		Body = Human ? Cast<ATTARunnerPawn>(Human->GetPawn()) : nullptr;
+		if (Human) break;
+	}
+	if (Human) SeatInHeaven(Human, Body);
+	for (TActorIterator<ATTARunnerPawn> It(GetWorld()); It; ++It)
+	{
+		if (*It != Body) It->SetActorHiddenInGame(true);
+	}
+
+	if (!Director || !Director->IsRunning() || !HeavenWatch)
+	{
+		FinishDeathReel();
+		return;
+	}
+	const tta::Replay Shot = Director->GetReplay();
+	Director->EndRecording();
+	TArray<FTransform> Views = CollectDemoViews();
+	if (Views.IsEmpty())
+	{
+		Views.Add(FTransform(FRotator(-12.f, 0.f, 0.f), FVector(2200.f, -700.f, 650.f)));
+	}
+	USkeletalMesh* Mesh = LoadObject<USkeletalMesh>(nullptr, TEXT("/Game/Characters/Angel/SK_Angel.SK_Angel"));
+	if (!Mesh || Shot.frameCount() == 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ATTAGameMode: death reel skipped (%s, %d frames)"), Mesh ? TEXT("mesh ok") : TEXT("no mesh"), Shot.frameCount());
+		FinishDeathReel();
+		return;
+	}
+	std::vector<int> Cameras;
+	for (int32 i = 0; i < Views.Num(); ++i) Cameras.push_back(i);
+	tta::EditList Cut;
+	try
+	{
+		Cut = tta::autoEdit(Shot, Cameras, Views.Num() - 1);
+		if (Cut.clips().empty())
+		{
+			tta::Clip Clip;
+			Clip.camera = 0;
+			Clip.endMs = static_cast<uint32>(FMath::RoundToInt(Shot.durationSeconds() * 1000.0));
+			Clip.startMs = Clip.endMs > 8000 ? Clip.endMs - 8000 : 0;
+			if (Clip.endMs > Clip.startMs) Cut.addClip(Clip);
+		}
+	}
+	catch (const std::exception& Error)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ATTAGameMode: auto-edit failed (%hs)"), Error.what());
+	}
+	if (Cut.clips().empty())
+	{
+		FinishDeathReel();
+		return;
+	}
+	FActorSpawnParameters Params;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	ReelStage = GetWorld()->SpawnActor<ATTAEditStage>(FVector::ZeroVector, FRotator::ZeroRotator, Params);
+	if (!ReelStage)
+	{
+		FinishDeathReel();
+		return;
+	}
+	ReelStage->Init(Shot, Views, Mesh);
+	ReelPlayer = NewObject<UTTACutPlayer>(this);
+	ReelPlayer->SetCut(Cut);
+	ReelPlayer->Play();
+	bReel = true;
+	AdvanceDeathReel(0.f);
+	HeavenWatch->ShowTexture(ReelStage->GetPreview());
+	UE_LOG(LogTemp, Log, TEXT("ATTAGameMode: death reel, %.1f s"), Cut.durationMs() / 1000.0);
+}
+
+void ATTAGameMode::AdvanceDeathReel(float DeltaSeconds)
+{
+	if (!bReel || !ReelPlayer || !ReelStage) return;
+	if (const TOptional<tta::CutFrame> Frame = ReelPlayer->GetFrame())
+	{
+		ReelStage->ShowAt(Frame->replaySeconds, Frame->camera, Frame->zoom);
+	}
+	if (DeltaSeconds > 0.f && !ReelPlayer->Advance(DeltaSeconds))
+	{
+		FinishDeathReel();
+	}
+}
+
+void ATTAGameMode::FinishDeathReel()
+{
+	bReel = false;
+	if (ReelStage)
+	{
+		ReelStage->Destroy();
+		ReelStage = nullptr;
+	}
+	ReelPlayer = nullptr;
+	if (bDemoClosing) return;
+	if (Match.phase() != tta::Phase::Run)
+	{
+		return;
+	}
+	const ATTAGameState* State = GetGameState<ATTAGameState>();
+	if (State && State->GetRound() >= Match.settings().rounds)
+	{
+		bDemoClosing = true;
+		UE_LOG(LogTemp, Log, TEXT("ATTAGameMode: demo finished, returning to Title"));
+		GetWorld()->ServerTravel(TEXT("/Game/Maps/Title"));
+		return;
+	}
+	bWatching = false;
+	TimedOutFor = 0.f;
+	TArray<ATTARunnerPawn*> Corpses;
+	for (TActorIterator<ATTARunnerPawn> It(GetWorld()); It; ++It) Corpses.Add(*It);
+	for (ATTARunnerPawn* Runner : Corpses) Runner->Destroy();
+	for (TActorIterator<ATTABotController> It(GetWorld()); It; ++It) It->StopRun();
+	ClearPlacements();
+	if (!Match.transition(tta::Phase::Edit) || !Match.transition(tta::Phase::Premiere) || !RequestPhase(ETTAPhase::Build))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ATTAGameMode: demo could not open the next build"));
 	}
 }
 
@@ -726,27 +888,8 @@ void ATTAGameMode::BeginDemoRound()
 
 void ATTAGameMode::EndDemoRound()
 {
-	if (bDemoClosing || Match.phase() != tta::Phase::Run) return;
-	const ATTAGameState* State = GetGameState<ATTAGameState>();
-	if (State && State->GetRound() >= Match.settings().rounds)
-	{
-		bDemoClosing = true;
-		UE_LOG(LogTemp, Log, TEXT("ATTAGameMode: demo finished, returning to Title"));
-		GetWorld()->ServerTravel(TEXT("/Game/Maps/Title"));
-		return;
-	}
-	// Next round is another build. Step Edit and Premiere without travelling to the cinema map.
-	bWatching = false;
-	TimedOutFor = 0.f;
-	TArray<ATTARunnerPawn*> Corpses;
-	for (TActorIterator<ATTARunnerPawn> It(GetWorld()); It; ++It) Corpses.Add(*It);
-	for (ATTARunnerPawn* Runner : Corpses) Runner->Destroy();
-	for (TActorIterator<ATTABotController> It(GetWorld()); It; ++It) It->StopRun();
-	ClearPlacements();
-	if (!Match.transition(tta::Phase::Edit) || !Match.transition(tta::Phase::Premiere) || !RequestPhase(ETTAPhase::Build))
-	{
-		UE_LOG(LogTemp, Error, TEXT("ATTAGameMode: demo could not open the next build"));
-	}
+	if (bDemoClosing || bReel || Match.phase() != tta::Phase::Run) return;
+	StartDeathReel();
 }
 
 void ATTAGameMode::EndRun()

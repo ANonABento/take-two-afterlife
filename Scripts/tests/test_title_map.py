@@ -31,6 +31,7 @@ def _fake_unreal(exists=True):
     for n in ["DirectionalLight", "SkyLight", "SkyAtmosphere", "ExponentialHeightFog", "CameraActor", "StaticMeshActor"]:
         setattr(u, n, n)
     u.Vector = u.Rotator = lambda *a: a
+    u.CollisionEnabled = types.SimpleNamespace(NO_COLLISION="NO_COLLISION")
     u.log = lambda m: spawned.append(("log", m))
     u.load_class = lambda outer, path: path.rsplit(".", 1)[-1]
 

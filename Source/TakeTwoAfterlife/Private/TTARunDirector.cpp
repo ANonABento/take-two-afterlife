@@ -76,6 +76,17 @@ void ATTARunDirector::CaptureFrame()
 	std::vector<tta::ReplayPose> Poses;
 	for (const ATTARunnerPawn* Runner : Runners)
 	{
+		// Already in heaven: keep the pose from the course, or the reel shows them on the couch.
+		if (Eliminated.Contains(Runner))
+		{
+			const tta::Replay& SoFar = Recorder->replay();
+			const int32 Id = PlayerId(Runner);
+			if (SoFar.frameCount() > 0 && Id != INDEX_NONE)
+			{
+				Poses.push_back(SoFar.frame(Id, SoFar.frameCount() - 1));
+				continue;
+			}
+		}
 		tta::ReplayPose Pose;
 		Pose[0] = ToBone(Runner->GetActorTransform());
 		const USkeletalMeshComponent* Mesh = Runner->GetMesh();
@@ -96,6 +107,11 @@ tta::RoundInput ATTARunDirector::GetRoundInput() const
 	std::set<int> FinishedIds;
 	for (const ATTARunnerPawn* Runner : Finished) FinishedIds.insert(PlayerId(Runner));
 	return Recorder->roundInput(FinishedIds);
+}
+
+void ATTARunDirector::EndRecording()
+{
+	Recorder.Reset();
 }
 
 void ATTARunDirector::MarkFinished(ATTARunnerPawn* Runner)

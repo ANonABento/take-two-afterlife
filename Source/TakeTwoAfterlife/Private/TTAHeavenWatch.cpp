@@ -44,6 +44,19 @@ AActor* ATTAHeavenWatch::GetSeatCamera()
 	return SeatCamera.Get();
 }
 
+FTransform ATTAHeavenWatch::GetSeatTransform() const
+{
+	const FVector Seat = GetActorLocation() + FVector(40.f, 0.f, 110.f);
+	const FVector ScreenAt = GetActorLocation() + FVector(700.f, 0.f, 280.f);
+	return FTransform((ScreenAt - Seat).Rotation(), Seat);
+}
+
+void ATTAHeavenWatch::ShowTexture(UTexture* Texture)
+{
+	bLive = false;
+	if (Feed) Feed->SetFeed(Texture);
+}
+
 ATTAHeavenWatch::ATTAHeavenWatch()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -73,6 +86,7 @@ ATTAHeavenWatch::ATTAHeavenWatch()
 
 void ATTAHeavenWatch::Start(const TArray<FTransform>& InViews)
 {
+	bLive = true;
 	Views = InViews;
 	if (Views.IsEmpty())
 	{
@@ -125,6 +139,7 @@ void ATTAHeavenWatch::Start(const TArray<FTransform>& InViews)
 			}
 		}
 	}
+	if (Feed && Target) Feed->SetFeed(Target);
 	ShowView(0);
 }
 
@@ -159,7 +174,7 @@ void ATTAHeavenWatch::ShowView(int32 Index)
 void ATTAHeavenWatch::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	if (!FeedCam || Views.IsEmpty()) return;
+	if (!bLive || !FeedCam || Views.IsEmpty()) return;
 	SwitchIn += DeltaSeconds;
 	if (SwitchIn < 2.5f) return;
 	SwitchIn = 0.f;

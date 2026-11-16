@@ -411,6 +411,16 @@ StopStun ran on every machine with its own pelvis read and a sweep from the pre-
 - **Agent did:** Core `tta::PunchArmConfig` (UpperArm_R / ForeArm_R; wind-up ends at upper arm (-55, 25, 0) + forearm yaw -120, punch ends at (-80, -10, 0) with a straight forearm, recovery eases to 0) and `punchArmPose(phase, t)` (smoothstep wind-up/recovery, ease-out cubic punch), doctest at start/middle/end of each phase. New `UTTARunnerAnimInstance` (UpperArmRotation, ForearmRotation, PunchArmAlpha); the server mirrors the punch phase into replicated `PunchPhaseRep` and every machine writes the pose each tick. `WindUpScale` and all scale code removed. Static check `Scripts/tests/test_punch_arm.py`.
 - **Failed / fixed by hand:** needs ABP_Angel reparented to `TTARunnerAnimInstance` plus two Transform (Modify) Bone nodes; until then the pawn logs one warning and the arm stays still. Editor compile pending.
 
+## Death reel on the heaven TV
+- **Prompt:** dying should put you in heaven to watch a death-cam compilation, not the manual editor.
+- **Agent did:** a demo death stands the angel on the sky couch (movement off, seat camera on the TV). The TV keeps the live race until the round ends, then `autoEdit` plays on that screen (hits, slow-mo wipeouts, 30s cap; last 8s if nobody was hit). Other racers are hidden during the reel so the replay puppets are the bodies on the course. After the reel, the next build starts, or Title after round 2. Eliminated runners keep their last course pose in the replay, so the couch does not show up in the cut.
+- **Failed / fixed by hand:** needs an editor compile (Ctrl+Alt+F11 if the editor is open) and a death in a race. WASTED cards are in the cut data and are not drawn on the TV.
+
+## Play skips the lobby
+- **Prompt:** the Play click showed a screen that said you need 2 players and offered Customize.
+- **Agent did:** Play travels straight to the backyard and no longer opens the lobby. Settings is back on the title, with colour / hat / face above the volume sliders. Host, Join, and the lobby screen stay in the code.
+- **Failed / fixed by hand:** editor was open, so Live Coding blocked the command-line compile. Press Ctrl+Alt+F11 in the editor.
+
 ## Demo build phase
 - **Prompt:** jam extended to 11pm. Put more of the original loop back in, only what fits.
 - **Agent did:** Play still loads Backyard `?demo=1`, but the demo now waits on a 40s Build before each 50s race. The player flies the course and places traps; bots still place theirs. Death still opens the heaven TV. When the race ends, the machine steps Edit and Premiere without travelling, then opens Build again. After round 2 it returns to Title. HUD line tells you to place traps.
@@ -424,7 +434,36 @@ StopStun ran on every machine with its own pelvis read and a sweep from the pre-
 ## Backyard fall-through (rotation)
 Floor slabs called `Rotator(roll, pitch, yaw)` positionally. The editor reads that as pitch, yaw, roll, so a 90° roll became a 90° pitch and the slabs stood on edge. `spawn_fitted` now passes roll/pitch/yaw by name, solid roles use BlockAll plus double-sided complex collision, and water/markers stay non-blocking. `package_win64.bat` no longer deletes an existing Title map. Rebuild with `rebuild_maps.py` in the open editor (not `setup_content.ps1`, not `full`).
 
+## Menu painting behind the angels
+`menu_bg_v1.png` is now `Art/UI/T_UI_TitleBackdrop.png` (1536x1024). `create_title_map.py` puts it on an unlit plane at x=2600, behind the choir, and drops the ground plane that would cover the painted meadow. The menu's blue wash is 12% so the painting shows through. Rebuild Title in the editor with `create_title_map.py`.
+
+## UI from the contact sheet
+Cut the glossy buttons, panel, pill, ribbon, slider, text field and the seven icons out of `Art/UI/ref/assets_contact.png` (`Scripts/cut_ui_sheet.py`). The large title painting stays. 9-slice margins were measured from each sprite. `test_ui_chrome`, `test_ui_icons` and `test_ui_style_guide` pass. Reimport with `import_ui_assets.py` so the editor textures update.
+
+## UI chrome resolution
+No separate UI kit on disk (Downloads has KayKit, Kenney City, Kenney Nature, and the two fonts only). Icons and the title backdrop stay as they are. Button, panel, pill, banner, field and slider art is redrawn at 4x (buttons 2048x640, 24 px outline) by `Scripts/build_ui_chrome.py`. Slice fractions are unchanged. Reimport with `import_ui_assets.py` so `/Game/UI/Generated` picks up the new pixels.
+
+## Bots race the gate
+- **Prompt:** drop the route-marker breadcrumb and give the bots a brain so they compete. Keep random building.
+- **Agent did:** `tta::BotRace` steers toward the finish gate, sidesteps traps it can see (clumsy bots notice late, pro bots early), jumps gaps unless they roll a deliberate miss, shoves back onto floor when one side is gone, punches a rival in front (`ATTARunnerPawn::CanPunch`), and chases someone ahead unless clumsy. Stuck for 1.5 s sidesteps; stuck for 4 s still ragdolls home. `ATTAGameMode` passes only the finish gate. Doctest `BotRaceTests.cpp`. The bone stepping stones stay on the map so the course still reads; bots ignore the `TTARoute` tag.
+- **Failed / fixed by hand:** needs an editor compile and a Play check. `make test` was not run here.
+
+## Bots race the gate
+- **Prompt:** drop the route-marker breadcrumb and give the bots a brain so they compete. Keep random building.
+- **Agent did:** `tta::BotRace` steers toward the finish gate, sidesteps traps it can see (clumsy bots notice late, pro bots early), jumps gaps unless they roll a deliberate miss, shoves back onto floor when one side is gone, punches a rival in front (`ATTARunnerPawn::CanPunch`), and chases someone ahead unless clumsy. Stuck for 1.5 s sidesteps; stuck for 4 s still ragdolls home. `ATTAGameMode` passes only the finish gate. Doctest `BotRaceTests.cpp`. The bone stepping stones stay on the map so the course still reads; bots ignore the `TTARoute` tag.
+- **Failed / fixed by hand:** needs an editor compile and a Play check. `make test` was not run here.
+
+## Bot placements show during Build
+- **Prompt:** review PR 35, merge and pull, and make sure bots randomly place items you can see in the build phase.
+- **Agent did:** PR 35 was already what it claimed (bots walk their spots after an instant Core placement, trap tiles capture a mesh thumbnail, keys 1–5 select a build item and Z/X/C/V adjust trap settings). Merged as `1cbce2b` and pulled. Bot markers stayed invisible until Run because only the local owner's hidden placements draw; bot owners are ids 1000+. `ATTAPlacementMarker` now draws and replicates those during Build. Placement itself is still `BotBrain::build`: random placeable traps inside the budget, plus up to 3 fixed cameras, on the 0.5 m corridor grid. `EnterBuild` spawns a marker for each one.
+- **Failed / fixed by hand:** trap thumbnails and the build-phase walk have not been compiled in the editor. Other players' traps stay hidden until the race.
+
 ## Textured traps, backyard script restored
 - **Prompt:** use the textured traps, and put the backyard builder back to the committed map script (the later one had been overwritten in the working tree).
 - **Agent did:** restored `Scripts/build_backyard_map.py`, `Scripts/layout_spawn.py`, and `Scripts/tests/test_fit_units_axes.py` to HEAD (same blob as `64c443b`). Imported `models/SM_Trap_*` and `SM_Cam_*` with their materials into `/Game/Art/Traps` and `/Game/Art/Cams` (`TTA_IMPORT=traps`). `DefaultGame.ini` ItemMeshes now point at those. The trap actor copies that mesh onto its body (lawnmower blade too) and hides the build marker for the run. Hammer came in at 28 x 50 x 98 cm.
 - **Failed / fixed by hand:** the saved Backyard map was not rebuilt. In the editor: `py C:/Users/kevbe/take-two-afterlife/Scripts/build_backyard_map.py` then save. The editor was closed so the import and compile could run.
+
+## NPC hats and faces
+- **Prompt:** wire random textured hats and faces onto the angels so the NPC angels don't all match. Drop the face if it sits high. Keep the latest fitted textured hats.
+- **Agent did:** those hats are already on disk from `f6b9391` (`Scripts/apply_hat_textures.py`, `models/hat-tex/`, `MI_Hat_*` on the gen 3 meshes). `DT_Cosmetics` still maps the six look slots onto them. Each bot now gets its own hat, face and colour before it spawns. The title choir does the same from that table. `ApplyLook` sets `FaceUVOffset` V to `TTAFaceDropV` (0.20) so the painted face sits lower, and the hat stays visible in angel form as well as human form.
+- **Failed / fixed by hand:** not compiled here. If a face is still high, nudge `TTAFaceDropV` in `TTACosmetics.h`. Only the crown has a hand-tuned fit; the other hats use the default in `Scripts/build_cosmetics_table.py`.
