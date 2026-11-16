@@ -1,4 +1,5 @@
 #include "TTABotController.h"
+#include "TTAPlacementMarker.h"
 
 #include "EngineUtils.h"
 #include "Engine/World.h"
@@ -32,6 +33,15 @@ void ATTABotController::BuildTraps(tta::Layout& Layout)
 	if (bBuiltThisRound) return;
 	Brain->build(Layout);
 	bBuiltThisRound = true;
+	// Placement is instant in Core; the walk to each spot is only for show during Build.
+	BuildStops.Reset();
+	for (const tta::Placement& P : Layout.all())
+	{
+		if (P.owner == Brain->playerId() && P.round == Layout.round())
+			BuildStops.Add(ATTAPlacementMarker::WorldTransform(FTTAPlacementRep::FromCore(P)).GetLocation());
+	}
+	BuildStop = 0;
+	BuildPause = 0.f;
 }
 
 void ATTABotController::StartRun(const TArray<FVector>& RouteCm)
@@ -41,6 +51,7 @@ void ATTABotController::StartRun(const TArray<FVector>& RouteCm)
 	std::vector<tta::RoutePoint> Points;
 	for (const FVector& P : RouteCm) Points.push_back({P.X / 100.0, P.Y / 100.0, P.Z / 100.0});
 	Route = std::make_unique<tta::BotRoute>(std::move(Points));
+	BuildStops.Reset();
 	Plan = Brain->planRun();
 	bBuiltThisRound = false;
 	bWasGroundAhead = true;
@@ -129,5 +140,25 @@ TArray<FVector> ATTABotController::FindRoute(UWorld* World)
 void ATTABotController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	DriveRunner(DeltaSeconds);
+	if (Route) DriveRunner(DeltaSeconds);
+	else WalkBuildStops(DeltaSeconds);
+}
+
+void ATTABotController::WalkBuildStops(float DeltaSeconds)
+{
+	ATTARunnerPawn* Runner = Cast<ATTARunnerPawn>(GetPawn());
+	if (!Runner || BuildStops.Num() == 0) return;
+	if (BuildPause > 0.f)
+	{
+		BuildPause -= DeltaSeconds;
+		return;
+	}
+	const FVector ToStop = BuildStops[BuildStop] - Runner->GetActorLocation();
+	if (ToStop.Size2D() <= BuildArriveCm)
+	{
+		BuildPause = BuildPauseSeconds; // stands there "placing" it
+		BuildStop = (BuildStop + 1) % BuildStops.Num();
+		return;
+	}
+	Runner->AddMovementInput(ToStop.GetSafeNormal2D());
 }

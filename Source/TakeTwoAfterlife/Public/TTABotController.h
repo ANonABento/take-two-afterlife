@@ -57,6 +57,10 @@ public:
 
 	virtual void Tick(float DeltaSeconds) override;
 
+	// Build phase only: how close counts as at a spot, and how long the bot stands there.
+	UPROPERTY(EditAnywhere, Category = "TTA") float BuildArriveCm = 80.f;
+	UPROPERTY(EditAnywhere, Category = "TTA") float BuildPauseSeconds = 0.6f;
+
 	// How far ahead of the runner the floor probe looks for a gap.
 	UPROPERTY(EditAnywhere, Category = "TTA") float ProbeAheadCm = 120.f;
 
@@ -65,6 +69,11 @@ private:
 	std::unique_ptr<tta::BotRoute> Route;
 	std::optional<tta::EditList> Cut;
 	tta::RunnerPlan Plan;
+	// Walks the runner to each of its own placements in turn so building reads on screen.
+	void WalkBuildStops(float DeltaSeconds);
+	TArray<FVector> BuildStops;
+	int32 BuildStop = 0;
+	float BuildPause = 0.f;
 	bool bBuiltThisRound = false;
 	bool bWasGroundAhead = true;
 	bool bSkipThisGap = false;

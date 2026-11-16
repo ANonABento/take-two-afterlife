@@ -19,7 +19,7 @@ Keyboard + mouse (from the project's input mappings; gamepad: TODO).
 - Jump: Space · Dive: Left Shift
 - Raise handheld camera (Run): Right mouse button
 - Build — place: Left mouse · remove: Right mouse · select: F · rotate 45°: R · next/previous item: mouse wheel
-- Build — trap setting 1 down/up: 1 / 2 · setting 2 down/up: 3 / 4
+- Build — quick-select item: 1–5 · trap setting 1 down/up: Z / X · setting 2 down/up: C / V
 - Editor, rating a cut (Funny / Evil 1–5), voice: TODO (confirm on-screen UI / push-to-talk in the packaged build)
 
 ## How to play

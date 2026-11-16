@@ -34,6 +34,11 @@ void ATTABuildPawn::SetupPlayerInputComponent(UInputComponent* Input)
 	Input->BindAction("BuildRotate", IE_Pressed, this, &ATTABuildPawn::Rotate);
 	Input->BindAction("BuildNextItem", IE_Pressed, this, &ATTABuildPawn::NextItem);
 	Input->BindAction("BuildPrevItem", IE_Pressed, this, &ATTABuildPawn::PrevItem);
+	Input->BindAction("BuildItem1", IE_Pressed, this, &ATTABuildPawn::SelectItem1);
+	Input->BindAction("BuildItem2", IE_Pressed, this, &ATTABuildPawn::SelectItem2);
+	Input->BindAction("BuildItem3", IE_Pressed, this, &ATTABuildPawn::SelectItem3);
+	Input->BindAction("BuildItem4", IE_Pressed, this, &ATTABuildPawn::SelectItem4);
+	Input->BindAction("BuildItem5", IE_Pressed, this, &ATTABuildPawn::SelectItem5);
 	Input->BindAction("BuildSetting1Down", IE_Pressed, this, &ATTABuildPawn::Setting1Down);
 	Input->BindAction("BuildSetting1Up", IE_Pressed, this, &ATTABuildPawn::Setting1Up);
 	Input->BindAction("BuildSetting2Down", IE_Pressed, this, &ATTABuildPawn::Setting2Down);
@@ -137,6 +142,11 @@ void ATTABuildPawn::NextItem()
 void ATTABuildPawn::PrevItem()
 {
 	SelectedItem = (SelectedItem + TTABuildItem::Count() - 1) % TTABuildItem::Count();
+}
+
+void ATTABuildPawn::SelectItem(int32 Item)
+{
+	if (Item < TTABuildItem::Count()) SelectedItem = Item;
 }
 
 void ATTABuildPawn::AdjustSetting(int32 Index, int32 Delta)

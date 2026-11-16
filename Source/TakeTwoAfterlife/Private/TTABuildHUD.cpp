@@ -2,6 +2,12 @@
 #include "TTAGameMode.h"
 
 #include "Engine/Canvas.h"
+#include "Components/SceneCaptureComponent2D.h"
+#include "Engine/SceneCapture2D.h"
+#include "Engine/StaticMeshActor.h"
+#include "Engine/TextureRenderTarget2D.h"
+#include "Kismet/KismetRenderingLibrary.h"
+#include "TTAPlacementMarker.h"
 #include "Engine/Font.h"
 #include "Engine/Texture2D.h"
 #include "EngineUtils.h"
@@ -27,7 +33,7 @@ constexpr float kDesignW = 1920.f, kBarH = 120.f, kLineH = 40.f, kPad = 20.f, kP
 // Build tiles: one equal square per TTABuildItem, in a row under the phase card.
 constexpr float kTileSize = 96.f, kTileGap = 12.f, kTileIconInset = 16.f;
 
-// Icon art for a camera build item; traps have none and show their number.
+// Icon art for a camera build item; traps use TrapThumbnail.
 ETTAAsset CameraIcon(tta::CameraType Type)
 {
 	switch (Type)
@@ -262,9 +268,9 @@ float ATTABuildHUD::DrawBuildTiles(float X, float Y, int32 Selected)
 	{
 		const float TileX = X + Item * (kTileSize + kTileGap);
 		DrawCard(TileX, Y, kTileSize, kTileSize, Item == Selected ? tta::kYellow : tta::kBone);
-		UTexture2D* Icon = TTABuildItem::IsCamera(Item)
-			? Cast<UTexture2D>(UTTAUIStyle::Brush(CameraIcon(TTABuildItem::Camera(Item))).GetResourceObject())
-			: nullptr;
+		UTexture* Icon = TTABuildItem::IsCamera(Item)
+			? Cast<UTexture>(UTTAUIStyle::Brush(CameraIcon(TTABuildItem::Camera(Item))).GetResourceObject())
+			: TrapThumbnail(Item);
 		if (Icon)
 		{
 			const float Side = kTileSize - 2 * kTileIconInset;
@@ -276,4 +282,37 @@ float ATTABuildHUD::DrawBuildTiles(float X, float Y, int32 Selected)
 			Y + (kTileSize - UTTAUIStyle::kH2) * 0.5f, UTTAUIStyle::kH2, true);
 	}
 	return Y + kTileSize;
+}
+
+UTexture* ATTABuildHUD::TrapThumbnail(int32 Item)
+{
+	if (const TObjectPtr<UTextureRenderTarget2D>* Cached = TrapThumbnails.Find(Item)) return *Cached;
+	UStaticMesh* Mesh = GetDefault<ATTAPlacementMarker>()->MeshForItem(Item);
+	UWorld* World = GetWorld();
+	if (!Mesh || !World) return nullptr;
+	// Far below the level so nothing else is in frame; ShowOnly keeps it to this one mesh.
+	const FVector At(0.f, 0.f, -100000.f);
+	FActorSpawnParameters Params;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	AStaticMeshActor* Prop = World->SpawnActor<AStaticMeshActor>(At, FRotator(0.f, 35.f, 0.f), Params);
+	Prop->SetMobility(EComponentMobility::Movable);
+	Prop->GetStaticMeshComponent()->SetStaticMesh(Mesh);
+	const FBoxSphereBounds B = Mesh->GetBounds();
+	const FVector Center = At + B.Origin;
+	const FVector Eye = Center + FVector(-1.f, -0.6f, 0.7f).GetSafeNormal() * B.SphereRadius * 2.4f;
+	ASceneCapture2D* Cam = World->SpawnActor<ASceneCapture2D>(Eye, (Center - Eye).Rotation(), Params);
+	UTextureRenderTarget2D* Target = UKismetRenderingLibrary::CreateRenderTarget2D(this, 256, 256, RTF_RGBA8);
+	Target->ClearColor = FLinearColor::Transparent;
+	USceneCaptureComponent2D* Capture = Cam->GetCaptureComponent2D();
+	Capture->PrimitiveRenderMode = ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
+	Capture->ShowOnlyActors.Add(Prop);
+	Capture->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
+	Capture->bCaptureEveryFrame = false;
+	Capture->FOVAngle = 40.f;
+	Capture->TextureTarget = Target;
+	Capture->CaptureScene();
+	Prop->Destroy();
+	Cam->Destroy();
+	TrapThumbnails.Add(Item, Target);
+	return Target;
 }
