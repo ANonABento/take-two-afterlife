@@ -24,6 +24,6 @@ struct TAKETWOAFTERLIFE_API FTTACosmeticRow : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) int32 PaletteIndex = 0;
 };
 
-// M_TTA_Angel FaceUVOffset.G. Positive moves the sample up the texture, which drops the
-// painted face on the gen 3 head (the face island sits high).
-static constexpr float TTAFaceDropV = 0.20f;
+// M_TTA_Angel FaceUVOffset.G. The material adds this to the mesh V, so a negative
+// value drops the painted face onto the gen 3 head.
+static constexpr float TTAFaceDropV = -0.20f;

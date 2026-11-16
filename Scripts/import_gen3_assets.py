@@ -27,7 +27,7 @@ HAT_SRC = REPO / "models" / "angel-v2" / "hats"
 GEN3_HATS = ["crown", "halo", "devil-horns", "propeller-beanie", "party-cone", "viking-helmet", "bunny-ears", "traffic-cone"]
 # Hat slot mapping lives in Scripts/build_cosmetics_table.py (HAT_MAP).
 SLOT_COLOURS = {"body": (0.886, 0.871, 0.831), "outfit": (0.397, 0.564, 0.768)}  # linear of #F2F0EC / #A9C6E3
-FACE_UV = (1.0, 1.0, 0.0, 0.20)  # scale u, scale v, offset u, offset v; +V drops the face on the head (TTAFaceDropV)
+FACE_UV = (1.0, 1.0, 0.0, -0.20)  # scale u, scale v, offset u, offset v; negative V drops the face (TTAFaceDropV)
 REIMPORT_ANGEL = False  # True to re-import SK_Angel.fbx; False keeps your existing clean import
 
 

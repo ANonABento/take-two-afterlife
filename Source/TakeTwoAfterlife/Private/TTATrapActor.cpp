@@ -20,6 +20,7 @@ namespace
 {
 constexpr float kTrapCmPerMeter = 100.f;
 constexpr double kBladeDegPerSecond = 1440.0; // visual only
+constexpr float kHammerHeadDropCm = 77.f; // hinge to mallet head centre in SM_Trap_Hammer (models/build_traps_cams.py)
 }
 
 ATTATrapActor::ATTATrapActor()
@@ -60,6 +61,8 @@ void ATTATrapActor::InitFromPlacement(const tta::Placement& InPlacement)
 	// Core decides the mower's hits; its hitbox overlap stays off so there is one hit path.
 	Hitbox->SetGenerateOverlapEvents(!bMower);
 	Blade->SetVisibility(bMower);
+	// The hammer swings from a raised hinge; its hitbox rides the mallet head, not the hinge.
+	Hitbox->SetRelativeLocation(Placement.trap == tta::TrapType::Hammer ? FVector(0.f, 0.f, -kHammerHeadDropCm) : FVector::ZeroVector);
 	const int32 Item = TTABuildItem::IndexOfTrap(Placement.trap);
 	if (Item != INDEX_NONE)
 	{
@@ -85,7 +88,7 @@ FTransform ATTATrapActor::MovingTransform(tta::TrapType Type, const tta::TrapPos
 	const float Reach = static_cast<float>(Pose.extensionMeters) * kTrapCmPerMeter;
 	switch (Type)
 	{
-	case tta::TrapType::Hammer: return FTransform(FRotator(0.f, 0.f, Angle));
+	case tta::TrapType::Hammer: return FTransform(FRotator(0.f, 0.f, Angle), FVector(0.f, 0.f, ATTAPlacementMarker::HammerHingeCm));
 	case tta::TrapType::Spinner:
 		return FTransform(FRotator(0.f, Angle, 0.f), FVector::ZeroVector, FVector(FMath::Max(Reach, 1.f) / kTrapCmPerMeter, 1.f, 1.f));
 	case tta::TrapType::PusherWall: return FTransform(FVector(Reach, 0.f, 0.f));

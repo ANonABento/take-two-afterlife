@@ -176,6 +176,9 @@ def import_textured_only():
             unreal.log(f"SM_Trap_Hammer size cm after rescale: {size.x:.1f} {size.y:.1f} {size.z:.1f}")
         for src, dest in wanted:
             ensure_collision(f"{dest}/{src.stem}")
+        # Fixed and pan FBX still carry a tripod until models/build_traps_cams.py is re-exported.
+        import strip_camera_tripod
+        strip_camera_tripod.strip_placed_cameras()
         for folder in ("/Game/Art/Traps", "/Game/Art/Cams"):
             EAL.save_directory(folder, only_if_is_dirty=False, recursive=True)
         unreal.log(f"imported {count} textured traps and cameras")

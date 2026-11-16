@@ -130,18 +130,13 @@ items.append(done('SM_Trap_Lawnmower'))
 cyl(0.20, 0.012, (0,0,0), c='metal', v=16)
 for k in range(2): box((0.40,0.05,0.016), (0,0,0), 'ink', rot=(0,0,k*math.pi/2))
 items.append(done('SM_Trap_LawnmowerBlade'))
-# --- Cameras (~40 cm), pivot base centre
-def tripod(hc):
-    for k in range(3):
-        t = k*2*math.pi/3 + math.pi/6
-        cyl(0.012, 0.27, (0.055*math.cos(t), 0.055*math.sin(t), 0.135), (0, -0.4, t), 'black', 6)
-    cyl(0.02, 0.06, (0,0,0.27), c='black', v=8)
+# --- Cameras, pivot at the body bottom. No tripod: they are placed in the air, so legs just dangle.
 def cambody(z, c):
     box((0.16,0.09,0.10), (0,0,z), c); cyl(0.035, 0.07, (0.11,0,z), X90, 'black', 10)
     cyl(0.025, 0.005, (0.146,0,z), X90, 'glass', 10)
-tripod('red'); cambody(0.35, 'red'); items.append(done('SM_Cam_Fixed'))
-tripod('blue'); cyl(0.045, 0.03, (0,0,0.315), c='metal', v=12); box((0.14,0.015,0.015), (-0.12,0,0.315), 'black')
-cambody(0.38, 'blue'); items.append(done('SM_Cam_Pan'))
+cambody(0.05, 'red'); items.append(done('SM_Cam_Fixed'))
+cyl(0.045, 0.03, (0,0,0.015), c='metal', v=12); box((0.14,0.015,0.015), (-0.12,0,0.015), 'black')
+cambody(0.08, 'blue'); items.append(done('SM_Cam_Pan'))
 # drone
 for y in (-0.07, 0.07): box((0.22,0.015,0.015), (0,y,0.0075), 'black'); box((0.015,0.015,0.06), (0.06,y,0.045), 'black'); box((0.015,0.015,0.06), (-0.06,y,0.045), 'black')
 box((0.18,0.14,0.07), (0,0,0.11), 'green')

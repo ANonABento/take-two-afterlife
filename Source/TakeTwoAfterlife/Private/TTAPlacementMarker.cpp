@@ -1,6 +1,7 @@
 #include "TTAPlacementMarker.h"
 
 #include "TTABotController.h"
+#include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
@@ -83,9 +84,11 @@ ATTAPlacementMarker::ATTAPlacementMarker()
 {
 	bReplicates = true;
 	SetReplicatingMovement(false); // the transform comes from Data
+	// The actor stays on the placement; the mesh is a child so it can be lifted (MeshLiftCm).
+	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
+	Mesh->SetupAttachment(RootComponent);
 	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	RootComponent = Mesh;
 }
 
 void ATTAPlacementMarker::SetData(const FTTAPlacementRep& InData)
@@ -105,6 +108,11 @@ FTransform ATTAPlacementMarker::WorldTransform(const FTTAPlacementRep& Rep)
 	const double Z = TTABuildItem::IsCamera(Rep.Item) ? GetDefault<ATTAPlacementMarker>()->CameraHeightCm : 0.0;
 	return FTransform(FRotator(0.f, 45.f * Rep.Rotation, 0.f),
 		FVector(tta::cellToMeters(Rep.CellX) * kCmPerMeter, tta::cellToMeters(Rep.CellY) * kCmPerMeter, Z));
+}
+
+float ATTAPlacementMarker::MeshLiftCm(int32 Item)
+{
+	return !TTABuildItem::IsCamera(Item) && TTABuildItem::Trap(Item) == tta::TrapType::Hammer ? HammerHingeCm : 0.f;
 }
 
 int32 ATTAPlacementMarker::PlayerIdOf(const AActor* ControllerOrPawn)
@@ -129,6 +137,7 @@ void ATTAPlacementMarker::Refresh()
 {
 	SetActorTransform(WorldTransform(Data));
 	Mesh->SetStaticMesh(MeshForItem(Data.Item));
+	Mesh->SetRelativeLocation(FVector(0.f, 0.f, MeshLiftCm(Data.Item)));
 	bool bShow = Data.bRevealed;
 	if (!bShow)
 	{

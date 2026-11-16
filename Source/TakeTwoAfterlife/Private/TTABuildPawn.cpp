@@ -39,6 +39,8 @@ void ATTABuildPawn::SetupPlayerInputComponent(UInputComponent* Input)
 	Input->BindAction("BuildItem3", IE_Pressed, this, &ATTABuildPawn::SelectItem3);
 	Input->BindAction("BuildItem4", IE_Pressed, this, &ATTABuildPawn::SelectItem4);
 	Input->BindAction("BuildItem5", IE_Pressed, this, &ATTABuildPawn::SelectItem5);
+	Input->BindAction("BuildItem6", IE_Pressed, this, &ATTABuildPawn::SelectItem6);
+	Input->BindAction("BuildItem7", IE_Pressed, this, &ATTABuildPawn::SelectItem7);
 	Input->BindAction("BuildSetting1Down", IE_Pressed, this, &ATTABuildPawn::Setting1Down);
 	Input->BindAction("BuildSetting1Up", IE_Pressed, this, &ATTABuildPawn::Setting1Up);
 	Input->BindAction("BuildSetting2Down", IE_Pressed, this, &ATTABuildPawn::Setting2Down);
@@ -108,7 +110,9 @@ void ATTABuildPawn::Tick(float DeltaSeconds)
 		P.rotation = RotationStep;
 		return P;
 	}();
-	Ghost->SetWorldTransform(ATTAPlacementMarker::WorldTransform(FTTAPlacementRep::FromCore(Preview)));
+	FTransform GhostAt = ATTAPlacementMarker::WorldTransform(FTTAPlacementRep::FromCore(Preview));
+	GhostAt.AddToTranslation(FVector(0.f, 0.f, ATTAPlacementMarker::MeshLiftCm(SelectedItem)));
+	Ghost->SetWorldTransform(GhostAt);
 	Ghost->SetStaticMesh(GetDefault<ATTAPlacementMarker>()->MeshForItem(SelectedItem));
 	GhostOutcome = ToUE(OwnLayout().canPlace(ATTAPlacementMarker::PlayerIdOf(this), Preview.isCamera, Preview.trap,
 		GhostCm.X / 100.0, GhostCm.Y / 100.0, Preview.camera));

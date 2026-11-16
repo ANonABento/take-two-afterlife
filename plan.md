@@ -645,6 +645,16 @@ Scored 1-5 by judges on: ambition/innovation, theme, fun, gameplay, visuals, lev
 - Left: editor playtest. Fall, watch the live TV, see the reel, walk the gate, confirm round 2 has a denser bot course. Finish the course gate once and confirm you sit down before the bots are done. Press R and confirm the budget card is back to $100.
 - Surprises: the continue gate reuses `ATTAFinishGate`. The next round is queued off the overlap so the pawn is not destroyed inside the trigger.
 
+### Handoff: face offset sign
+- Done: `TTAFaceDropV` is `-0.20`. The angel material adds FaceUVOffset to the mesh V, so the old positive value was raising the painted face. The import script default matches.
+- Left: editor compile, then look at a title angel and a runner. The face should sit lower on the head.
+- Surprises: the saved material instance still has the old `+0.20` until a rebuild, but dress code overwrites it on the dynamic instance.
+
+### Handoff: settings pictures for hat and face
+- Done: Settings is a full-safe-area page. Hat and face are picture grids (no names, no colour picker). The selected picture uses the gold button frame. Tile size, gaps and BACK come from the widget size in `NativeTick`. Hat icons are `Art/UI/Looks/T_UI_Hat_*.png`. Faces are the existing `T_Face_*` textures. Tests: `test_settings_sliders`.
+- Left: editor compile, then open Settings and click a hat and a face. The gold frame should move, and the grid should stay on screen if the window size changes.
+- Surprises: hat albedo textures are UV sheets, so the picker uses drawn icons rather than those textures. The colour value is still stored for the HUD and statues.
+
 ### Handoff: hat and face only, loading screen on Play
 - Done: settings and the lobby customize panel cycle hat and face. Colour stays on `PlayerLook` for the body tint, HUD and podium statues, with no picker. Play draws a LOADING veil for one frame, then `UTTASessionSubsystem` calls `SetupLoadingScreen` (MoviePlayer, ink background, bone "LOADING") from `PreLoadMap` and again at the start of `HostSolo` before the Backyard travel. Tests: `test_settings_sliders`, `test_title_map`.
 - Left: editor compile, then Play from the title. The LOADING veil should show before the yard hitch. MoviePlayer is what packaged builds keep up while the map blocks; the editor may only hold the last painted frame.
@@ -659,3 +669,18 @@ Scored 1-5 by judges on: ambition/innovation, theme, fun, gameplay, visuals, lev
 - Done: `Scripts/create_title_map.py` reruns load `/Game/Maps/Title` and destroy its actors instead of `delete_asset` + `new_level` on the same path, which crashed the editor every time the map existed. Test: `Scripts/tests/test_title_map.py`.
 - Left: run the script in the editor with Title open, confirm no crash and that the lights, backdrop, ground and `TitleCamera` come back. Then rerun `apply_title_backdrop.py` if the backdrop look depends on it.
 - Surprises: the old script comment blamed the `Class.cpp:2640` assert on creating a material. The crash logs put it in `DeleteAsset`; material creation was not the cause.
+
+### Handoff: coloured build thumbnails
+- Done: tile captures add a key and a fill directional light to the show-only list, with shadows off. Eye adaptation and the outline post-process are off, exposure is manual, and the prop sits at z = -30 m so the depth buffer keeps the surface instead of inking it flat. Test: `Scripts/tests/test_hud_layout.py`.
+- Left: compile (the editor had Live Coding on) and look at the build tiles. Hammer, banana, lawnmower and the camera should show their own colours.
+- Surprises: a show-only capture does not inherit the level lights, so a lit mesh renders as flat gray. The old -1000 m drop also made the outline pass treat the whole mesh as one edge.
+
+### Handoff: camera body, build keys, tile thumbnails
+- Done: keys 1–7 select the seven build tiles (hammer, spinner, pusher, trapdoor, banana, lawnmower, camera), on the number row and the numpad. Tiles draw an orthographic thumbnail of that item's mesh, framed to the square, with the key in the corner. `Scripts/strip_camera_tripod.py` (also run at the end of a traps import) writes `/Game/Art/Cams/SM_Cam_FixedBody` with the tripod removed and the body on the pivot. The build list uses that mesh. `models/build_traps_cams.py` no longer builds legs.
+- Left: editor compile, then Play a build phase. Press 6 and 7 and confirm the lawnmower and the camera. Place a camera and confirm it is just the body, sitting at camera height. Check every tile picture fills its box.
+- Surprises: key 5 was already banana, the fifth tile. The lawnmower and camera had no binding, so 6 and 7 did nothing.
+
+### Handoff: rotate key and hammer height in Build
+- Done: `ATTAPlayerController`'s R binding (demo restart) no longer consumes the key, so the build pawn's `BuildRotate` fires again. The hammer hinge sits 130 cm up (`ATTAPlacementMarker::HammerHingeCm`, `MeshLiftCm`) on the ghost, the marker mesh and the trap's `Moving` transform; the trap hitbox is 77 cm below the hinge, on the mallet head. Marker actors keep their floor location (mesh is now a child of a scene root). `EngineAssociation` reverted to `"5.5"`.
+- Left: close the editor, run the editor build, reopen. In Build: R turns the ghost, 6 and 7 pick lawnmower and camera, the camera has no legs, the hammer hangs above the floor and its swing knocks a runner down. Run `Automation RunTests TTA.` (the traps and build-place tests cover the changed transforms).
+- Surprises: keys 6/7 and the camera legs were not bugs in the source. The running editor was started before those edits and before `SM_Cam_FixedBody` existed. Controller key bindings are read before the pawn's, which is how the restart key broke rotation. 130 cm is a guess at a good swing height and has not been seen in game.

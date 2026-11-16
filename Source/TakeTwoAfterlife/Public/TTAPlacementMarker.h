@@ -67,6 +67,10 @@ public:
 	// World transform of a placement: grid cell in cm from the corridor origin, 45 degree yaw,
 	// cameras lifted to CameraHeightCm.
 	static FTransform WorldTransform(const FTTAPlacementRep& Rep);
+	// How far the mesh sits above the placement. The hammer mesh hangs from its pivot (the hinge),
+	// so the hinge is lifted and the mallet swings just above the floor. Zero for everything else.
+	static float MeshLiftCm(int32 Item);
+	static constexpr float HammerHingeCm = 130.f;
 	// PlayerState id of a controller or pawn; INDEX_NONE without a PlayerState.
 	static int32 PlayerIdOf(const AActor* ControllerOrPawn);
 	// Configured mesh for a build item; logs an error and returns null when missing.

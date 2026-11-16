@@ -16,6 +16,8 @@
 #include "Components/SizeBox.h"
 #include "Components/Slider.h"
 #include "Components/TextBlock.h"
+#include "Components/UniformGridPanel.h"
+#include "Components/UniformGridSlot.h"
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
 #include "Components/WidgetSwitcher.h"
@@ -26,6 +28,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Misc/Paths.h"
 #include "TimerManager.h"
+#include "TTALookIcons.h"
 #include "TTAReels.h"
 #include "TTAUIStyle.h"
 #include "tta/JoinCode.h"
@@ -39,35 +42,9 @@ constexpr int32 kCode = 160;
 // Layout: screens are a centred 520 px column (two of them for Lobby / How to play).
 constexpr float kScreenW = 520.f, kWideW = 2 * kScreenW + 40.f;
 constexpr float kButtonW = 480.f, kButtonH = 72.f, kGap = 12.f, kCorner = 18.f;
-constexpr float kRowLabelW = 180.f, kRowControlW = 280.f;  // fits inside a Card (520 - 2 * 30)
-// Settings scroll height: leaves room for the heading and BACK on a 720p window inside the safe area.
-constexpr float kSettingsScrollH = 440.f;
-constexpr float kCycleH = 56.f;
 // The title painting is the 3D backdrop. This wash sits on top of it and the angels, so it stays faint.
 constexpr float kTitleTilt = -4.f, kSkyOpacity = 0.12f;
 constexpr float kHoverDarken = 0.25f, kPressedDarken = 0.45f;  // lerp toward Ink
-
-
-// "BunnyEars" -> "Bunny Ears", so the buttons show the textured hat and face names.
-FString SpacedName(const char* Raw)
-{
-	const FString Name = UTF8_TO_TCHAR(Raw);
-	FString Out;
-	for (int32 i = 0; i < Name.Len(); ++i)
-	{
-		if (i > 0 && FChar::IsUpper(Name[i]) && !FChar::IsUpper(Name[i - 1])) Out.AppendChar(TEXT(' '));
-		Out.AppendChar(Name[i]);
-	}
-	return Out;
-}
-
-void SetButtonText(UButton* Button, const FString& Text)
-{
-	if (UTextBlock* Block = Button ? Cast<UTextBlock>(Button->GetChildAt(0)) : nullptr)
-	{
-		Block->SetText(FText::FromString(Text));
-	}
-}
 
 // Puts a gap after the child along its box's direction.
 void GapAfter(UPanelSlot* Slot)
@@ -163,14 +140,17 @@ UVerticalBox* UTTAMenuWidget::ScreenPanel(float Width, EHorizontalAlignment HAli
 void UTTAMenuWidget::SettingRow(UPanelWidget* Parent, const FString& Name, UWidget* Control)
 {
 	UHorizontalBox* Row = WidgetTree->ConstructWidget<UHorizontalBox>();
-	USizeBox* LabelSize = WidgetTree->ConstructWidget<USizeBox>();
-	LabelSize->SetWidthOverride(kRowLabelW);
-	Row->AddChild(LabelSize);
-	Label(LabelSize, Name, UTTAUIStyle::kSmall);
-	USizeBox* ControlSize = WidgetTree->ConstructWidget<USizeBox>();
-	ControlSize->SetWidthOverride(kRowControlW);
-	ControlSize->SetContent(Control);
-	Row->AddChild(ControlSize);
+	UTextBlock* NameText = Label(Row, Name, UTTAUIStyle::kSmall);
+	UHorizontalBoxSlot* NameSlot = Cast<UHorizontalBoxSlot>(NameText->Slot);
+	FSlateChildSize NameSize(ESlateSizeRule::Fill);
+	NameSize.Value = 0.34f;
+	NameSlot->SetSize(NameSize);
+	NameSlot->SetVerticalAlignment(VAlign_Center);
+	UHorizontalBoxSlot* ControlSlot = Row->AddChildToHorizontalBox(Control);
+	FSlateChildSize ControlSize(ESlateSizeRule::Fill);
+	ControlSize.Value = 0.66f;
+	ControlSlot->SetSize(ControlSize);
+	ControlSlot->SetVerticalAlignment(VAlign_Center);
 	GapAfter(Parent->AddChild(Row));
 }
 
@@ -183,10 +163,12 @@ USlider* UTTAMenuWidget::SettingSlider(UPanelWidget* Parent, const FString& Name
 	UHorizontalBoxSlot* BarSlot = Control->AddChildToHorizontalBox(Slider);
 	BarSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
 	BarSlot->SetVerticalAlignment(VAlign_Center);
-	USizeBox* ValueSize = WidgetTree->ConstructWidget<USizeBox>();
-	ValueSize->SetWidthOverride(kSettingValueW);
-	Control->AddChild(ValueSize);
-	SettingValues.Add(Label(ValueSize, TEXT(""), UTTAUIStyle::kSmall));
+	SettingValues.Add(Label(Control, TEXT(""), UTTAUIStyle::kSmall));
+	UHorizontalBoxSlot* NumberSlot = Cast<UHorizontalBoxSlot>(SettingValues.Last()->Slot);
+	FSlateChildSize NumberSize(ESlateSizeRule::Fill);
+	NumberSize.Value = 0.22f;
+	NumberSlot->SetSize(NumberSize);
+	NumberSlot->SetVerticalAlignment(VAlign_Center);
 	SettingSliders.Add(Slider);
 	SettingRow(Parent, Name, Control);
 	return Slider;
@@ -302,11 +284,9 @@ void UTTAMenuWidget::NativeOnInitialized()
 		}
 		GapAfter(Box->AddChild(CardRow));
 		WaitingText = Label(Box, TEXT(""), UTTAUIStyle::kBody);
-		// Customize opens the hat / face pickers under the cards.
+		// Customize opens the hat and face steppers under the cards.
 		CustomizePanel = WidgetTree->ConstructWidget<UVerticalBox>();
 		CustomizePanel->SetVisibility(ESlateVisibility::Collapsed);
-		LookSwatch = Card(CustomizePanel, tta::kRed);
-		LookText = Label(LookSwatch, TEXT(""), UTTAUIStyle::kBody, true);
 		MenuButton(CustomizePanel, TEXT("HAT >"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnHatNext);
 		MenuButton(CustomizePanel, TEXT("FACE >"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnFaceNext);
 		GapAfter(Box->AddChild(CustomizePanel));
@@ -321,34 +301,31 @@ void UTTAMenuWidget::NativeOnInitialized()
 		Box->AddChild(Bottom);
 	}
 	// Settings
-	// Look on one row, video next, audio below. The list scrolls; BACK stays on screen.
+	// Fills the safe area. Pictures on the right, sliders on the left, BACK pinned under both.
 	{
-		UVerticalBox* Box = ScreenPanel(kScreenW, HAlign_Center, VAlign_Top);
+		UVerticalBox* Box = ScreenPanel(kScreenW, HAlign_Fill, VAlign_Fill);
+		if (USizeBox* Frame = Cast<USizeBox>(Box->GetParent())) Frame->ClearWidthOverride();
 		Label(Box, TEXT("SETTINGS"), UTTAUIStyle::kH2, true);
+		UHorizontalBox* Body = WidgetTree->ConstructWidget<UHorizontalBox>();
+		UVerticalBoxSlot* BodySlot = Box->AddChildToVerticalBox(Body);
+		BodySlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
 		UScrollBox* Scroll = WidgetTree->ConstructWidget<UScrollBox>();
-		USizeBox* ScrollSize = WidgetTree->ConstructWidget<USizeBox>();
-		ScrollSize->SetHeightOverride(kSettingsScrollH);
-		ScrollSize->SetContent(Scroll);
-		Box->AddChild(ScrollSize);
+		UHorizontalBoxSlot* Left = Body->AddChildToHorizontalBox(Scroll);
+		Left->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+		Left->SetVerticalAlignment(VAlign_Fill);
+		Left->SetPadding(UTTAUIStyle::PadAfter(Orient_Horizontal, kGap));
 		UVerticalBox* Inner = WidgetTree->ConstructWidget<UVerticalBox>();
 		Scroll->AddChild(Inner);
-		UHorizontalBox* LookRow = WidgetTree->ConstructWidget<UHorizontalBox>();
-		const float CycleW = (kScreenW - kGap) / 2.f;
-		auto AddCycle = [&](const FString& Text) -> UButton*
-		{
-			UButton* Button = UTTAUIStyle::MakeButton(WidgetTree, FText::FromString(Text), ETTAButtonKind::Secondary);
-			USizeBox* Size = WidgetTree->ConstructWidget<USizeBox>();
-			Size->SetWidthOverride(CycleW);
-			Size->SetHeightOverride(kCycleH);
-			Size->SetContent(Button);
-			GapAfter(LookRow->AddChild(Size));
-			return Button;
-		};
-		HatCycle = AddCycle(TEXT("Hat"));
-		FaceCycle = AddCycle(TEXT("Face"));
-		HatCycle->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnHatNext);
-		FaceCycle->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnFaceNext);
-		GapAfter(Inner->AddChild(LookRow));
+		UVerticalBox* Looks = WidgetTree->ConstructWidget<UVerticalBox>();
+		UHorizontalBoxSlot* Right = Body->AddChildToHorizontalBox(Looks);
+		Right->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+		Right->SetVerticalAlignment(VAlign_Fill);
+		UUniformGridPanel* Hats = WidgetTree->ConstructWidget<UUniformGridPanel>();
+		UUniformGridPanel* Faces = WidgetTree->ConstructWidget<UUniformGridPanel>();
+		GapAfter(Looks->AddChild(Hats));
+		Looks->AddChild(Faces);
+		BuildLookGrid(Hats, true);
+		BuildLookGrid(Faces, false);
 		WindowModeBox = SettingCombo(Inner, TEXT("Display"));
 		for (const char* Name : tta::kWindowModeNames) WindowModeBox->AddOption(UTF8_TO_TCHAR(Name));
 		WindowModeBox->OnSelectionChanged.AddDynamic(this, &UTTAMenuWidget::OnWindowModeChanged);
@@ -363,7 +340,13 @@ void UTTAMenuWidget::NativeOnInitialized()
 		MicMeter = WidgetTree->ConstructWidget<UProgressBar>();
 		MicMeter->SetFillColorAndOpacity(Palette(tta::kGrass));
 		SettingRow(Inner, TEXT("Mic test"), MicMeter);
-		MenuButton(Box, TEXT("BACK"), tta::kInk)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnBackClicked);
+		UButton* Back = UTTAUIStyle::MakeButton(WidgetTree, FText::FromString(TEXT("BACK")), ETTAButtonKind::Secondary);
+		Back->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnBackClicked);
+		SettingsBackSize = WidgetTree->ConstructWidget<USizeBox>();
+		SettingsBackSize->SetWidthOverride(kButtonW);
+		SettingsBackSize->SetHeightOverride(kButtonH);
+		SettingsBackSize->SetContent(Back);
+		Box->AddChildToVerticalBox(SettingsBackSize)->SetHorizontalAlignment(HAlign_Left);
 	}
 	// How to play: one centred panel holding the step cards and Back.
 	{
@@ -474,9 +457,9 @@ void UTTAMenuWidget::PlaySolo()
 		Word->SetFont(UTTAUIStyle::Font(ETTAFont::H1));
 		Word->SetColorAndOpacity(FSlateColor(UTTAUIStyle::Color(ETTAColor::Bone)));
 		Veil->SetContent(Word);
-		UOverlaySlot* Slot = Root->AddChildToOverlay(Veil);
-		Slot->SetHorizontalAlignment(HAlign_Fill);
-		Slot->SetVerticalAlignment(VAlign_Fill);
+		UOverlaySlot* VeilSlot = Root->AddChildToOverlay(Veil);
+		VeilSlot->SetHorizontalAlignment(HAlign_Fill);
+		VeilSlot->SetVerticalAlignment(VAlign_Fill);
 	}
 	if (UWorld* World = GetWorld())
 	{
@@ -576,22 +559,109 @@ void UTTAMenuWidget::CycleLook(tta::LookPart Part, int32 Step)
 	if (ATTAPlayerState* State = GetOwningPlayerState<ATTAPlayerState>()) State->ServerSetLook(Look.colour, Look.hat, Look.face);
 }
 
+void UTTAMenuWidget::PickLook(bool bHat, int32 Index)
+{
+	const int32 Count = bHat ? static_cast<int32>(tta::kHats.size()) : static_cast<int32>(tta::kFaces.size());
+	if (Index < 0 || Index >= Count) return;
+	if (bHat) Look.hat = Index;
+	else Look.face = Index;
+	RefreshLook();
+	if (ATTAPlayerState* State = GetOwningPlayerState<ATTAPlayerState>()) State->ServerSetLook(Look.colour, Look.hat, Look.face);
+}
+
+void UTTALookButton::HandleClick()
+{
+	if (Menu) Menu->PickLook(bHat, Index);
+}
+
 FLinearColor UTTAMenuWidget::GetLookColour() const
 {
 	return Palette(tta::kPlayerColours[Look.colour]);
 }
 
+void UTTAMenuWidget::BuildLookGrid(UUniformGridPanel* Grid, bool bHat)
+{
+	const int32 Count = bHat ? static_cast<int32>(tta::kHats.size()) : static_cast<int32>(tta::kFaces.size());
+	constexpr int32 Columns = 4;
+	for (int32 i = 0; i < Count; ++i)
+	{
+		UTexture2D* Tex = bHat ? TTALoadHatIcon(tta::kHats[i]) : TTALoadFaceTexture(tta::kFaces[i]);
+		if (Tex) LookTextures.Add(Tex);
+		UTTALookButton* Button = WidgetTree->ConstructWidget<UTTALookButton>();
+		Button->Index = i;
+		Button->bHat = bHat;
+		Button->Menu = this;
+		Button->OnClicked.AddDynamic(Button, &UTTALookButton::HandleClick);
+		UImage* Image = WidgetTree->ConstructWidget<UImage>();
+		if (Tex) Image->SetBrushFromTexture(Tex, false);
+		Button->AddChild(Image);
+		USizeBox* Tile = WidgetTree->ConstructWidget<USizeBox>();
+		Tile->SetWidthOverride(96.f);
+		Tile->SetHeightOverride(96.f);
+		Tile->SetContent(Button);
+		Grid->AddChildToUniformGrid(Tile, i / Columns, i % Columns);
+		LookTiles.Add(Tile);
+		(bHat ? HatPicks : FacePicks).Add(Button);
+	}
+}
+
+void UTTAMenuWidget::ApplyPickStyle(UButton* Button, bool bSelected)
+{
+	if (!Button) return;
+	const FMargin Pad(LookPad);
+	FButtonStyle Style;
+	Style.SetNormal(UTTAUIStyle::Brush(bSelected ? ETTAAsset::ButtonPrimary : ETTAAsset::Button));
+	Style.SetHovered(UTTAUIStyle::Brush(bSelected ? ETTAAsset::ButtonPrimary : ETTAAsset::ButtonHover));
+	Style.SetPressed(UTTAUIStyle::Brush(ETTAAsset::ButtonPressed));
+	Style.SetNormalPadding(Pad);
+	Style.SetPressedPadding(Pad);
+	Button->SetStyle(Style);
+}
+
+void UTTAMenuWidget::ApplyRelativeLayout(FVector2D Size)
+{
+	if (Size.X < 8.f || Size.Y < 8.f || LookTiles.Num() == 0) return;
+	const FMargin Safe = UTTAUIStyle::Get().SafeArea;
+	const float InnerW = FMath::Max(320.f, Size.X - Safe.Left - Safe.Right);
+	const float InnerH = FMath::Max(240.f, Size.Y - Safe.Top - Safe.Bottom);
+	const float Gap = InnerW * 0.012f;
+	const float TileW = (InnerW * 0.5f - 3.f * Gap) / 4.f;
+	const float TileH = (InnerH * 0.62f - 3.f * Gap) / 4.f;
+	const float Tile = FMath::Max(36.f, FMath::Min(TileW, TileH));
+	LookPad = Tile * 0.08f;
+	for (USizeBox* TileBox : LookTiles)
+	{
+		TileBox->SetWidthOverride(Tile);
+		TileBox->SetHeightOverride(Tile);
+		// Uniform grid slots have no padding of their own; the panel pads every slot.
+		if (UUniformGridPanel* Grid = Cast<UUniformGridPanel>(TileBox->GetParent()))
+		{
+			Grid->SetSlotPadding(FMargin(Gap * 0.5f));
+		}
+	}
+	if (SettingsBackSize)
+	{
+		SettingsBackSize->SetWidthOverride(InnerW * 0.28f);
+		SettingsBackSize->SetHeightOverride(FMath::Clamp(InnerH * 0.08f, 44.f, 84.f));
+	}
+	RefreshLook();
+}
+
+void UTTAMenuWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+	Super::NativeTick(MyGeometry, InDeltaTime);
+	const FVector2D Size = MyGeometry.GetLocalSize();
+	if (!Size.Equals(CachedMenuSize, 1.f))
+	{
+		CachedMenuSize = Size;
+		ApplyRelativeLayout(Size);
+	}
+}
+
 void UTTAMenuWidget::RefreshLook()
 {
-	const FString Hat = SpacedName(tta::kHats[Look.hat]);
-	const FString Face = SpacedName(tta::kFaces[Look.face]);
-	const FText Line = FText::FromString(FString::Printf(TEXT("%s   %s"), *Hat, *Face));
-	LookSwatch->SetBrushColor(GetLookColour());
-	LookText->SetText(Line);
-	if (SettingsLookSwatch) SettingsLookSwatch->SetBrushColor(GetLookColour());
-	if (SettingsLookText) SettingsLookText->SetText(Line);
-	SetButtonText(HatCycle, Hat);
-	SetButtonText(FaceCycle, Face);
+	for (int32 i = 0; i < HatPicks.Num(); ++i) ApplyPickStyle(HatPicks[i], i == Look.hat);
+	for (int32 i = 0; i < FacePicks.Num(); ++i) ApplyPickStyle(FacePicks[i], i == Look.face);
 }
 
 void UTTAMenuWidget::SetSettings(const tta::ClientSettings& InSettings)

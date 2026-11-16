@@ -43,6 +43,8 @@ TEST_CASE("bad settings are rejected") {
     CHECK_THROWS_AS(parseMatchSettings("{\"rounds\": 3"), std::invalid_argument);
     CHECK_THROWS_AS(parseMatchSettings("{\"rounds\": 3,}"), std::invalid_argument);
     CHECK_THROWS_AS(parseMatchSettings("{\"rounds\": 0}"), std::invalid_argument);
+    CHECK_THROWS_AS(parseMatchSettings("{\"rounds\": 1000}"), std::invalid_argument);
+    CHECK(parseMatchSettings("{\"rounds\": 999}").rounds == 999);
     CHECK_THROWS_AS(parseMatchSettings("{\"rounds\": -2}"), std::invalid_argument);
     CHECK_THROWS_AS(parseMatchSettings("{\"rounds\": 2.5}"), std::invalid_argument);
     CHECK_THROWS_AS(parseMatchSettings("{\"rounds\": \"3\"}"), std::invalid_argument);

@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/Button.h"
 #include "Components/EditableTextBox.h"
 #include "tta/MenuFlow.h"
 #include "TTAUIStyle.h"
@@ -9,12 +10,13 @@
 
 class UImage;
 class UBorder;
-class UButton;
 class UComboBoxString;
 class UPanelWidget;
 class UProgressBar;
+class USizeBox;
 class USlider;
 class UTextBlock;
+class UTexture2D;
 class UVerticalBox;
 class UWidget;
 class UWidgetSwitcher;
@@ -22,13 +24,26 @@ class UWidgetSwitcher;
 DECLARE_DELEGATE(FTTAMenuAction);
 DECLARE_DELEGATE_OneParam(FTTAMenuCode, const FString&);
 
-// Front-end menus (plan task 24): Title (Play Solo / Host / Join / Settings / Quit;
-// logo, background and button art come from UTTAUIStyle slots), Join (code or IP), Lobby (colour / hat / face, room
-// code, START gate), Settings (audio, sensitivity, window mode, resolution, mic test,
-// accessibility), How to play,
-// Reels. Screen rules live in Core tta::MenuFlow; this widget builds the tree in C++ and
-// skins it per choomfie ref ui-party-games (sticker cards, Ink outlines, palette colours).
-// The owner binds the delegates to UTTASessionSubsystem / the cut player.
+class UTTAMenuWidget;
+
+// One picture in the settings hat or face grid. The click carries the index.
+UCLASS()
+class TAKETWOAFTERLIFE_API UTTALookButton : public UButton
+{
+	GENERATED_BODY()
+
+public:
+	int32 Index = 0;
+	bool bHat = true;
+
+	UFUNCTION() void HandleClick();
+
+	UPROPERTY() TObjectPtr<UTTAMenuWidget> Menu;
+};
+
+// Front-end menus. Title (Play / Host / Join / Settings / Quit), Join, Lobby, Settings
+// (hat and face pictures, audio, video, mic), How to play, Reels.
+// Screen rules live in Core tta::MenuFlow. This widget builds the tree in C++.
 // One lobby card: avatar tint, name, ready tick.
 struct FTTALobbyPlayer
 {
@@ -75,6 +90,7 @@ public:
 	bool CanStart() const { return bHost && StartBlockedReason.IsEmpty(); }
 	const FString& GetStartBlockedReason() const { return StartBlockedReason; }
 	void CycleLook(tta::LookPart Part, int32 Step);
+	void PickLook(bool bHat, int32 Index);
 	const tta::PlayerLook& GetLook() const { return Look; }
 	FLinearColor GetLookColour() const;
 
@@ -97,6 +113,7 @@ public:
 
 protected:
 	virtual void NativeOnInitialized() override;
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 private:
 	tta::MenuFlow Flow;
@@ -121,13 +138,13 @@ private:
 	UPROPERTY() TArray<TObjectPtr<UTextBlock>> CardNames;
 	UPROPERTY() TArray<TObjectPtr<UImage>> CardReady;
 	UPROPERTY() TObjectPtr<UVerticalBox> CustomizePanel;
-	UPROPERTY() TObjectPtr<UTextBlock> LookText;
-	UPROPERTY() TObjectPtr<UBorder> LookSwatch;
-	UPROPERTY() TObjectPtr<UTextBlock> SettingsLookText;
-	UPROPERTY() TObjectPtr<UBorder> SettingsLookSwatch;
-	// Settings look row. Labels are rewritten in RefreshLook (Crown / Happy).
-	UPROPERTY() TObjectPtr<UButton> HatCycle;
-	UPROPERTY() TObjectPtr<UButton> FaceCycle;
+	UPROPERTY() TArray<TObjectPtr<UTTALookButton>> HatPicks;
+	UPROPERTY() TArray<TObjectPtr<UTTALookButton>> FacePicks;
+	UPROPERTY() TArray<TObjectPtr<USizeBox>> LookTiles;
+	UPROPERTY() TArray<TObjectPtr<UTexture2D>> LookTextures;
+	UPROPERTY() TObjectPtr<USizeBox> SettingsBackSize;
+	FVector2D CachedMenuSize = FVector2D::ZeroVector;
+	float LookPad = 8.f;
 	UPROPERTY() TObjectPtr<UButton> StartButton;
 	UPROPERTY() TObjectPtr<UProgressBar> MicMeter;
 	// One per ClientSettings field, in RefreshSettings order (master, music, vo, sfx, sensitivity).
@@ -149,8 +166,10 @@ private:
 	UVerticalBox* ScreenPanel(float Width, EHorizontalAlignment HAlign = HAlign_Center, EVerticalAlignment VAlign = VAlign_Center);
 	static constexpr float kVolumeSliderMax = 100.f;      // slider 0..1 -> volume 0..100
 	static constexpr float kSensitivitySliderMax = 500.f; // slider 0..1 -> sensitivity 0..500 %
-	static constexpr float kSettingValueW = 96.f;         // number column right of each slider
 	void SettingRow(UPanelWidget* Parent, const FString& Name, UWidget* Control);
+	void BuildLookGrid(class UUniformGridPanel* Grid, bool bHat);
+	void ApplyPickStyle(UButton* Button, bool bSelected);
+	void ApplyRelativeLayout(FVector2D Size);
 	USlider* SettingSlider(UPanelWidget* Parent, const FString& Name, float Value01);
 	UComboBoxString* SettingCombo(UPanelWidget* Parent, const FString& Name);
 	void RefreshVideo();

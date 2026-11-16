@@ -147,7 +147,8 @@ void ATTAPlayerController::SetupInputComponent()
 	Super::SetupInputComponent();
 	InputComponent->BindKey(EKeys::Enter, IE_Pressed, this, &ATTAPlayerController::PressStart);
 	InputComponent->BindKey(EKeys::Gamepad_Special_Right, IE_Pressed, this, &ATTAPlayerController::PressStart);
-	InputComponent->BindKey(EKeys::R, IE_Pressed, this, &ATTAPlayerController::PressRestart);
+	// The controller reads keys before its pawn. Do not swallow R: the build pawn rotates with it.
+	InputComponent->BindKey(EKeys::R, IE_Pressed, this, &ATTAPlayerController::PressRestart).bConsumeInput = false;
 	InputComponent->BindKey(EKeys::Gamepad_FaceButton_Top, IE_Pressed, this, &ATTAPlayerController::PressRestart);
 }
 
@@ -354,7 +355,7 @@ void ATTAGameMode::InitGame(const FString& MapName, const FString& Options, FStr
 	}
 	if (bDemo)
 	{
-		// Two rounds of the real loop, shortened: place traps, then race. Edit and premiere stay in the machine.
+		// Short build and race. rounds stays high so the heaven gate can keep starting the next one.
 		try
 		{
 			Match = tta::MatchStateMachine(tta::parseMatchSettings(DemoSettingsJson, Match.settings()));

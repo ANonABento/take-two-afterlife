@@ -16,7 +16,7 @@ struct Field {
 };
 
 const Field kFields[] = {
-    {"rounds", &MatchSettings::rounds, 1, 10},
+    {"rounds", &MatchSettings::rounds, 1, 999},
     {"buildSeconds", &MatchSettings::buildSeconds, 10, 600},
     {"runSeconds", &MatchSettings::runSeconds, 10, 600},
     {"editSeconds", &MatchSettings::editSeconds, 10, 600},

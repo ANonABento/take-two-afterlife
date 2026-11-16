@@ -28,7 +28,7 @@ private:
 	float MeasureText(const FString& Text, int32 Size, bool bDisplay);
 	// Equal square tiles, one per build item (selected = Yellow); returns the row's bottom Y.
 	float DrawBuildTiles(float X, float Y, int32 Selected);
-	// Trap tile art: the item mesh rendered once off-screen, cached per build item.
+	// Tile art: the item mesh rendered once, framed to the square, cached per build item.
 	UTexture* TrapThumbnail(int32 Item);
 	UPROPERTY() TMap<int32, TObjectPtr<class UTextureRenderTarget2D>> TrapThumbnails;
 	void ShowResults();

@@ -2,7 +2,9 @@
 #include "TTAGameMode.h"
 
 #include "Engine/Canvas.h"
+#include "Components/DirectionalLightComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
+#include "Engine/DirectionalLight.h"
 #include "Engine/SceneCapture2D.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/StaticMeshActor.h"
@@ -34,21 +36,9 @@ namespace
 {
 constexpr float kDesignW = 1920.f, kBarH = 120.f, kLineH = 40.f, kPad = 20.f, kPanelOpacity = 0.85f;
 // Build tiles: one equal square per TTABuildItem, in a row under the phase card.
-constexpr float kTileSize = 96.f, kTileGap = 12.f, kTileIconInset = 16.f;
-
-// Icon art for a camera build item; traps use TrapThumbnail.
-ETTAAsset CameraIcon(tta::CameraType Type)
-{
-	switch (Type)
-	{
-	case tta::CameraType::Fixed: return ETTAAsset::IconCamFixed;
-	case tta::CameraType::Pan: return ETTAAsset::IconCamPan;
-	case tta::CameraType::Follow: return ETTAAsset::IconCamFollow;
-	case tta::CameraType::TrapCam: return ETTAAsset::IconCamTrap;
-	}
-	checkNoEntry();
-	return ETTAAsset::IconCamFixed;
-}
+constexpr float kTileSize = 96.f, kTileGap = 12.f;
+// Stay inside the card stroke so the picture fills the tile without covering the border.
+constexpr float kTileIconInset = UTTAUIStyle::kOutline + 2.f;
 }
 
 float ATTABuildHUD::UiScale() const
@@ -199,7 +189,7 @@ void ATTABuildHUD::DrawHUD()
 		Own.cameraCount(Me, tta::CameraType::Fixed), Own.cameraCount(Me, tta::CameraType::Pan),
 		Own.cameraCount(Me, tta::CameraType::Follow), Own.cameraCount(Me, tta::CameraType::TrapCam)), tta::kBone);
 	const bool bGhostOk = Pawn->GetGhostOutcome() == ETTAPlaceOutcome::Ok;
-	Lines.Emplace(FString::Printf(TEXT("%s   [wheel] item  [R] rotate  [LMB] place  [RMB] remove  [F] select"),
+	Lines.Emplace(FString::Printf(TEXT("%s   [1-7] item  [R] rotate  [LMB] place  [RMB] remove  [F] select"),
 		*TTABuildItem::Label(Pawn->GetSelectedItem())), tta::kBone);
 	Lines.Emplace(bGhostOk ? FString(TEXT("Can place here")) : UEnum::GetDisplayValueAsText(Pawn->GetGhostOutcome()).ToString(),
 		bGhostOk ? tta::kGrass : tta::kRed);
@@ -276,18 +266,20 @@ float ATTABuildHUD::DrawBuildTiles(float X, float Y, int32 Selected)
 	{
 		const float TileX = X + Item * (kTileSize + kTileGap);
 		DrawCard(TileX, Y, kTileSize, kTileSize, Item == Selected ? tta::kYellow : tta::kBone);
-		UTexture* Icon = TTABuildItem::IsCamera(Item)
-			? Cast<UTexture>(UTTAUIStyle::Brush(CameraIcon(TTABuildItem::Camera(Item))).GetResourceObject())
-			: TrapThumbnail(Item);
-		if (Icon)
+		const FString Number = FString::FromInt(Item + 1);
+		if (UTexture* Icon = TrapThumbnail(Item))
 		{
 			const float Side = kTileSize - 2 * kTileIconInset;
-			DrawTexture(Icon, (TileX + kTileIconInset) * S, (Y + kTileIconInset) * S, Side * S, Side * S, 0.f, 0.f, 1.f, 1.f);
-			continue;
+			DrawTexture(Icon, (TileX + kTileIconInset) * S, (Y + kTileIconInset) * S, Side * S, Side * S,
+				0.f, 0.f, 1.f, 1.f, FLinearColor::White, BLEND_Opaque);
 		}
-		const FString Number = FString::FromInt(Item + 1);
-		DrawStyledText(Number, tta::kInk, TileX + (kTileSize - MeasureText(Number, UTTAUIStyle::kH2, true)) * 0.5f,
-			Y + (kTileSize - UTTAUIStyle::kH2) * 0.5f, UTTAUIStyle::kH2, true);
+		else
+		{
+			DrawStyledText(Number, tta::kInk, TileX + (kTileSize - MeasureText(Number, UTTAUIStyle::kH2, true)) * 0.5f,
+				Y + (kTileSize - UTTAUIStyle::kH2) * 0.5f, UTTAUIStyle::kH2, true);
+		}
+		DrawStyledText(Number, tta::kInk, TileX + kTileIconInset, Y + kTileSize - kTileIconInset - UTTAUIStyle::kSmall,
+			UTTAUIStyle::kSmall, true);
 	}
 	return Y + kTileSize;
 }
@@ -298,28 +290,61 @@ UTexture* ATTABuildHUD::TrapThumbnail(int32 Item)
 	UStaticMesh* Mesh = GetDefault<ATTAPlacementMarker>()->MeshForItem(Item);
 	UWorld* World = GetWorld();
 	if (!Mesh || !World) return nullptr;
-	// Far below the level so nothing else is in frame; ShowOnly keeps it to this one mesh.
-	const FVector At(0.f, 0.f, -100000.f);
+	// Just under the course. ShowOnly hides the level; staying near the origin keeps the
+	// depth buffer precise so the outline pass cannot ink the whole mesh one flat colour.
+	const FVector At(0.f, 0.f, -3000.f);
 	FActorSpawnParameters Params;
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	AStaticMeshActor* Prop = World->SpawnActor<AStaticMeshActor>(At, FRotator(0.f, 35.f, 0.f), Params);
+	AStaticMeshActor* Prop = World->SpawnActor<AStaticMeshActor>(At, FRotator(-22.f, 38.f, 0.f), Params);
 	Prop->SetMobility(EComponentMobility::Movable);
-	Prop->GetStaticMeshComponent()->SetStaticMesh(Mesh);
-	const FBoxSphereBounds B = Mesh->GetBounds();
-	const FVector Center = At + B.Origin;
-	const FVector Eye = Center + FVector(-1.f, -0.6f, 0.7f).GetSafeNormal() * B.SphereRadius * 2.4f;
+	UStaticMeshComponent* PropMesh = Prop->GetStaticMeshComponent();
+	PropMesh->SetStaticMesh(Mesh);
+	PropMesh->UpdateBounds();
+	// Orthographic fit to the rotated bounds so a hammer and a banana fill the same square.
+	const FBox Box = PropMesh->Bounds.GetBox();
+	const FVector Center = Box.GetCenter();
+	const float Span = Box.GetExtent().GetMax() * 2.f * 1.08f;
+	const FVector Eye = Center + FVector(-1.f, -0.65f, 0.55f).GetSafeNormal() * Span;
+	// ShowOnly drops every light that is not in the list, which left these lit meshes a flat gray.
+	ADirectionalLight* Key = World->SpawnActor<ADirectionalLight>(Center, FRotator(-50.f, -35.f, 0.f), Params);
+	ADirectionalLight* Fill = World->SpawnActor<ADirectionalLight>(Center, FRotator(-15.f, 145.f, 0.f), Params);
+	for (ADirectionalLight* Light : {Key, Fill})
+	{
+		UDirectionalLightComponent* Comp = Light->GetComponent();
+		Comp->SetMobility(EComponentMobility::Movable);
+		Comp->SetCastShadows(false);
+		Comp->SetIntensity(Light == Key ? 12.f : 5.f);
+		Comp->SetLightColor(FLinearColor::White);
+	}
 	ASceneCapture2D* Cam = World->SpawnActor<ASceneCapture2D>(Eye, (Center - Eye).Rotation(), Params);
 	UTextureRenderTarget2D* Target = UKismetRenderingLibrary::CreateRenderTarget2D(this, 256, 256, RTF_RGBA8);
-	Target->ClearColor = FLinearColor::Transparent;
+	Target->ClearColor = UTTAUIStyle::Colour(tta::kBone);
 	USceneCaptureComponent2D* Capture = Cam->GetCaptureComponent2D();
 	Capture->PrimitiveRenderMode = ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
 	Capture->ShowOnlyActors.Add(Prop);
-	Capture->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
+	Capture->ShowOnlyActors.Add(Key);
+	Capture->ShowOnlyActors.Add(Fill);
+	Capture->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
 	Capture->bCaptureEveryFrame = false;
-	Capture->FOVAngle = 40.f;
+	Capture->ProjectionType = ECameraProjectionMode::Orthographic;
+	Capture->OrthoWidth = Span;
+	Capture->bUpdateOrthoPlanes = true;
+	Capture->ShowFlags.SetPostProcessMaterial(false);
+	Capture->ShowFlags.SetEyeAdaptation(false);
+	Capture->ShowFlags.SetFog(false);
+	Capture->ShowFlags.SetAtmosphere(false);
+	Capture->PostProcessBlendWeight = 1.f;
+	Capture->PostProcessSettings.bOverride_AutoExposureMethod = true;
+	Capture->PostProcessSettings.AutoExposureMethod = EAutoExposureMethod::AEM_Manual;
+	Capture->PostProcessSettings.bOverride_AutoExposureBias = true;
+	Capture->PostProcessSettings.AutoExposureBias = 0.6f;
+	Capture->PostProcessSettings.bOverride_AutoExposureApplyPhysicalCameraExposure = true;
+	Capture->PostProcessSettings.AutoExposureApplyPhysicalCameraExposure = false;
 	Capture->TextureTarget = Target;
 	Capture->CaptureScene();
 	Prop->Destroy();
+	Key->Destroy();
+	Fill->Destroy();
 	Cam->Destroy();
 	TrapThumbnails.Add(Item, Target);
 	return Target;

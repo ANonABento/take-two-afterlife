@@ -51,8 +51,22 @@ class SettingsSlidersTests(unittest.TestCase):
     def test_settings_look_is_hat_and_face(self):
         self.assertNotIn("COLOUR", self.screen)
         self.assertNotIn("OnColourNext", self.cpp)
-        self.assertIn("HatCycle", self.screen)
-        self.assertIn("FaceCycle", self.screen)
+        self.assertNotIn("HatCycle", self.cpp)
+        self.assertIn("BuildLookGrid(Hats, true)", self.screen)
+        self.assertIn("BuildLookGrid(Faces, false)", self.screen)
+        self.assertIn("ApplyRelativeLayout", self.cpp)
+        self.assertNotIn("kSettingsScrollH", self.cpp)
+
+    def test_hat_pictures_exist(self):
+        header = (ROOT / "Core" / "include" / "tta" / "MenuFlow.h").read_text()
+        block = header[header.index("kHats"):header.index("kFaces")]
+        names = re.findall(r'"(\w+)"', block)
+        self.assertEqual(len(names), 8)
+        folder = ROOT / "Art" / "UI" / "Looks"
+        for name in names:
+            png = folder / f"T_UI_Hat_{name}.png"
+            self.assertTrue(png.is_file(), png)
+            self.assertIn("T_UI_Hat_%s.png", (SRC / "Private" / "TTALookIcons.cpp").read_text())
 
 
 if __name__ == "__main__":

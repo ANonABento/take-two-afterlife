@@ -2,6 +2,21 @@
 
 Built for the Epic AI MegaJam 2026 (theme: Director's Cut). Each entry: the prompt, what the agent did, what failed, what was fixed by hand.
 
+## Build phase: rotate key, hammer under the floor
+- **Prompt:** keys 6 and 7 don't select the lawnmower and camera, the camera still has legs, the hammer looks upside down, rotation stopped working. Is it a script I forgot to run?
+- **Agent did:** keys 6/7 and the legless camera were already in the source but the open editor predates them (DLL built 21:17, edits and `SM_Cam_FixedBody` came later), so they need an editor restart and rebuild, not a script. Rotation was a real bug: the controller's R (demo restart) is read before the build pawn and consumed the key; it no longer consumes it. The hammer mesh pivots at its hinge and hangs 91 cm down, so at floor height the mallet was underground. The hinge is now lifted 130 cm (`ATTAPlacementMarker::HammerHingeCm`) on the ghost, the marker and the trap, and the trap's hitbox rides the mallet head. The marker actor stays on the floor; its mesh is a child. `EngineAssociation` is back to `"5.5"`.
+- **Failed / fixed by hand:** not compiled. `Build.bat` stops at "Unable to build while Live Coding is active" with the editor open. Python suite has 7 failures and Core has 1 (`MenuFlowTests` look carousels); they are in the menu/looks, `TTAHeavenWatch`, `TTAGameMode` end-run regex and the tile `FLinearColor::White`, not in these files.
+
+## Build tile thumbnails in colour
+- **Prompt:** the trap thumbnails show the shape, but each one is a single shade of gray.
+- **Agent did:** the tile capture now includes a key light and a fill light (the show-only list was dropping every light), turns off eye adaptation and the outline post-process, and shoots the mesh 30 m down instead of 1 km so the depth buffer does not ink the whole prop. Test: `Scripts/tests/test_hud_layout.py`.
+- **Failed / fixed by hand:** nothing yet.
+
+## Build tiles: camera legs, keys 6–7, thumbnails
+- **Prompt:** the placed camera's tripod floats; lawnmower and camera number keys do nothing; trap thumbnails don't fill their tiles.
+- **Agent did:** number keys 1–7 (and the numpad) select every build tile, lawnmower is 6 and the camera is 7. Each tile, camera included, is an orthographic shot of that mesh framed to the square, with the key in the corner. `Scripts/strip_camera_tripod.py` writes `SM_Cam_FixedBody` (tripod removed, body on the pivot) and the build list points at it. The Blender builder no longer makes legs.
+- **Failed / fixed by hand:** nothing yet.
+
 ## Task 1 — Asset sourcing research
 - **Prompt:** find human-made, jam-legal asset sources for UE5 with at least 15 cited sources and a shortlist.
 - **Agent did:** browser research; wrote `assets-ue5.md` with sources and a shortlist (Kenney, Quaternius, KayKit, Poly Haven, Freesound, Fab free).
@@ -484,7 +499,17 @@ No separate UI kit on disk (Downloads has KayKit, Kenney City, Kenney Nature, an
 - **Agent did:** settings and lobby customize cycle hat and face only. `PlayerLook.colour` stays for the body tint, HUD and statues. Play paints a full-screen LOADING frame, then travel waits one tick so that frame draws. `UTTASessionSubsystem` sets a MoviePlayer loading screen on `PreLoadMap` and again in `HostSolo` before the Backyard `ServerTravel`. MoviePlayer is a module dependency.
 - **Failed / fixed by hand:** needs an editor compile and a Play from the title. The hitch is the Backyard map load; this covers it, it does not make the load instant. In the editor the movie player often stays off, so the painted LOADING frame is what you see through the hitch.
 
+## Settings hat and face pictures
+- **Prompt:** redo Settings, drop the colour picker, pick hat and face from pictures with no names, and size the page to the screen.
+- **Agent did:** Settings fills the safe area. Hats are a picture grid (`Art/UI/Looks/T_UI_Hat_*.png`, drawn by `Scripts/build_look_icons.py`) and faces use the `T_Face_*` textures. The gold frame is the current pick. Tile size and the BACK button follow the widget size. Slider rows split by fill instead of a fixed 520 px column.
+- **Failed / fixed by hand:** needs an editor compile, then open Settings. The pictures load from `Art/UI/Looks` and `/Game/Characters/Faces`, so there is no import step.
+
 ## Title map script no longer crashes the editor
 - **Prompt:** UE crashes (access violation at 0x10) when running `create_title_map.py`; debug it.
 - **Agent did:** four crash logs in `Saved/Crashes` end the same way: `Force Deleting 1 Package(s): /Game/Maps/Title.Title`, then `new_level` recreating the same path. Two die on the `Class.cpp:2640` assert with the script stack in `EditorAssetLibrary.DeleteAsset`, two on the access violation inside `new_level`. The script deleted the Title world (usually the open level) and made a new one with the same name in the same call. Reruns now `load_level` the existing map and destroy its actors, like `build_backyard_map.py`; `new_level` only runs when the map is missing. `test_title_map.py` covers the rerun path.
 - **Failed / fixed by hand:** not rerun in the editor. Run `py C:/Users/kevbe/take-two-afterlife/Scripts/create_title_map.py` with Title open and confirm it rebuilds and saves. A rerun now empties the map of every listed actor, including hand-placed ones.
+
+## Face offset was the wrong sign
+- **Prompt:** the painted faces sit far too high; the offset has been moved the wrong way.
+- **Agent did:** `TTAFaceDropV` is now `-0.20`. The angel material adds that value to the mesh V, so the previous `+0.20` was sliding the face up the head. `Scripts/import_gen3_assets.py` uses the same default.
+- **Failed / fixed by hand:** needs an editor compile. The live value is set when a pawn or title angel is dressed, so the saved material instance does not have to be rebuilt.
