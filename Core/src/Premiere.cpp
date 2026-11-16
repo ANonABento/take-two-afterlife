@@ -8,6 +8,16 @@
 
 namespace tta {
 
+Cut cutCredits(int editor, int victim, const Replay& replay) {
+    Cut cut{editor, kNoBuilder};
+    for (const ReplayEvent& e : replay.events()) {
+        if (e.victim != victim) continue;
+        if (e.type == ReplayEventType::Wipeout) cut.builder = e.trapOwner == kNoTrap ? kNoBuilder : e.trapOwner;
+        else if (e.type == ReplayEventType::Smite) cut.builder = kNoBuilder;
+    }
+    return cut;
+}
+
 Premiere::Premiere(std::vector<PremiereCut> cuts, std::uint32_t seed, bool finalRound, const MatchSettings& timings)
     : order_(std::move(cuts)),
       finalRound_(finalRound),

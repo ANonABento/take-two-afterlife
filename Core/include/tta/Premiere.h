@@ -2,6 +2,7 @@
 
 #include "tta/MatchSettings.h"
 #include "tta/Ratings.h"
+#include "tta/Replay.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -17,6 +18,11 @@ struct PremiereCut {
     int victim = 0;
     std::uint32_t durationMs = 0;
 };
+
+// Credits for a cut of `victim`'s death: the editor directs it, the builder is the
+// owner of the trap behind the victim's last wipeout in `replay`. kNoBuilder when the
+// victim never wiped out on a trap (no wipeout, or a smite).
+Cut cutCredits(int editor, int victim, const Replay& replay);
 
 // One round's premiere: cuts in a seeded random order, each going
 // Intro -> Playback -> Rating -> Reveal; then Podium on the final round, else Done.
