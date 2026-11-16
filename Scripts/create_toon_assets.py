@@ -38,12 +38,15 @@ float2 buv = ViewportUVToBufferUV(UV);
 float2 px = View.BufferSizeAndInvSize.zw * Thickness;
 float d = SceneTextureLookup(buv, 1, false).r;
 float3 n = SceneTextureLookup(buv, 8, false).rgb;
-float dEdge = 0; float nEdge = 0;
+float nEdge = 0; float ds[4];
 float2 o[4] = { float2(px.x, 0), float2(-px.x, 0), float2(0, px.y), float2(0, -px.y) };
 for (int i = 0; i < 4; i++) {
-  dEdge = max(dEdge, abs(SceneTextureLookup(buv + o[i], 1, false).r - d) / max(d, 1));
+  ds[i] = SceneTextureLookup(buv + o[i], 1, false).r;
   nEdge = max(nEdge, 1 - dot(n, SceneTextureLookup(buv + o[i], 8, false).rgb));
 }
+// Depth edge = change of slope across the pixel, not the slope: far ground seen at a low angle has a steep
+// but steady depth slope, and the plain difference inked all of it in one colour.
+float dEdge = max(abs(ds[0] + ds[1] - 2 * d), abs(ds[2] + ds[3] - 2 * d)) / max(d, 1);
 float ink = saturate(step(DepthThreshold, dEdge) + step(NormalThreshold, nEdge)) * step(d, 100000);
 float3 c = lerp(Scene, InkColor, ink);
 float luma = dot(c, float3(0.299, 0.587, 0.114));

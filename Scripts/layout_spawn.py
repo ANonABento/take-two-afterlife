@@ -165,6 +165,20 @@ def tag(unreal, actor, *extra):
     actor.set_editor_property("tags", [unreal.Name(LAYOUT_TAG)] + [unreal.Name(t) for t in extra])
 
 
+def no_collision(component):
+    """Seen, never touched. By profile: set_collision_enabled alone did not survive the save (the trench water
+    and the route coins still blocked runners)."""
+    component.set_collision_profile_name("NoCollision")
+
+
+def blocker(unreal, subsystem, cube, label, size, target, yaw=0.0):
+    """Unseen box that blocks: for meshes whose own collision is off or wrong. `target` is its bottom-centre (cm)."""
+    actor, _ = spawn_fitted(unreal, subsystem, label, cube, ("box", tuple(size)), target, yaw)
+    actor.static_mesh_component.set_visibility(False)
+    actor.static_mesh_component.set_hidden_in_game(True)
+    return actor
+
+
 def spawn_fitted(unreal, subsystem, label, mesh, fit, target, yaw, extra_tags=(), collide=True):
     """StaticMeshActor of `mesh` fitted to `fit` with its bottom-centre at `target` (cm), tagged TTA_Layout.
 
@@ -179,7 +193,7 @@ def spawn_fitted(unreal, subsystem, label, mesh, fit, target, yaw, extra_tags=()
     actor.set_actor_scale3d(unreal.Vector(*scale))
     actor.set_actor_location(unreal.Vector(*loc), False, False)
     if not collide:
-        actor.static_mesh_component.set_collision_enabled(unreal.CollisionEnabled.NO_COLLISION)
+        no_collision(actor.static_mesh_component)
     tag(unreal, actor, *extra_tags)
     return actor, tuple(h - l for h, l in zip(rhi, rlo))
 

@@ -1,3 +1,6 @@
+# NOTE (Nov 15): for the maps use Scripts/rebuild_maps.py inside the open editor instead. This headless chain
+# predates the kit and model imports, the Heaven dressing and the look volumes and runs none of them, and the
+# Backyard builder now crashes UnrealEditor-Cmd when it destroys level actors.
 # Builds the generated content headless, in order:
 #   create_toon_assets.py -> build_backyard_map.py (Downloads/, placeholders for missing packs)
 #   -> swap_to_toon.py (/Game) -> create_title_map.py -> create_placeholder_audio.py (silent SoundWaves

@@ -76,8 +76,8 @@ void ATTARunDirector::CaptureFrame()
 	std::vector<tta::ReplayPose> Poses;
 	for (const ATTARunnerPawn* Runner : Runners)
 	{
-		// Already in heaven: keep the pose from the course, or the reel shows them on the couch.
-		if (Eliminated.Contains(Runner))
+		// Already in heaven (fell, or finished and sat down): keep the last course pose.
+		if (Eliminated.Contains(Runner) || Finished.Contains(Runner))
 		{
 			const tta::Replay& SoFar = Recorder->replay();
 			const int32 Id = PlayerId(Runner);

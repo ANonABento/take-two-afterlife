@@ -123,32 +123,63 @@ def fit_component(comp, mesh, prop):
     """Child component (the gate Arch): scale + relative offset, bottom-centre on the actor origin."""
     box = mesh.get_bounding_box()
     lo, hi = (box.min.x, box.min.y, box.min.z), (box.max.x, box.max.y, box.max.z)
-    scale, fit_rot, _ = S.fit_mesh([h - l for h, l in zip(hi, lo)], target_fit(prop))
-    rlo, rhi = S.rotated_box(lo, hi, scale, fit_rot)
-    off = S.placement((0.0, 0.0, 0.0), 0.0, rlo, rhi, (1.0, 1.0, 1.0))
-    comp.set_relative_rotation(unreal.Rotator(float(fit_rot[0]), float(fit_rot[1]), 0.0), False, False)
+    scale, _turn, _ = S.fit_mesh([h - l for h, l in zip(hi, lo)], target_fit(prop))   # our own arch: never turned
     comp.set_relative_scale3d(unreal.Vector(*scale))
     comp.set_relative_rotation(rot(yaw=float(prop.yaw)), False, False)
     comp.set_relative_location(unreal.Vector(*S.placement((0.0, 0.0, 0.0), prop.yaw, lo, hi, scale)), False, False)
 
 
+SLAB_ROLES = ("floor", "backdrop")                # the strip and the island ground: plain boxes
+CUBE = "/Engine/BasicShapes/Cube"                # 100 cm box with a box collision that is always right
+KIT_TEXTURED = ()   # kits that keep their own materials; tried on the Kenney kits (Nov 15): the houses lost their colours
+# Our Blender props carry one material slot per part, named in models/build_backyard_props.py.
+SLOT_COLOURS = (("Wood", "Wood"), ("Trim", "Bone"), ("Roof", "Ink"), ("Steel", "Bone"), ("Black", "Ink"),
+                ("Blue", "Blue"), ("Pink", "Pink"), ("Teal", "Teal"), ("Water", "Sky"), ("Red", "Red"),
+                ("Boot", "Wood"), ("Beard", "Bone"), ("Skin", "Orange"), ("Grass", "Grass"))
+
+
+def slot_colour(mesh, slot, fallback):
+    """Palette colour for one material slot of one of our own props, by the slot's name."""
+    names = {n for n, _ in toon_spec.PALETTE}
+    try:
+        name = str(mesh.get_editor_property("static_materials")[slot].get_editor_property("material_slot_name"))
+    except Exception:
+        return fallback
+    for key, colour in SLOT_COLOURS:
+        if key.lower() in name.lower() and colour in names:
+            return colour
+    return fallback
+
+
 def place(actors, prop, toon, paths):
-    mesh = prop_mesh(prop, paths)
+    """One layout prop. Ground is the engine cube: the KayKit floor tile kept a collision hull from its first
+    (100x too small) import, so runners fell straight through it."""
+    slab = prop.role in SLAB_ROLES
+    mesh = EAL.load_asset(CUBE) if slab else prop_mesh(prop, paths)
+    solid = prop.role in SOLID_ROLES
     extra = (L.ROUTE_TAG,) if prop.role == "marker" else ()
-    actor, _ = S.spawn_or_skip(unreal, actors, f"{prop.role}_{prop.mesh}", mesh, target_fit(prop),
-                               (prop.x * CM, prop.y * CM, prop.z * CM), prop.yaw, extra)
+    target = (prop.x * CM, prop.y * CM, prop.z * CM)
+    actor, size = S.spawn_or_skip(unreal, actors, f"{prop.role}_{prop.mesh}", mesh, target_fit(prop), target, prop.yaw,
+                                  extra, collide=solid)
     if actor is None:   # logged by spawn_or_skip; one bad mesh must not abort the map
         return None
     comp = actor.static_mesh_component
-    for slot in range(comp.get_num_materials()):
-        comp.set_material(slot, palette_instance(prop.palette, toon))
+    own = prop.kit in L.KIT_ROOTS
+    if slab or prop.kit not in KIT_TEXTURED:
+        for slot in range(comp.get_num_materials()):
+            colour = slot_colour(mesh, slot, prop.palette) if own else prop.palette
+            comp.set_material(slot, palette_instance(colour, toon))
+    if solid and not slab and prop.kit == "KayKitPrototypeBits":
+        # Same stale hull as the floor tile: the mesh is only seen, an unseen cube of its size does the blocking.
+        S.no_collision(comp)
+        S.blocker(unreal, actors, EAL.load_asset(CUBE), f"blocker_{prop.mesh}", size, target, prop.yaw)
     return actor
 
 
 def light_sky(actors):
     """Sun, sky light, atmosphere and thin haze, all dynamic (nothing is baked). Tagged, so a rerun replaces them."""
     sun = actors.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 2000),
-                                        rot(yaw=35.0, pitch=-48.0))   # from behind the start, over one shoulder
+                                        rot(yaw=35.0, pitch=-30.0))   # low and from behind the start: long shadows down the strip
     sun.set_actor_label("Sun")
     light = sun.get_component_by_class(unreal.DirectionalLightComponent)
     light.set_mobility(unreal.ComponentMobility.MOVABLE)
@@ -163,8 +194,16 @@ def light_sky(actors):
     fog = actors.spawn_actor_from_class(unreal.ExponentialHeightFog, unreal.Vector(0, 0, 0))
     fog.set_actor_label("HeightFog")
     haze = fog.get_component_by_class(unreal.ExponentialHeightFogComponent)
-    haze.set_editor_property("fog_density", 0.006)
-    haze.set_editor_property("start_distance", 3000.0)
+    # Thick enough that the far islands fade to silhouettes; it starts past the strip so the race stays crisp.
+    haze.set_editor_property("fog_density", 0.012)
+    haze.set_editor_property("fog_height_falloff", 0.02)
+    haze.set_editor_property("start_distance", 4500.0)
+    for name, value in (("fog_inscattering_luminance", unreal.LinearColor(0.75, 0.62, 0.8, 1.0)),
+                        ("fog_max_opacity", 0.85)):
+        try:
+            haze.set_editor_property(name, value)
+        except Exception as err:   # a tint is not worth losing the map over
+            unreal.log_warning(f"HeightFog {name} not set: {err}")
     for actor in (sun, sky, air, fog):
         S.tag(unreal, actor)
 

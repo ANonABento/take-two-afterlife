@@ -170,6 +170,21 @@ TEST_CASE("placements stay between rounds and the budget resets each Build") {
     CHECK(m.transition(Phase::Podium));
 }
 
+TEST_CASE("an owner budget replaces kBudget until cleared") {
+    Layout layout;
+    layout.beginBuild(1);
+    CHECK(layout.budgetFor(2) == kBudget);
+    layout.setBudget(2, 250);
+    CHECK(layout.remaining(2) == 250);
+    CHECK(layout.remaining(1) == kBudget);
+    CHECK(layout.placeTrap(2, TrapType::Hammer, 10, 0, 0) == PlaceResult::Ok);
+    CHECK(layout.remaining(2) == 250 - trapSpec(TrapType::Hammer).cost);
+    layout.setBudget(2, 10);
+    CHECK(layout.placeTrap(2, TrapType::Hammer, 12, 0, 0) == PlaceResult::OverBudget);
+    layout.setBudget(2, -1);
+    CHECK(layout.budgetFor(2) == kBudget);
+}
+
 TEST_CASE("layout JSON keeps each placement's round and the current round") {
     Layout layout;
     layout.beginBuild(1);

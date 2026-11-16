@@ -125,6 +125,9 @@ private:
 	UPROPERTY() TObjectPtr<UBorder> LookSwatch;
 	UPROPERTY() TObjectPtr<UTextBlock> SettingsLookText;
 	UPROPERTY() TObjectPtr<UBorder> SettingsLookSwatch;
+	// Settings look row. Labels are rewritten in RefreshLook (Crown / Happy).
+	UPROPERTY() TObjectPtr<UButton> HatCycle;
+	UPROPERTY() TObjectPtr<UButton> FaceCycle;
 	UPROPERTY() TObjectPtr<UButton> StartButton;
 	UPROPERTY() TObjectPtr<UProgressBar> MicMeter;
 	// One per ClientSettings field, in RefreshSettings order (master, music, vo, sfx, sensitivity).
@@ -156,6 +159,7 @@ private:
 	// Title keeps every button in the tree. Host, Join and Settings are collapsed so
 	// only Play and Quit can be clicked. Build, edit, ratings and premiere are not on this menu.
 	void HideUnreachableTitleEntries();
+	bool bTravelStarted = false;
 
 	UFUNCTION() void OnHostClicked() { Host(); }
 	UFUNCTION() void OnPlaySoloClicked() { PlaySolo(); }
@@ -167,7 +171,6 @@ private:
 	UFUNCTION() void OnStartClicked();
 	UFUNCTION() void OnDirectClicked() { OnJoinDirect.ExecuteIfBound(IpBox->GetText().ToString()); }
 	UFUNCTION() void OnCustomizeClicked();
-	UFUNCTION() void OnColourNext() { CycleLook(tta::LookPart::Colour, 1); }
 	UFUNCTION() void OnHatNext() { CycleLook(tta::LookPart::Hat, 1); }
 	UFUNCTION() void OnFaceNext() { CycleLook(tta::LookPart::Face, 1); }
 	UFUNCTION() void OnMasterChanged(float V) { Settings.master = FMath::RoundToInt(V * kVolumeSliderMax); RefreshSettings(); }

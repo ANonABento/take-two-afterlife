@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -75,9 +76,13 @@ public:
     void beginBuild(int round) { round_ = round; }
     int round() const { return round_; }
 
+    // Demo rounds raise a bot's budget. Missing owners stay on kBudget. Not saved in the layout JSON.
+    void setBudget(int owner, int budget);
+    int budgetFor(int owner) const;
+
     // Trap spend this round; placements from earlier rounds are already paid for.
     int spent(int owner) const;
-    int remaining(int owner) const { return kBudget - spent(owner); }
+    int remaining(int owner) const { return budgetFor(owner) - spent(owner); }
     int cameraCount(int owner) const;
     int cameraCount(int owner, CameraType type) const;
 
@@ -91,6 +96,7 @@ public:
 private:
     PlaceResult add(Placement p, double xMeters, double yMeters, double degrees, int* outId);
     std::vector<Placement> placements_;
+    std::map<int, int> budgets_;
     int nextId_ = 1;
     int round_ = 0;
 };

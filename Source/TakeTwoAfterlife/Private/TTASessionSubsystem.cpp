@@ -9,7 +9,11 @@
 #include "OnlineSessionSettings.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSubsystemUtils.h"
+#include "MoviePlayer.h"
 #include "TimerManager.h"
+#include "Widgets/Layout/SBorder.h"
+#include "Widgets/Text/STextBlock.h"
+#include "Styling/CoreStyle.h"
 #include "tta/JoinCode.h"
 
 namespace
@@ -17,12 +21,53 @@ namespace
 const FName JoinCodeKey(TEXT("JOINCODE"));
 
 FString CoreToUE(const std::string& S) { return UTF8_TO_TCHAR(S.c_str()); }
+
+void ShowMapLoadingScreen()
+{
+	if (IsRunningDedicatedServer()) return;
+	IGameMoviePlayer* Player = GetMoviePlayer();
+	if (!Player) return;
+	FLoadingScreenAttributes Screen;
+	Screen.bAutoCompleteWhenLoadingCompletes = true;
+	Screen.bWaitForManualStop = false;
+	Screen.bAllowEngineTick = false;
+	Screen.MinimumLoadingScreenDisplayTime = 0.75f;
+	Screen.WidgetLoadingScreen = SNew(SBorder)
+		.BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush"))
+		.BorderBackgroundColor(FLinearColor(FColor::FromHex(TEXT("1E1B2E"))))
+		.HAlign(HAlign_Center)
+		.VAlign(VAlign_Center)
+		[
+			SNew(STextBlock)
+			.Text(FText::FromString(TEXT("LOADING")))
+			.Font(FCoreStyle::GetDefaultFontStyle("Bold", 64))
+			.ColorAndOpacity(FLinearColor(FColor::FromHex(TEXT("F4F1E8"))))
+		];
+	Player->SetupLoadingScreen(Screen);
+}
 }
 
 IOnlineSessionPtr UTTASessionSubsystem::Sessions() const
 {
 	const IOnlineSubsystem* Subsystem = Online::GetSubsystem(GetWorld());
 	return Subsystem ? Subsystem->GetSessionInterface() : nullptr;
+}
+
+void UTTASessionSubsystem::Initialize(FSubsystemCollectionBase& Collection)
+{
+	Super::Initialize(Collection);
+	FCoreUObjectDelegates::PreLoadMap.AddUObject(this, &UTTASessionSubsystem::OnPreLoadMap);
+}
+
+void UTTASessionSubsystem::Deinitialize()
+{
+	FCoreUObjectDelegates::PreLoadMap.RemoveAll(this);
+	Super::Deinitialize();
+}
+
+void UTTASessionSubsystem::OnPreLoadMap(const FString&)
+{
+	ShowMapLoadingScreen();
 }
 
 void UTTASessionSubsystem::Login()
@@ -194,7 +239,9 @@ void UTTASessionSubsystem::HostDirect()
 void UTTASessionSubsystem::HostSolo(int32 Bots)
 {
 	// Demo race: backyard, random traps, bots. The lobby hop is still here and unused.
+	// The loading screen is armed in PreLoadMap so the hitch while Backyard opens is not a frozen menu.
 	// GetWorld()->ServerTravel(LobbyMap + FString::Printf(TEXT("?bots=%d"), Bots));
+	ShowMapLoadingScreen();
 	GetWorld()->ServerTravel(FString::Printf(TEXT("/Game/Maps/Backyard?demo=1&bots=%d"), Bots));
 }
 

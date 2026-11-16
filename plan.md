@@ -640,7 +640,22 @@ Scored 1-5 by judges on: ambition/innovation, theme, fun, gameplay, visuals, lev
 - Left: editor compile, then Play. Bots should spread around traps and shove each other on the way to the arch.
 - Surprises: build placement is still the random `BotBrain::build`.
 
+### Handoff: heaven hub
+- Done: demo finish seats the human (`SeatFinished`) and the race keeps going, so the TV stays live. Death already sat them there. Round end still plays the death reel, then `OpenHeavenHub` gives the body back and spawns a gate on the cloud. Overlap queues the next Build (traps cleared, `Layout::setBudget` adds $50 per round for bots only). R queues a new match at round 1. Demo settings are 999 rounds, 40s build, 50s run, so the machine never podiums on its own. Finished runners keep their last course pose in the replay.
+- Left: editor playtest. Fall, watch the live TV, see the reel, walk the gate, confirm round 2 has a denser bot course. Finish the course gate once and confirm you sit down before the bots are done. Press R and confirm the budget card is back to $100.
+- Surprises: the continue gate reuses `ATTAFinishGate`. The next round is queued off the overlap so the pawn is not destroyed inside the trigger.
+
+### Handoff: hat and face only, loading screen on Play
+- Done: settings and the lobby customize panel cycle hat and face. Colour stays on `PlayerLook` for the body tint, HUD and podium statues, with no picker. Play draws a LOADING veil for one frame, then `UTTASessionSubsystem` calls `SetupLoadingScreen` (MoviePlayer, ink background, bone "LOADING") from `PreLoadMap` and again at the start of `HostSolo` before the Backyard travel. Tests: `test_settings_sliders`, `test_title_map`.
+- Left: editor compile, then Play from the title. The LOADING veil should show before the yard hitch. MoviePlayer is what packaged builds keep up while the map blocks; the editor may only hold the last painted frame.
+- Surprises: the delay is the Backyard load (`ServerTravel`), not a stuck click handler. Making that load instant was not attempted.
+
 ### Handoff: bot build items visible
 - Done: merged PR 35 (`1cbce2b`: build-phase walk, trap tile thumbnails, keys 1–5 / Z X C V). Bot placements from `BotBrain::build` now draw during Build (`Data.Owner >= FirstBotId` in `Refresh` and `IsNetRelevantFor`). Test: `Scripts/tests/test_bots.py`.
 - Left: editor compile, then Play and confirm the yard fills with bot traps and cameras during the 40 s build, and the bots walk those spots.
 - Surprises: the PR places everything the moment Build starts, then walks; the meshes were already spawned, just hidden from anyone who did not own them.
+
+### Handoff: title map script crash
+- Done: `Scripts/create_title_map.py` reruns load `/Game/Maps/Title` and destroy its actors instead of `delete_asset` + `new_level` on the same path, which crashed the editor every time the map existed. Test: `Scripts/tests/test_title_map.py`.
+- Left: run the script in the editor with Title open, confirm no crash and that the lights, backdrop, ground and `TitleCamera` come back. Then rerun `apply_title_backdrop.py` if the backdrop look depends on it.
+- Surprises: the old script comment blamed the `Class.cpp:2640` assert on creating a material. The crash logs put it in `DeleteAsset`; material creation was not the cause.

@@ -48,6 +48,12 @@ class SettingsSlidersTests(unittest.TestCase):
     def test_no_text_summary_line(self):
         self.assertNotIn("SettingsText", self.cpp + self.header)
 
+    def test_settings_look_is_hat_and_face(self):
+        self.assertNotIn("COLOUR", self.screen)
+        self.assertNotIn("OnColourNext", self.cpp)
+        self.assertIn("HatCycle", self.screen)
+        self.assertIn("FaceCycle", self.screen)
+
 
 if __name__ == "__main__":
     unittest.main()

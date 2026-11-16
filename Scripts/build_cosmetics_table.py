@@ -15,20 +15,17 @@ import cosmetics_rows as C  # noqa: E402
 REPO = HERE.parent
 EAL = unreal.EditorAssetLibrary
 HATS = "/Game/Characters/Hats"
-# Game hat slot (MenuFlow.h kHats) -> gen 3 hat folder. Edit, then re-run.
-HAT_MAP = {"Chef": "crown", "Cowboy": "viking-helmet", "Firefighter": "propeller-beanie",
-           "HardHat": "party-cone", "Pilot": "bunny-ears", "Police": "devil-horns"}
-HAT_Z_CM = 0.0
-# Per-hat fit on the head socket: offset (cm), rotation (Pitch, Yaw, Roll), uniform scale.
-# Find values live (Play, F8, select Hat), then copy them here and re-run.
+# Per-hat fit on the head socket: offset (cm), rotation (Pitch, Yaw, Roll), scale.
+# Scale is one number or (X, Y, Z). Copied from the live editor adjustments.
 DEFAULT_FIT = ((0.0, 0.0, 0.0), (180.0, 0.0, 270.0), 1.0)
 HAT_FIT = {
-    "crown": ((0.0, 0.1, 0.0), (180.0, 0.0, 270.0), 1.33),
+    "Crown": ((0.0, 0.1, 0.0), (180.0, 0.0, 270.0), 1.33),
+    "DevilHorns": ((0.0, 0.43, 0.0), (90.0, -180.0, 90.0), (2.1325, 2.0, 1.85)),
+    "PartyCone": ((0.0, 0.06, -0.05), (0.0, -180.0, 106.0), 1.33),
+    "TrafficCone": ((0.0, 0.06, 0.05), (0.0, -180.0, 76.0), 1.5275),
+    "VikingHelmet": ((0.0, 0.4, 0.0), (0.0, -180.0, 90.0), (1.76, 1.9975, 1.5775)),
+    "BunnyEars": ((0.0, 0.32, -0.01), (-90.0, -180.0, 90.0), (3.1025, 2.5525, 2.3325)),
 }
-
-
-def camel(folder):
-    return "".join(p.capitalize() for p in folder.split("-"))
 
 
 def game_slots():
@@ -59,13 +56,14 @@ def run():
         rows = C.build_rows()
     import_missing_faces(rows)
     report = []
-    for r, hat in zip(rows, hats):
-        name = f"SM_Hat_{camel(HAT_MAP[hat])}"
+    for r in rows:
+        name = r["HatMesh"].rsplit("/", 1)[1].split(".")[0]
+        hat = name.removeprefix("SM_Hat_")
         if not EAL.does_asset_exist(f"{HATS}/{name}"):
             unreal.log_warning(f"{name} not imported yet: run import_gen3_assets.py")
-        r["HatMesh"] = f"{HATS}/{name}.{name}"
-        off, rot, sc = HAT_FIT.get(HAT_MAP[hat], DEFAULT_FIT)
-        r["SocketOffset"], r["Rotation"], r["Scale"] = off, rot, (sc, sc, sc)
+        off, rot, sc = HAT_FIT.get(hat, DEFAULT_FIT)
+        scale = tuple(sc) if isinstance(sc, (tuple, list)) else (sc, sc, sc)
+        r["SocketOffset"], r["Rotation"], r["Scale"] = off, rot, scale
         report.append(f"{r['Name']}: {hat} -> {name}")
     struct = unreal.load_object(None, C.ROW_STRUCT)
     if struct is None:

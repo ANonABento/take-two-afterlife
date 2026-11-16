@@ -4,7 +4,7 @@ namespace tta {
 
 // Runner life cycle on a hit (plan req 8): impact frame, ragdoll, respawn at start.
 constexpr double kImpactFreezeSeconds = 0.12;
-constexpr double kRagdollSeconds = 1.5;
+constexpr double kRagdollSeconds = 2.5;   // long enough to watch the body land before the respawn
 // Punch stun (punch plan req 3-4): short ragdoll, get up in place, then immunity.
 constexpr double kStunSeconds = 1.0;
 constexpr double kPunchImmunitySeconds = 2.0;

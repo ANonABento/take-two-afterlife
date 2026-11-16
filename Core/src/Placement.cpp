@@ -122,6 +122,16 @@ bool Layout::remove(int id) {
     return true;
 }
 
+void Layout::setBudget(int owner, int budget) {
+    if (budget < 0) budgets_.erase(owner);
+    else budgets_[owner] = budget;
+}
+
+int Layout::budgetFor(int owner) const {
+    const auto it = budgets_.find(owner);
+    return it == budgets_.end() ? kBudget : it->second;
+}
+
 int Layout::spent(int owner) const {
     int total = 0;
     for (const Placement& p : placements_)

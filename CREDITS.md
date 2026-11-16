@@ -12,7 +12,7 @@ TODO: confirm the KayKit/Kenney mesh names and pack versions once `fetch_assets.
 | Asset | Author | License | Source |
 |---|---|---|---|
 | KayKit Prototype Bits 1.0: `Barrel_A`, `Box_A`, `Box_B`, `Coin_A`, `Pallet_Small`, `Primitive_Floor`, `table_medium` (Backyard map; materials replaced with M_TTA_Toon) | Kay Lousberg | CC0 1.0 | https://github.com/KayKit-Game-Assets/KayKit-Prototype-Bits-1.0 |
-| City Kit (Suburban): `building-type-a`, `building-type-b`, `building-type-c`, `building-type-d`, `building-type-e`, `building-type-f`, `fence`, `planter`, `tree-large`, `tree-small` (Backyard map; materials replaced with M_TTA_Toon) | Kenney | CC0 1.0 | https://kenney.nl/assets/city-kit-suburban |
+| City Kit (Suburban): `building-type-a`, `building-type-b`, `building-type-c`, `building-type-d`, `building-type-e`, `building-type-f`, `building-type-g`, `building-type-h`, `building-type-i`, `building-type-j`, `building-type-k`, `building-type-l`, `building-type-m`, `building-type-n`, `building-type-o`, `building-type-p`, `building-type-q`, `building-type-r`, `building-type-s`, `building-type-t`, `building-type-u`, `fence`, `path-stones-short`, `planter`, `tree-large`, `tree-small` (Backyard map; materials replaced with M_TTA_Toon) | Kenney | CC0 1.0 | https://kenney.nl/assets/city-kit-suburban |
 | Nature Kit: `flower_redA`, `flower_yellowA`, `plant_bushLarge`, `rock_smallA` (Backyard map; materials replaced with M_TTA_Toon) | Kenney | CC0 1.0 | https://kenney.nl/assets/nature-kit |
 | Backyard props: `SM_Backyard_Gnome`, `SM_Backyard_Grill`, `SM_Backyard_KiddiePool`, `SM_Backyard_PicnicTable`, `SM_Backyard_Shed`, `SM_Backyard_Trampoline` (Backyard map) | Take Two: Afterlife team, scripted in Blender | own work | models/build_backyard_props.py |
 | Trapdoor `trapdoor_quaternius.glb` (`SM_Trap_Trapdoor`, recoloured from palette.md) | Quaternius | CC0 1.0 | https://poly.pizza/m/Ph6MpmwySS |
@@ -21,6 +21,7 @@ TODO: confirm the KayKit/Kenney mesh names and pack versions once `fetch_assets.
 | Saw Blade `sawblade_quaternius.glb` (`SM_Trap_Spinner`, recoloured from palette.md) | Quaternius | CC0 1.0 | https://poly.pizza/m/HLOlecPOVD |
 | Traps: `SM_Trap_Lawnmower`, `SM_Trap_PusherWall`, `SM_Trap_Cannon` and primitive fallbacks for the four above | Take Two: Afterlife team, scripted in Blender | own work | models/build_traps_cams.py |
 | Course kit: `SM_Course_GateFinish` (Backyard finish arch) | Take Two: Afterlife team, scripted in Blender | own work | models/build_course_kit.py |
+| Heaven set: `SM_Heaven_Cloud_A`, `SM_Heaven_Cloud_B`, `SM_Heaven_Cloud_C` (Backyard cloud layer) | Take Two: Afterlife team, scripted in Blender | own work | models/build_heaven.py |
 
 ## Audio
 Music and SFX WAVs in `Content/Audio/` are built by `Scripts/build_audio.py`. Narrator VO WAVs ship separately (`VO_wavs.zip`, unzip into `Content/Audio/VO/`).

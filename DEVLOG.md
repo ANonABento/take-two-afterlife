@@ -434,6 +434,12 @@ StopStun ran on every machine with its own pelvis read and a sweep from the pre-
 ## Backyard fall-through (rotation)
 Floor slabs called `Rotator(roll, pitch, yaw)` positionally. The editor reads that as pitch, yaw, roll, so a 90° roll became a 90° pitch and the slabs stood on edge. `spawn_fitted` now passes roll/pitch/yaw by name, solid roles use BlockAll plus double-sided complex collision, and water/markers stay non-blocking. `package_win64.bat` no longer deletes an existing Title map. Rebuild with `rebuild_maps.py` in the open editor (not `setup_content.ps1`, not `full`).
 
+## Title map crash again
+`create_title_map.py` no longer builds a material or sets a collision profile. Those calls were the `IsChildOf` crash (Class.cpp:2640). The map script only spawns the lights, the backdrop plane, the ground, and the camera, using `M_TTA_Toon` when it already exists. The painting is a second script, `apply_title_backdrop.py`, which instances the existing hat material instead of creating a new one.
+
+## Settings fit, textured looks, title map crash
+Settings is a scrolling list with BACK pinned under it, so resolution and the mic row stay clickable. Colour, hat and face are one row and show the live name (Red, Bunny Ears, Happy). `kHats` is the eight textured hats and `kFaces` adds Dizzy; row 0 is Bunny Ears, face index 1 is still Happy. Rebuild `DT_Cosmetics` with `build_cosmetics_table.py`. The title-map crash was `IsChildOf` on a null class from setting the shading-model enum and `CollisionEnabled`; the backdrop material is now created like the hat materials, and the plane uses the NoCollision profile.
+
 ## Menu painting behind the angels
 `menu_bg_v1.png` is now `Art/UI/T_UI_TitleBackdrop.png` (1536x1024). `create_title_map.py` puts it on an unlit plane at x=2600, behind the choir, and drops the ground plane that would cover the painted meadow. The menu's blue wash is 12% so the painting shows through. Rebuild Title in the editor with `create_title_map.py`.
 
@@ -467,3 +473,18 @@ No separate UI kit on disk (Downloads has KayKit, Kenney City, Kenney Nature, an
 - **Prompt:** wire random textured hats and faces onto the angels so the NPC angels don't all match. Drop the face if it sits high. Keep the latest fitted textured hats.
 - **Agent did:** those hats are already on disk from `f6b9391` (`Scripts/apply_hat_textures.py`, `models/hat-tex/`, `MI_Hat_*` on the gen 3 meshes). `DT_Cosmetics` still maps the six look slots onto them. Each bot now gets its own hat, face and colour before it spawns. The title choir does the same from that table. `ApplyLook` sets `FaceUVOffset` V to `TTAFaceDropV` (0.20) so the painted face sits lower, and the hat stays visible in angel form as well as human form.
 - **Failed / fixed by hand:** not compiled here. If a face is still high, nudge `TTAFaceDropV` in `TTACosmetics.h`. Only the crown has a hand-tuned fit; the other hats use the default in `Scripts/build_cosmetics_table.py`.
+
+## Heaven hub between rounds
+- **Prompt:** death and a finish both end in heaven; the TV stays live until the round ends, then the death reel plays; walking through a gate there starts the next round, and R restarts at round 1. Bot budget climbs instead of traps stacking.
+- **Agent did:** touching the course gate seats the human on the couch without ending the race. When everyone is finished or dead, or the timer runs out, the same reel plays. After it, the player can walk: the heaven gate queues the next build (yard cleared, bots get +$50 each round, player stays at $100), and R rebuilds round 1. Demo no longer returns to Title after two rounds.
+- **Failed / fixed by hand:** not played in the editor. Confirm a fall keeps the live TV until the bots finish, a gate finish does the same, the reel plays, the heaven gate starts round 2 with more bot traps, and R starts a fresh $100 round.
+
+## Hat and face only, loading screen on Play
+- **Prompt:** drop the colour picker; hat and face are enough. The long pause after Play feels frozen. Add a loading screen or make the load faster.
+- **Agent did:** settings and lobby customize cycle hat and face only. `PlayerLook.colour` stays for the body tint, HUD and statues. Play paints a full-screen LOADING frame, then travel waits one tick so that frame draws. `UTTASessionSubsystem` sets a MoviePlayer loading screen on `PreLoadMap` and again in `HostSolo` before the Backyard `ServerTravel`. MoviePlayer is a module dependency.
+- **Failed / fixed by hand:** needs an editor compile and a Play from the title. The hitch is the Backyard map load; this covers it, it does not make the load instant. In the editor the movie player often stays off, so the painted LOADING frame is what you see through the hitch.
+
+## Title map script no longer crashes the editor
+- **Prompt:** UE crashes (access violation at 0x10) when running `create_title_map.py`; debug it.
+- **Agent did:** four crash logs in `Saved/Crashes` end the same way: `Force Deleting 1 Package(s): /Game/Maps/Title.Title`, then `new_level` recreating the same path. Two die on the `Class.cpp:2640` assert with the script stack in `EditorAssetLibrary.DeleteAsset`, two on the access violation inside `new_level`. The script deleted the Title world (usually the open level) and made a new one with the same name in the same call. Reruns now `load_level` the existing map and destroy its actors, like `build_backyard_map.py`; `new_level` only runs when the map is missing. `test_title_map.py` covers the rerun path.
+- **Failed / fixed by hand:** not rerun in the editor. Run `py C:/Users/kevbe/take-two-afterlife/Scripts/create_title_map.py` with Title open and confirm it rebuilds and saves. A rerun now empties the map of every listed actor, including hand-placed ones.

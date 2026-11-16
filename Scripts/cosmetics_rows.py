@@ -20,7 +20,10 @@ OFFSET = (0.0, 0.0, 12.0)
 ROTATION = (0.0, 0.0, 0.0)
 SCALE = (1.0, 1.0, 1.0)
 # Hat tint, as indices into toon_spec.PALETTE / kPaletteHex.
-HAT_PALETTE = {"Chef": 1, "Cowboy": 11, "Firefighter": 2, "HardHat": 4, "Pilot": 0, "Police": 8}
+HAT_PALETTE = {
+    "BunnyEars": 10, "Crown": 4, "DevilHorns": 2, "Halo": 4,
+    "PartyCone": 3, "PropellerBeanie": 7, "TrafficCone": 3, "VikingHelmet": 11,
+}
 FIELDS = ("Name", "HatMesh", "SocketOffset", "Rotation", "Scale", "FaceTexture", "PaletteIndex")
 
 
@@ -39,29 +42,36 @@ def asset_path(folder, name):
 def build_rows(hats=None, faces=None):
     hats = core_names("kHats") if hats is None else hats
     faces = core_names("kFaces") if faces is None else faces
-    if len(hats) != len(faces):
-        raise ValueError(f"{len(hats)} hats vs {len(faces)} faces: one row holds one of each")
+    if not hats or not faces:
+        raise ValueError(f"{len(hats)} hats vs {len(faces)} faces")
     missing = [h for h in hats if h not in HAT_PALETTE]
     if missing:
         raise ValueError(f"no palette index for hats {missing}")
-    return [{
-        "Name": f"Look{i}",
-        "HatMesh": asset_path(HAT_DIR, f"SM_Hat_{hat}"),
-        "SocketOffset": OFFSET,
-        "Rotation": ROTATION,
-        "Scale": SCALE,
-        "FaceTexture": asset_path(FACE_DIR, f"T_Face_{face}"),
-        "PaletteIndex": HAT_PALETTE[hat],
-    } for i, (hat, face) in enumerate(zip(hats, faces))]
+    # One row per index. Hat i and face i are read independently, so the table is as long as the longer list.
+    count = max(len(hats), len(faces))
+    rows = []
+    for i in range(count):
+        hat = hats[i] if i < len(hats) else hats[0]
+        face = faces[i] if i < len(faces) else faces[0]
+        rows.append({
+            "Name": f"Look{i}",
+            "HatMesh": asset_path(HAT_DIR, f"SM_Hat_{hat}"),
+            "SocketOffset": OFFSET,
+            "Rotation": ROTATION,
+            "Scale": SCALE,
+            "FaceTexture": asset_path(FACE_DIR, f"T_Face_{face}"),
+            "PaletteIndex": HAT_PALETTE[hat],
+        })
+    return rows
 
 
 def source_files(rows):
-    """models/ files each row needs imported: (fbx or png path, destination folder)."""
+    """Imported asset for each row: the Content uasset, which is what the game loads."""
     out = []
     for row in rows:
-        for key, folder, ext, sub in (("HatMesh", HAT_DIR, ".fbx", ""), ("FaceTexture", FACE_DIR, ".png", "renders")):
+        for key, folder in (("HatMesh", "Content/Characters/Hats"), ("FaceTexture", "Content/Characters/Faces")):
             name = row[key].rsplit("/", 1)[1].split(".")[0]
-            out.append((MODELS / sub / f"{name}{ext}", folder))
+            out.append((REPO / folder / f"{name}.uasset", "/" + folder.replace("Content", "Game")))
     return out
 
 

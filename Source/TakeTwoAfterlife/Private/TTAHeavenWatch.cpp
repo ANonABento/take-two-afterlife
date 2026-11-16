@@ -1,6 +1,7 @@
 #include "TTAHeavenWatch.h"
 
 #include "Camera/CameraActor.h"
+#include "TTAFinishGate.h"
 #include "Components/Image.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/StaticMeshComponent.h"
@@ -55,6 +56,53 @@ void ATTAHeavenWatch::ShowTexture(UTexture* Texture)
 {
 	bLive = false;
 	if (Feed) Feed->SetFeed(Texture);
+}
+
+FTransform ATTAHeavenWatch::GetWalkTransform() const
+{
+	const FVector At = GetActorLocation() + FVector(-180.f, 0.f, 140.f);
+	const FVector Gate = GetActorLocation() + FVector(-700.f, 0.f, 140.f);
+	return FTransform((Gate - At).Rotation(), At);
+}
+
+void ATTAHeavenWatch::ClearContinueGate()
+{
+	if (ContinueGate)
+	{
+		ContinueGate->Destroy();
+		ContinueGate = nullptr;
+	}
+	if (WalkFloor)
+	{
+		WalkFloor->DestroyComponent();
+		WalkFloor = nullptr;
+	}
+}
+
+void ATTAHeavenWatch::SpawnContinueGate()
+{
+	ClearContinueGate();
+	UStaticMesh* Cube = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube"));
+	WalkFloor = NewObject<UStaticMeshComponent>(this);
+	WalkFloor->SetupAttachment(Cloud);
+	WalkFloor->SetStaticMesh(Cube);
+	WalkFloor->SetRelativeLocation(FVector(-250.f, 0.f, 30.f));
+	WalkFloor->SetRelativeScale3D(FVector(14.f, 6.f, 0.2f));
+	WalkFloor->SetCollisionProfileName(TEXT("BlockAll"));
+	WalkFloor->RegisterComponent();
+
+	FActorSpawnParameters Params;
+	Params.Owner = this;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	const FVector GateAt = GetActorLocation() + FVector(-700.f, 0.f, 30.f);
+	ContinueGate = GetWorld()->SpawnActor<ATTAFinishGate>(GateAt, FRotator(0.f, 180.f, 0.f), Params);
+	if (ContinueGate && Cube)
+	{
+		ContinueGate->Arch->SetStaticMesh(Cube);
+		ContinueGate->Arch->SetWorldScale3D(FVector(0.3f, 2.2f, 2.6f));
+		ContinueGate->Arch->SetRelativeLocation(FVector(0.f, 0.f, 130.f));
+		ContinueGate->Arch->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
 }
 
 ATTAHeavenWatch::ATTAHeavenWatch()

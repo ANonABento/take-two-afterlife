@@ -169,9 +169,14 @@ void ATTABuildHUD::DrawHUD()
 			tta::kBone, Left, Y, UTTAUIStyle::kSmall, false);
 		Y += kLineH;
 	}
-	if (Mode && Mode->IsWatching())
+	if (Mode && Mode->IsHeavenChoice())
 	{
-		DrawStyledText(TEXT("You're in heaven. The TV shows the race, then the death reel."),
+		DrawStyledText(TEXT("Walk through the gate for the next round.  [R] restarts at round 1."),
+			tta::kBone, Left, Y, UTTAUIStyle::kSmall, false);
+	}
+	else if (Mode && Mode->IsWatching())
+	{
+		DrawStyledText(TEXT("You're in heaven. The TV stays on the race, then plays the death reel."),
 			tta::kBone, Left, Y, UTTAUIStyle::kSmall, false);
 	}
 

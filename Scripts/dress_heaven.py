@@ -71,7 +71,7 @@ def cinema_point(origin, at):
 def spawn_mesh(subsystem, piece, toon, origin):
     """piece: one S.heaven_pieces() entry. Fitted once from the mesh bounds, bounds bottom-centre on its spot."""
     mesh = load_mesh(piece["mesh"])
-    yaw = piece["yaw"] + origin.rotation.yaw
+    yaw = piece["yaw"] + origin.rotation.rotator().yaw   # Transform.rotation is a Quat
     actor, size = S.spawn_or_skip(unreal, subsystem, piece["label"], mesh, piece["fit"], cinema_point(origin, piece["at"]),
                                   yaw, collide=piece["collide"])
     if actor is None:   # logged by spawn_or_skip
@@ -192,6 +192,18 @@ def main():
     trigger.set_box_extent(unreal.Vector(*S.GATE_TRIGGER_HALF))
     trigger.set_relative_location(unreal.Vector(0.0, 0.0, S.GATE_TRIGGER_HALF[2]), False, False)
 
+    # The screen and the gate arch have collision off in C++ (runners walked through both). Unseen boxes block
+    # instead: one over the screen, one per gate pillar; the opening between the pillars stays free.
+    cube = EAL.load_asset("/Engine/BasicShapes/Cube")
+    tv = S.heaven_protected(layout)["Screen"]
+    S.blocker(unreal, subsystem, cube, "Blocker_Screen", (2 * tv["half"][0], 2 * tv["half"][1], 700.0),
+              cinema_point(origin, (tv["x"], tv["y"], 0.0)))
+    opening, depth = S.GATE_TRIGGER_HALF[1], 2 * spot["half"][1]
+    pillar = spot["half"][0] - opening
+    for side in (-1, 1):
+        S.blocker(unreal, subsystem, cube, "Blocker_GatePillar", (pillar, depth, 700.0),
+                  cinema_point(origin, (spot["x"] + side * (opening + pillar / 2), spot["y"], 0.0)), spot["yaw"])
+
     # No ATTACinema lookup for podium marks. Tags 1st/2nd/3rd are the spots (statue centre, facing the lobby).
     for tag, (x, y, z, yaw) in S.podium_spots(layout).items():
         point = subsystem.spawn_actor_from_class(unreal.TargetPoint, unreal.Vector(*cinema_point(origin, (x, y, z))),
@@ -204,7 +216,6 @@ def main():
     unreal.log("dressed /Game/Maps/Heaven")
 
 
-main()
 
 
 def walkable_floor(mesh):
@@ -218,3 +229,6 @@ def walkable_floor(mesh):
 
 def rot(yaw=0.0, pitch=0.0):
     return unreal.Rotator(roll=0.0, pitch=pitch, yaw=yaw)
+
+
+main()

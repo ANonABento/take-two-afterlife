@@ -31,7 +31,6 @@ def _fake_unreal(exists=True):
     for n in ["DirectionalLight", "SkyLight", "SkyAtmosphere", "ExponentialHeightFog", "CameraActor", "StaticMeshActor"]:
         setattr(u, n, n)
     u.Vector = u.Rotator = lambda *a: a
-    u.CollisionEnabled = types.SimpleNamespace(NO_COLLISION="NO_COLLISION")
     u.log = lambda m: spawned.append(("log", m))
     u.load_class = lambda outer, path: path.rsplit(".", 1)[-1]
 
@@ -40,13 +39,20 @@ def _fake_unreal(exists=True):
             spawned.append(cls)
             return _Obj(cls)
 
+        def get_all_level_actors(self):
+            return ["OldSun", "OldCamera"]
+
+        def destroy_actor(self, actor):
+            spawned.append(("destroyed", actor))
+            return True
+
     class EAL:
         does_asset_exist = staticmethod(lambda p: exists)
-        delete_asset = staticmethod(lambda p: spawned.append(("deleted", p)) or True)
         load_asset = staticmethod(lambda p: _Obj("asset"))
 
     class Level:
-        def new_level(self, p): return True
+        def new_level(self, p): return spawned.append(("new", p)) or True
+        def load_level(self, p): return spawned.append(("loaded", p)) or True
         def save_current_level(self): return True
 
     class Editor:
@@ -84,7 +90,12 @@ class TitleMapTest(unittest.TestCase):
 
     def test_rerun_rebuilds_existing_title(self):
         spawned, world = self.run_script(exists=True)
-        self.assertIn(("deleted", "/Game/Maps/Title"), spawned)
+        # Deleting the map and recreating it at the same path crashes the editor: reruns load and clear.
+        self.assertNotIn("delete_asset", (SCRIPTS / "create_title_map.py").read_text().split("\nif EAL")[1])
+        self.assertIn(("loaded", "/Game/Maps/Title"), spawned)
+        self.assertNotIn(("new", "/Game/Maps/Title"), spawned)
+        self.assertIn(("destroyed", "OldSun"), spawned)
+        self.assertIn(("destroyed", "OldCamera"), spawned)
         self.assertEqual(world.props.get("default_game_mode"), "TTATitleGameMode")
         self.assertIn(("log", "created /Game/Maps/Title"), spawned)
 
@@ -102,6 +113,13 @@ class TitleMapTest(unittest.TestCase):
     def test_host_travels_to_backyard(self):
         h = (SRC / "Public" / "TTASessionSubsystem.h").read_text()
         self.assertIn('LobbyMap = TEXT("/Game/Maps/Heaven")', h)
+
+    def test_travel_shows_a_loading_screen(self):
+        cpp = (SRC / "Private" / "TTASessionSubsystem.cpp").read_text()
+        self.assertIn("PreLoadMap", cpp)
+        self.assertIn("SetupLoadingScreen", cpp)
+        self.assertIn("LOADING", cpp)
+        self.assertIn("MoviePlayer", (SRC / "TakeTwoAfterlife.Build.cs").read_text())
 
 
 if __name__ == "__main__":

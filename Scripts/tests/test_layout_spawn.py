@@ -48,6 +48,8 @@ class FitScale(unittest.TestCase):
     def test_every_entry_scale_in_range(self):
         for size in (CUBE,):
             for prop in L.props():
+                if prop.kit == "TTAHeaven":
+                    continue   # clouds are fitted up to 49 m wide: fine on their own meshes, not on a 1 m cube
                 for s in S.fit_scale(size, backyard_fit(prop)):
                     self.assertTrue(0.05 <= s <= 10.0, (prop, size, s))
             for piece in heaven():

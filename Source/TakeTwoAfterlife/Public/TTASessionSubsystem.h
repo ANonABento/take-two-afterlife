@@ -45,6 +45,10 @@ private:
 	void HandleFind(bool bOk);
 	void HandleJoin(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 	void FailJoin(const FString& Message);
+	void OnPreLoadMap(const FString& MapName);
+
+	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+	virtual void Deinitialize() override;
 
 	// Map the host travels to with ?listen: Heaven, the walkable lobby (Title is menus only).
 	UPROPERTY(Config) FString LobbyMap = TEXT("/Game/Maps/Heaven");

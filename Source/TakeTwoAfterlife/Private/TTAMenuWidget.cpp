@@ -12,6 +12,7 @@
 #include "Components/Overlay.h"
 #include "Components/OverlaySlot.h"
 #include "Components/ProgressBar.h"
+#include "Components/ScrollBox.h"
 #include "Components/SizeBox.h"
 #include "Components/Slider.h"
 #include "Components/TextBlock.h"
@@ -24,6 +25,7 @@
 #include "GameFramework/GameUserSettings.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Misc/Paths.h"
+#include "TimerManager.h"
 #include "TTAReels.h"
 #include "TTAUIStyle.h"
 #include "tta/JoinCode.h"
@@ -38,10 +40,34 @@ constexpr int32 kCode = 160;
 constexpr float kScreenW = 520.f, kWideW = 2 * kScreenW + 40.f;
 constexpr float kButtonW = 480.f, kButtonH = 72.f, kGap = 12.f, kCorner = 18.f;
 constexpr float kRowLabelW = 180.f, kRowControlW = 280.f;  // fits inside a Card (520 - 2 * 30)
+// Settings scroll height: leaves room for the heading and BACK on a 720p window inside the safe area.
+constexpr float kSettingsScrollH = 440.f;
+constexpr float kCycleH = 56.f;
 // The title painting is the 3D backdrop. This wash sits on top of it and the angels, so it stays faint.
 constexpr float kTitleTilt = -4.f, kSkyOpacity = 0.12f;
 constexpr float kHoverDarken = 0.25f, kPressedDarken = 0.45f;  // lerp toward Ink
 
+
+// "BunnyEars" -> "Bunny Ears", so the buttons show the textured hat and face names.
+FString SpacedName(const char* Raw)
+{
+	const FString Name = UTF8_TO_TCHAR(Raw);
+	FString Out;
+	for (int32 i = 0; i < Name.Len(); ++i)
+	{
+		if (i > 0 && FChar::IsUpper(Name[i]) && !FChar::IsUpper(Name[i - 1])) Out.AppendChar(TEXT(' '));
+		Out.AppendChar(Name[i]);
+	}
+	return Out;
+}
+
+void SetButtonText(UButton* Button, const FString& Text)
+{
+	if (UTextBlock* Block = Button ? Cast<UTextBlock>(Button->GetChildAt(0)) : nullptr)
+	{
+		Block->SetText(FText::FromString(Text));
+	}
+}
 
 // Puts a gap after the child along its box's direction.
 void GapAfter(UPanelSlot* Slot)
@@ -276,12 +302,11 @@ void UTTAMenuWidget::NativeOnInitialized()
 		}
 		GapAfter(Box->AddChild(CardRow));
 		WaitingText = Label(Box, TEXT(""), UTTAUIStyle::kBody);
-		// Customize opens the colour / hat / face pickers under the cards.
+		// Customize opens the hat / face pickers under the cards.
 		CustomizePanel = WidgetTree->ConstructWidget<UVerticalBox>();
 		CustomizePanel->SetVisibility(ESlateVisibility::Collapsed);
 		LookSwatch = Card(CustomizePanel, tta::kRed);
 		LookText = Label(LookSwatch, TEXT(""), UTTAUIStyle::kBody, true);
-		MenuButton(CustomizePanel, TEXT("COLOUR >"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnColourNext);
 		MenuButton(CustomizePanel, TEXT("HAT >"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnHatNext);
 		MenuButton(CustomizePanel, TEXT("FACE >"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnFaceNext);
 		GapAfter(Box->AddChild(CustomizePanel));
@@ -296,27 +321,44 @@ void UTTAMenuWidget::NativeOnInitialized()
 		Box->AddChild(Bottom);
 	}
 	// Settings
+	// Look on one row, video next, audio below. The list scrolls; BACK stays on screen.
 	{
-		UVerticalBox* Box = ScreenPanel(kScreenW);
-		UBorder* Face = Card(Box, tta::kBone);
+		UVerticalBox* Box = ScreenPanel(kScreenW, HAlign_Center, VAlign_Top);
+		Label(Box, TEXT("SETTINGS"), UTTAUIStyle::kH2, true);
+		UScrollBox* Scroll = WidgetTree->ConstructWidget<UScrollBox>();
+		USizeBox* ScrollSize = WidgetTree->ConstructWidget<USizeBox>();
+		ScrollSize->SetHeightOverride(kSettingsScrollH);
+		ScrollSize->SetContent(Scroll);
+		Box->AddChild(ScrollSize);
 		UVerticalBox* Inner = WidgetTree->ConstructWidget<UVerticalBox>();
-		Face->SetContent(Inner);
-		Label(Inner, TEXT("LOOK"), UTTAUIStyle::kH2, true);
-		SettingsLookSwatch = Card(Inner, tta::kRed);
-		SettingsLookText = Label(SettingsLookSwatch, TEXT(""), UTTAUIStyle::kBody, true);
-		MenuButton(Inner, TEXT("COLOUR >"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnColourNext);
-		MenuButton(Inner, TEXT("HAT >"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnHatNext);
-		MenuButton(Inner, TEXT("FACE >"), tta::kBlue)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnFaceNext);
-		SettingSlider(Inner, TEXT("Master"), Settings.master / kVolumeSliderMax)->OnValueChanged.AddDynamic(this, &UTTAMenuWidget::OnMasterChanged);
-		SettingSlider(Inner, TEXT("Music"), Settings.music / kVolumeSliderMax)->OnValueChanged.AddDynamic(this, &UTTAMenuWidget::OnMusicChanged);
-		SettingSlider(Inner, TEXT("Voice"), Settings.vo / kVolumeSliderMax)->OnValueChanged.AddDynamic(this, &UTTAMenuWidget::OnVoChanged);
-		SettingSlider(Inner, TEXT("SFX"), Settings.sfx / kVolumeSliderMax)->OnValueChanged.AddDynamic(this, &UTTAMenuWidget::OnSfxChanged);
-		SettingSlider(Inner, TEXT("Sensitivity"), Settings.sensitivity / kSensitivitySliderMax)->OnValueChanged.AddDynamic(this, &UTTAMenuWidget::OnSensitivityChanged);
+		Scroll->AddChild(Inner);
+		UHorizontalBox* LookRow = WidgetTree->ConstructWidget<UHorizontalBox>();
+		const float CycleW = (kScreenW - kGap) / 2.f;
+		auto AddCycle = [&](const FString& Text) -> UButton*
+		{
+			UButton* Button = UTTAUIStyle::MakeButton(WidgetTree, FText::FromString(Text), ETTAButtonKind::Secondary);
+			USizeBox* Size = WidgetTree->ConstructWidget<USizeBox>();
+			Size->SetWidthOverride(CycleW);
+			Size->SetHeightOverride(kCycleH);
+			Size->SetContent(Button);
+			GapAfter(LookRow->AddChild(Size));
+			return Button;
+		};
+		HatCycle = AddCycle(TEXT("Hat"));
+		FaceCycle = AddCycle(TEXT("Face"));
+		HatCycle->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnHatNext);
+		FaceCycle->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnFaceNext);
+		GapAfter(Inner->AddChild(LookRow));
 		WindowModeBox = SettingCombo(Inner, TEXT("Display"));
 		for (const char* Name : tta::kWindowModeNames) WindowModeBox->AddOption(UTF8_TO_TCHAR(Name));
 		WindowModeBox->OnSelectionChanged.AddDynamic(this, &UTTAMenuWidget::OnWindowModeChanged);
 		ResolutionBox = SettingCombo(Inner, TEXT("Resolution"));
 		ResolutionBox->OnSelectionChanged.AddDynamic(this, &UTTAMenuWidget::OnResolutionChanged);
+		SettingSlider(Inner, TEXT("Master"), Settings.master / kVolumeSliderMax)->OnValueChanged.AddDynamic(this, &UTTAMenuWidget::OnMasterChanged);
+		SettingSlider(Inner, TEXT("Music"), Settings.music / kVolumeSliderMax)->OnValueChanged.AddDynamic(this, &UTTAMenuWidget::OnMusicChanged);
+		SettingSlider(Inner, TEXT("Voice"), Settings.vo / kVolumeSliderMax)->OnValueChanged.AddDynamic(this, &UTTAMenuWidget::OnVoChanged);
+		SettingSlider(Inner, TEXT("SFX"), Settings.sfx / kVolumeSliderMax)->OnValueChanged.AddDynamic(this, &UTTAMenuWidget::OnSfxChanged);
+		SettingSlider(Inner, TEXT("Sensitivity"), Settings.sensitivity / kSensitivitySliderMax)->OnValueChanged.AddDynamic(this, &UTTAMenuWidget::OnSensitivityChanged);
 		// Video options fill in when Settings opens: Initialize must not need GameUserSettings/RHI.
 		MicMeter = WidgetTree->ConstructWidget<UProgressBar>();
 		MicMeter->SetFillColorAndOpacity(Palette(tta::kGrass));
@@ -418,7 +460,33 @@ void UTTAMenuWidget::Host()
 
 void UTTAMenuWidget::PlaySolo()
 {
-	// Travel straight to the race. Opening the lobby first showed "Need at least 2 players".
+	if (bTravelStarted) return;
+	bTravelStarted = true;
+	// One painted frame of LOADING, then travel. The movie-player screen covers the map load itself.
+	if (UOverlay* Root = Cast<UOverlay>(WidgetTree ? WidgetTree->RootWidget : nullptr))
+	{
+		UBorder* Veil = WidgetTree->ConstructWidget<UBorder>();
+		Veil->SetBrushColor(Palette(tta::kInk));
+		Veil->SetHorizontalAlignment(HAlign_Center);
+		Veil->SetVerticalAlignment(VAlign_Center);
+		UTextBlock* Word = WidgetTree->ConstructWidget<UTextBlock>();
+		Word->SetText(FText::FromString(TEXT("LOADING")));
+		Word->SetFont(UTTAUIStyle::Font(ETTAFont::H1));
+		Word->SetColorAndOpacity(FSlateColor(UTTAUIStyle::Color(ETTAColor::Bone)));
+		Veil->SetContent(Word);
+		UOverlaySlot* Slot = Root->AddChildToOverlay(Veil);
+		Slot->SetHorizontalAlignment(HAlign_Fill);
+		Slot->SetVerticalAlignment(VAlign_Fill);
+	}
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this, [this]()
+		{
+			bHost = true;
+			OnPlaySolo.ExecuteIfBound();
+		}));
+		return;
+	}
 	bHost = true;
 	OnPlaySolo.ExecuteIfBound();
 }
@@ -515,12 +583,15 @@ FLinearColor UTTAMenuWidget::GetLookColour() const
 
 void UTTAMenuWidget::RefreshLook()
 {
-	const FText Line = FText::FromString(FString::Printf(TEXT("Hat: %s  Face: %s"),
-		UTF8_TO_TCHAR(tta::kHats[Look.hat]), UTF8_TO_TCHAR(tta::kFaces[Look.face])));
+	const FString Hat = SpacedName(tta::kHats[Look.hat]);
+	const FString Face = SpacedName(tta::kFaces[Look.face]);
+	const FText Line = FText::FromString(FString::Printf(TEXT("%s   %s"), *Hat, *Face));
 	LookSwatch->SetBrushColor(GetLookColour());
 	LookText->SetText(Line);
 	if (SettingsLookSwatch) SettingsLookSwatch->SetBrushColor(GetLookColour());
 	if (SettingsLookText) SettingsLookText->SetText(Line);
+	SetButtonText(HatCycle, Hat);
+	SetButtonText(FaceCycle, Face);
 }
 
 void UTTAMenuWidget::SetSettings(const tta::ClientSettings& InSettings)

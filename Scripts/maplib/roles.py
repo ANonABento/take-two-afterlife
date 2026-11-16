@@ -7,7 +7,7 @@ import toon_spec
 # corridor), shortcut (flat stepping stone of an alternate branch, inside the corridor, no collision), gate
 # (finish arch, no collision), backdrop (seen, never touched: no collision, e.g. trench water). fit: ("box", (x, y, z)) scales each axis to that size;
 # ("height", h) scales uniformly to that height. Position = bottom-centre of the fitted mesh.
-ROLES = ("floor", "marker", "shortcut", "dressing", "gate", "backdrop")
+ROLES = ("floor", "marker", "shortcut", "dressing", "gate", "backdrop", "scenery")   # scenery: a real mesh, seen and not felt
 Prop = namedtuple("Prop", "kit mesh role x y z yaw palette fit")
 Point = namedtuple("Point", "x y z")
 Box = namedtuple("Box", "min_x max_x min_y max_y min_z max_z")

@@ -7,6 +7,7 @@
 
 class ACameraActor;
 class ASceneCapture2D;
+class ATTAFinishGate;
 class UImage;
 class UStaticMeshComponent;
 class UTextureRenderTarget2D;
@@ -47,6 +48,11 @@ public:
 	FTransform GetSeatTransform() const;
 	// Swap the screen off the live race and onto a replay render target. Stops camera cycling.
 	void ShowTexture(UTexture* Texture);
+	// Where the player stands once the reel is over, facing the continue gate.
+	FTransform GetWalkTransform() const;
+	// A walkable pad and a gate. Walking through the gate asks the game mode for the next round.
+	void SpawnContinueGate();
+	void ClearContinueGate();
 
 	virtual void Tick(float DeltaSeconds) override;
 
@@ -59,6 +65,8 @@ private:
 	UPROPERTY() TObjectPtr<UWidgetComponent> ScreenWidget;
 	UPROPERTY() TObjectPtr<UTTACamFeedWidget> Feed;
 	UPROPERTY() TObjectPtr<ACameraActor> SeatCamera;
+	UPROPERTY() TObjectPtr<UStaticMeshComponent> WalkFloor;
+	UPROPERTY() TObjectPtr<ATTAFinishGate> ContinueGate;
 	UPROPERTY() TObjectPtr<ASceneCapture2D> FeedCam;
 	UPROPERTY() TObjectPtr<UTextureRenderTarget2D> Target;
 	TArray<FTransform> Views;

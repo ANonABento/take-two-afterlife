@@ -38,7 +38,6 @@
 #include "Engine/TargetPoint.h"
 #include "Engine/World.h"
 #include "Engine/HitResult.h"
-#include "EngineUtils.h"
 #include "CollisionQueryParams.h"
 #include "CollisionShape.h"
 #include "Components/CapsuleComponent.h"
@@ -47,6 +46,12 @@
 
 #include <algorithm>
 #include <stdexcept>
+
+namespace
+{
+// Many rounds so Premiere keeps returning to Build. The heaven gate is what stops a run.
+const char* DemoSettingsJson = "{\"rounds\":999,\"buildSeconds\":40,\"runSeconds\":50}";
+}
 
 ATTAGameMode::ATTAGameMode()
 {
@@ -142,6 +147,15 @@ void ATTAPlayerController::SetupInputComponent()
 	Super::SetupInputComponent();
 	InputComponent->BindKey(EKeys::Enter, IE_Pressed, this, &ATTAPlayerController::PressStart);
 	InputComponent->BindKey(EKeys::Gamepad_Special_Right, IE_Pressed, this, &ATTAPlayerController::PressStart);
+	InputComponent->BindKey(EKeys::R, IE_Pressed, this, &ATTAPlayerController::PressRestart);
+	InputComponent->BindKey(EKeys::Gamepad_FaceButton_Top, IE_Pressed, this, &ATTAPlayerController::PressRestart);
+}
+
+void ATTAPlayerController::PressRestart()
+{
+	ATTAGameMode* Mode = GetWorld()->GetAuthGameMode<ATTAGameMode>();
+	if (!Mode || !IsLocalController()) return;
+	Mode->RestartDemo();
 }
 
 void ATTAPlayerController::PressStart()
@@ -343,7 +357,7 @@ void ATTAGameMode::InitGame(const FString& MapName, const FString& Options, FStr
 		// Two rounds of the real loop, shortened: place traps, then race. Edit and premiere stay in the machine.
 		try
 		{
-			Match = tta::MatchStateMachine(tta::parseMatchSettings("{\"rounds\":2,\"buildSeconds\":40,\"runSeconds\":50}", Match.settings()));
+			Match = tta::MatchStateMachine(tta::parseMatchSettings(DemoSettingsJson, Match.settings()));
 		}
 		catch (const std::invalid_argument& Error)
 		{
@@ -614,6 +628,19 @@ void ATTAGameMode::SpawnTraps()
 void ATTAGameMode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	if (bRestartQueued)
+	{
+		bRestartQueued = false;
+		bContinueQueued = false;
+		RestartDemoNow();
+		return;
+	}
+	if (bContinueQueued)
+	{
+		bContinueQueued = false;
+		StartNextDemoRound();
+		return;
+	}
 	const ATTAGameState* State = GetGameState<ATTAGameState>();
 	if (!State) return;
 	if (bReel)
@@ -650,14 +677,14 @@ void ATTAGameMode::Tick(float DeltaSeconds)
 	if (Director->IsTimedOut()) TimedOutFor += DeltaSeconds;
 	// A finish is a win, but one bot crossing early used to end a 50s race in a few seconds.
 	// The round now runs until the timer or until every racer is finished or dead.
-	if (bDemo && Director->AllOut())
+	if (bDemo && !bHeavenChoice && Director->AllOut())
 	{
 		EndDemoRound();
 		return;
 	}
 	if (Director->AllFinished() || TimedOutFor >= SmiteHoldSeconds)
 	{
-		if (bDemo) EndDemoRound();
+		if (bDemo && !bHeavenChoice) EndDemoRound();
 		else EndRun();
 	}
 }
@@ -687,8 +714,8 @@ void ATTAGameMode::OpenHeaven(APlayerController* PC)
 		FActorSpawnParameters Params;
 		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		HeavenWatch = GetWorld()->SpawnActor<ATTAHeavenWatch>(FVector(0.f, 14000.f, 7000.f), FRotator::ZeroRotator, Params);
-		if (HeavenWatch) HeavenWatch->Start(CollectDemoViews());
 	}
+	if (HeavenWatch) HeavenWatch->Start(CollectDemoViews());
 	if (PC && HeavenWatch && HeavenWatch->GetSeatCamera())
 	{
 		PC->SetViewTargetWithBlend(HeavenWatch->GetSeatCamera(), 0.45f);
@@ -711,9 +738,33 @@ void ATTAGameMode::SeatInHeaven(APlayerController* PC, ATTARunnerPawn* Runner)
 	}
 }
 
+void ATTAGameMode::SeatFinished(ATTARunnerPawn* Runner)
+{
+	if (!bDemo || bHeavenChoice || !Runner) return;
+	if (APlayerController* PC = Cast<APlayerController>(Runner->GetController()))
+	{
+		SeatInHeaven(PC, Runner);
+	}
+}
+
+bool ATTAGameMode::ContinueFromHeaven(ATTARunnerPawn* Runner)
+{
+	if (!bHeavenChoice || !Runner || !Cast<APlayerController>(Runner->GetController())) return false;
+	bHeavenChoice = false;
+	bContinueQueued = true;
+	return true;
+}
+
+void ATTAGameMode::RestartDemo()
+{
+	if (!bDemo || !bHeavenChoice) return;
+	bHeavenChoice = false;
+	bRestartQueued = true;
+}
+
 void ATTAGameMode::StartDeathReel()
 {
-	if (bReel || bDemoClosing) return;
+	if (bReel || bHeavenChoice) return;
 	APlayerController* Human = nullptr;
 	ATTARunnerPawn* Body = nullptr;
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
@@ -811,29 +862,97 @@ void ATTAGameMode::FinishDeathReel()
 		ReelStage = nullptr;
 	}
 	ReelPlayer = nullptr;
-	if (bDemoClosing) return;
-	if (Match.phase() != tta::Phase::Run)
-	{
-		return;
-	}
-	const ATTAGameState* State = GetGameState<ATTAGameState>();
-	if (State && State->GetRound() >= Match.settings().rounds)
-	{
-		bDemoClosing = true;
-		UE_LOG(LogTemp, Log, TEXT("ATTAGameMode: demo finished, returning to Title"));
-		GetWorld()->ServerTravel(TEXT("/Game/Maps/Title"));
-		return;
-	}
-	bWatching = false;
-	TimedOutFor = 0.f;
+	if (!bDemo || Match.phase() != tta::Phase::Run) return;
+	OpenHeavenHub();
+}
+
+void ATTAGameMode::ClearDemoRunners()
+{
 	TArray<ATTARunnerPawn*> Corpses;
 	for (TActorIterator<ATTARunnerPawn> It(GetWorld()); It; ++It) Corpses.Add(*It);
 	for (ATTARunnerPawn* Runner : Corpses) Runner->Destroy();
 	for (TActorIterator<ATTABotController> It(GetWorld()); It; ++It) It->StopRun();
+}
+
+void ATTAGameMode::ApplyDemoBotBudgets()
+{
+	const int32 Round = FMath::Max(Match.round(), 1);
+	const int Budget = tta::kBudget + (Round - 1) * 50;
+	for (TActorIterator<ATTABotController> It(GetWorld()); It; ++It)
+	{
+		if (It->PlayerState) Layout.setBudget(It->PlayerState->GetPlayerId(), Budget);
+	}
+	UE_LOG(LogTemp, Log, TEXT("ATTAGameMode: round %d bot budget $%d"), Round, Budget);
+}
+
+void ATTAGameMode::OpenHeavenHub()
+{
+	APlayerController* Human = nullptr;
+	ATTARunnerPawn* Body = nullptr;
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		Human = It->Get();
+		Body = Human ? Cast<ATTARunnerPawn>(Human->GetPawn()) : nullptr;
+		if (Human) break;
+	}
+	if (Human) SeatInHeaven(Human, Body);
+	if (Body) Body->WalkHeaven();
+	if (HeavenWatch)
+	{
+		const FTransform Walk = HeavenWatch->GetWalkTransform();
+		if (Body)
+		{
+			Body->SetActorLocationAndRotation(Walk.GetLocation(), Walk.Rotator(), false, nullptr, ETeleportType::TeleportPhysics);
+		}
+		HeavenWatch->SpawnContinueGate();
+	}
+	if (Human && Body) Human->SetViewTargetWithBlend(Body, 0.f);
+	bHeavenChoice = true;
+	bWatching = true;
+	UE_LOG(LogTemp, Log, TEXT("ATTAGameMode: heaven hub, walk the gate or press R"));
+}
+
+void ATTAGameMode::StartNextDemoRound()
+{
+	bWatching = false;
+	bHeavenChoice = false;
+	if (HeavenWatch) HeavenWatch->ClearContinueGate();
+	TimedOutFor = 0.f;
+	ClearDemoRunners();
 	ClearPlacements();
 	if (!Match.transition(tta::Phase::Edit) || !Match.transition(tta::Phase::Premiere) || !RequestPhase(ETTAPhase::Build))
 	{
 		UE_LOG(LogTemp, Error, TEXT("ATTAGameMode: demo could not open the next build"));
+	}
+}
+
+void ATTAGameMode::RestartDemoNow()
+{
+	bWatching = false;
+	bHeavenChoice = false;
+	bReel = false;
+	if (ReelStage)
+	{
+		ReelStage->Destroy();
+		ReelStage = nullptr;
+	}
+	ReelPlayer = nullptr;
+	if (HeavenWatch) HeavenWatch->ClearContinueGate();
+	TimedOutFor = 0.f;
+	ClearDemoRunners();
+	ClearPlacements();
+	try
+	{
+		Match = tta::MatchStateMachine(tta::parseMatchSettings(DemoSettingsJson, IniSettings()));
+	}
+	catch (const std::exception& Error)
+	{
+		UE_LOG(LogTemp, Error, TEXT("ATTAGameMode: demo restart rejected (%hs)"), Error.what());
+		return;
+	}
+	if (!RequestPhase(ETTAPhase::Build))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ATTAGameMode: demo could not restart at round 1"));
 	}
 }
 
@@ -888,7 +1007,7 @@ void ATTAGameMode::BeginDemoRound()
 
 void ATTAGameMode::EndDemoRound()
 {
-	if (bDemoClosing || bReel || Match.phase() != tta::Phase::Run) return;
+	if (bHeavenChoice || bReel || Match.phase() != tta::Phase::Run) return;
 	StartDeathReel();
 }
 
@@ -918,6 +1037,7 @@ void ATTAGameMode::EnterBuild()
 		PC->Possess(Pawn);
 		PC->SetViewTarget(Pawn);
 	}
+	if (bDemo) ApplyDemoBotBudgets();
 	for (TActorIterator<ATTABotController> It(GetWorld()); It; ++It) It->BuildTraps(Layout);
 	for (const tta::Placement& P : Layout.all()) SyncMarker(P.id);
 }

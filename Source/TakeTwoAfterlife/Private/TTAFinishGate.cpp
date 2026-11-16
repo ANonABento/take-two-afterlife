@@ -28,8 +28,14 @@ bool ATTAFinishGate::HandleRunnerEntered(ATTARunnerPawn* Runner)
 	{
 		return false;
 	}
+	ATTAGameMode* Mode = GetWorld()->GetAuthGameMode<ATTAGameMode>();
+	// Heaven hub, after the reel: this gate starts the next round.
+	if (Mode && Mode->ContinueFromHeaven(Runner))
+	{
+		return true;
+	}
 	// Heaven lobby: walking or jumping through marks the player ready.
-	if (ATTAGameMode* Mode = GetWorld()->GetAuthGameMode<ATTAGameMode>(); Mode && Mode->MarkReady(Runner->GetController()))
+	if (Mode && Mode->MarkReady(Runner->GetController()))
 	{
 		return true;
 	}
@@ -38,6 +44,7 @@ bool ATTAFinishGate::HandleRunnerEntered(ATTARunnerPawn* Runner)
 		if (It->IsRunning() && It->PlayerId(Runner) != INDEX_NONE)
 		{
 			It->MarkFinished(Runner);
+			if (Mode) Mode->SeatFinished(Runner);
 			return true;
 		}
 	}

@@ -37,6 +37,7 @@ protected:
 	virtual void SetupInputComponent() override;
 	// Host START (Enter / gamepad Menu): opens the Heaven gate. Listen-server host only.
 	void PressStart();
+	void PressRestart();
 	// The Title menu leaves the viewport in UIOnly with a cursor, and that survives the travel
 	// to the match map; the match controller puts the game back in charge.
 	virtual void BeginPlay() override;
@@ -119,6 +120,14 @@ public:
 	static constexpr int32 DemoBotCount = 6;
 	bool IsDemo() const { return bDemo; }
 	bool IsWatching() const { return bWatching; }
+	// After the death reel: walk the heaven gate for the next round, or restart at round 1.
+	bool IsHeavenChoice() const { return bHeavenChoice; }
+	// Demo finish: sit the human on the couch. The TV stays on the live race until the round ends.
+	void SeatFinished(ATTARunnerPawn* Runner);
+	// True when this overlap is the heaven continue gate and the next round is queued.
+	bool ContinueFromHeaven(ATTARunnerPawn* Runner);
+	// [R] while the heaven choice is up: queue a new run at round 1.
+	void RestartDemo();
 	// Demo death: the human stands on the heaven couch and watches the TV. A bot stays down.
 	// False outside the demo (normal hits still respawn at the start). True means the caller
 	// must not teleport the pawn home.
@@ -154,6 +163,11 @@ private:
 	void BeginDemoRound();
 	void EndDemoRound();
 	void ClearPlacements();
+	void ClearDemoRunners();
+	void ApplyDemoBotBudgets();
+	void OpenHeavenHub();
+	void StartNextDemoRound();
+	void RestartDemoNow();
 	void OpenHeaven(APlayerController* PC);
 	void SeatInHeaven(APlayerController* PC, ATTARunnerPawn* Runner);
 	void StartDeathReel();
@@ -191,7 +205,9 @@ private:
 	int32 BotCount = 0;
 	bool bDemo = false;
 	bool bWatching = false;
-	bool bDemoClosing = false;
+	bool bHeavenChoice = false;
+	bool bContinueQueued = false;
+	bool bRestartQueued = false;
 	UPROPERTY() TObjectPtr<ATTAHeavenWatch> HeavenWatch;
 	UPROPERTY() TObjectPtr<ATTAEditStage> ReelStage;
 	UPROPERTY() TObjectPtr<UTTACutPlayer> ReelPlayer;

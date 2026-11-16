@@ -418,6 +418,12 @@ void ATTARunnerPawn::SitOut()
 	GetCharacterMovement()->StopMovementImmediately();
 }
 
+void ATTARunnerPawn::WalkHeaven()
+{
+	RestoreBody();
+	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+}
+
 void ATTARunnerPawn::Respawn()
 {
 	if (ATTAGameMode* Mode = GetWorld()->GetAuthGameMode<ATTAGameMode>())

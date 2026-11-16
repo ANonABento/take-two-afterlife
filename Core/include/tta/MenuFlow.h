@@ -38,9 +38,11 @@ constexpr int hudTimerFill(int secondsLeft) { return secondsLeft <= kTimerWarnSe
 constexpr int hudBudgetFill(int remaining) { return remaining > 0 ? kGrass : kRed; }
 // Lobby colour choices, P1-P4 defaults (palette indices).
 constexpr std::array<int, 4> kPlayerColours = {kRed, kBlue, kGrass, kOrange};
-// models/: SM_Hat_* and T_Face_*, alphabetical.
-constexpr std::array<const char*, 6> kHats = {"Chef", "Cowboy", "Firefighter", "HardHat", "Pilot", "Police"};
-constexpr std::array<const char*, 6> kFaces = {"Angry", "Happy", "Shocked", "Sleepy", "Smug", "Wink"};
+// Textured gen-3 hats in Content/Characters/Hats (SM_Hat_*) and faces in Content/Characters/Faces (T_Face_*).
+constexpr std::array<const char*, 8> kHats = {
+    "BunnyEars", "Crown", "DevilHorns", "Halo", "PartyCone", "PropellerBeanie", "TrafficCone", "VikingHelmet"};
+constexpr std::array<const char*, 7> kFaces = {
+    "Angry", "Happy", "Shocked", "Sleepy", "Smug", "Wink", "Dizzy"};
 
 enum class LookPart { Colour, Hat, Face };
 struct PlayerLook {

@@ -40,6 +40,8 @@ public:
 	UFUNCTION(BlueprintCallable) void Hit();
 	// Ragdoll off and movement off. Demo death uses this to stand the angel on the heaven couch.
 	void SitOut();
+	// Movement back on, so the heaven hub can be walked.
+	void WalkHeaven();
 	// Forward lunge; only from the ground while alive.
 	UFUNCTION(BlueprintCallable) void Dive();
 	// [LMB]/[Gamepad right face] punch (punch plan req 1-5). Asks the server to start it.

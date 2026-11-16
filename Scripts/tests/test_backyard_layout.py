@@ -21,7 +21,7 @@ class LayoutTests(unittest.TestCase):
         self.assertTrue(all(b - a == 4 for a, b in zip(markers, markers[1:])))
 
     def test_designed_dressing(self):
-        dressing = [p for p in L.props() if p.role == "dressing"]
+        dressing = [p for p in L.props() if p.role in ("dressing", "scenery")]
         self.assertGreaterEqual(len(dressing), 40)
         self.assertGreaterEqual(len({p.mesh for p in dressing}), 10)
 

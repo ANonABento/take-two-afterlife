@@ -155,32 +155,45 @@ class BackyardGround(unittest.TestCase):
             if p.role == "dressing":
                 self.assertTrue(self._covered(p.x, p.y), p)
 
-    def test_trenches_are_open_beside_the_corridor_and_closed_at_the_ends(self):
+    def test_strip_is_the_only_ground_to_stand_on(self):
+        # Nov 15 play tests: with lawns beside the path, runners reached them and walked past every trap.
+        for x in (-1.0, 1.0, 30.0, 59.0, L.CORRIDOR_LENGTH + 1.0):
+            self.assertTrue(self._covered(x, 0.0), x)
         for x in (1.0, 30.0, 59.0):
             for side in (-1, 1):
-                self.assertFalse(self._covered(x, side * (L.HALF_WIDTH + L.DITCH / 2)), (x, side))
-        for x in (-1.0, L.CORRIDOR_LENGTH + 1.0):
-            self.assertTrue(self._covered(x, L.HALF_WIDTH + L.DITCH / 2))
-
-    def test_ground_is_solid_down_to_the_water(self):
+                self.assertFalse(self._covered(x, side * (L.HALF_WIDTH + 0.5)), x)
         for p in self.floors:
             self.assertEqual(p.z + p.fit[1][2], 0.0, p)
-            self.assertLess(p.z, L.WATER_Z, p)
-        water = [p for p in self.props if p.role == "backdrop"]
-        self.assertTrue(water)
-        for p in water:
-            self.assertGreater(p.z, L.KILL_PLANE.max_z)
-            self.assertTrue(L.HALF_WIDTH < abs(p.y) < L.HALF_WIDTH + L.DITCH)
+            self.assertTrue(L.STRIP_X[0] <= p.x <= L.STRIP_X[1] and abs(p.y) <= L.PAD_HALF, p)
+
+    def test_islands_are_out_of_reach_and_clear_of_the_heaven_seat(self):
+        # ACharacter defaults (no override in TTARunnerPawn): 600 cm/s, jump 420 cm/s, gravity 980 -> about 5.1 m.
+        reach = 6.0 * (2 * 4.2 / 9.8)
+        sites = L.island_sites()
+        self.assertGreaterEqual(len(sites), 20)
+        for x, y, _, size, _ in sites:
+            self.assertGreater(L.strip_distance(x, y) - size * 0.71, 2 * reach, (x, y))
+            self.assertGreater(((x - L.HEAVEN_SEAT[0]) ** 2 + (y - L.HEAVEN_SEAT[1]) ** 2) ** 0.5, 45.0, (x, y))
+        self.assertEqual(sites, L.island_sites())                      # seeded: every rebuild is the same map
+        self.assertLess(sum(1 for _, y, *_ in sites if y < -L.PAD_HALF), len(sites) / 4)   # TV cameras look across from -Y
+
+    def test_nothing_off_the_strip_can_be_stood_on(self):
+        for p in self.props:
+            if p.role in ("floor", "dressing"):
+                self.assertTrue(L.STRIP_X[0] <= p.x <= L.STRIP_X[1] and abs(p.y) <= L.PAD_HALF, p)
+
+    def test_clouds_hide_the_kill_plane(self):
+        k = L.KILL_PLANE
+        low = [p for p in self.props if p.kit == "TTAHeaven" and p.z < 0]
+        self.assertGreater(len(low), 50)
+        for p in low:
+            self.assertTrue(k.min_z - 1.0 <= p.z <= k.max_z, p)
 
     def test_kill_plane_is_under_the_whole_block(self):
         k = L.KILL_PLANE
         for p in self.floors:
             hx, hy = p.fit[1][0] / 2, p.fit[1][1] / 2
             self.assertTrue(k.min_x < p.x - hx and p.x + hx < k.max_x and k.min_y < p.y - hy and p.y + hy < k.max_y, p)
-
-    def test_fence_panels_touch(self):
-        fences = sorted(p.x for p in self.props if p.mesh == "fence" and p.yaw == 0 and p.y > 0)
-        self.assertTrue(all(b - a <= 2.12 for a, b in zip(fences, fences[1:])))
 
     def test_garden_has_its_landmarks(self):
         meshes = {p.mesh for p in self.props}
