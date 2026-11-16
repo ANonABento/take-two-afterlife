@@ -7,6 +7,7 @@
 #include "Engine/World.h"
 #include "TTAAudioDirector.generated.h"
 
+class AGameStateBase;
 class UAudioComponent;
 class USoundBase;
 
@@ -34,6 +35,8 @@ public:
 	static constexpr float MusicFadeSeconds = 1.0f;
 
 private:
+	// Clients get their GameState after BeginPlay, so the bind may have to wait for it.
+	void BindToGameState(AGameStateBase* State);
 	void OnPhaseChanged(ETTAPhase Phase, int32 Round);
 
 	UPROPERTY() TObjectPtr<UAudioComponent> Music;

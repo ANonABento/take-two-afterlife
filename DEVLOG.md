@@ -410,3 +410,21 @@ StopStun ran on every machine with its own pelvis read and a sweep from the pre-
 - **Prompt:** replace the wind-up scale stand-in with real bone motion on the right arm, keep the StopStun landing fix.
 - **Agent did:** Core `tta::PunchArmConfig` (UpperArm_R / ForeArm_R; wind-up ends at upper arm (-55, 25, 0) + forearm yaw -120, punch ends at (-80, -10, 0) with a straight forearm, recovery eases to 0) and `punchArmPose(phase, t)` (smoothstep wind-up/recovery, ease-out cubic punch), doctest at start/middle/end of each phase. New `UTTARunnerAnimInstance` (UpperArmRotation, ForearmRotation, PunchArmAlpha); the server mirrors the punch phase into replicated `PunchPhaseRep` and every machine writes the pose each tick. `WindUpScale` and all scale code removed. Static check `Scripts/tests/test_punch_arm.py`.
 - **Failed / fixed by hand:** needs ABP_Angel reparented to `TTARunnerAnimInstance` plus two Transform (Modify) Bone nodes; until then the pawn logs one warning and the arm stays still. Editor compile pending.
+
+## Demo build phase
+- **Prompt:** jam extended to 11pm. Put more of the original loop back in, only what fits.
+- **Agent did:** Play still loads Backyard `?demo=1`, but the demo now waits on a 40s Build before each 50s race. The player flies the course and places traps; bots still place theirs. Death still opens the heaven TV. When the race ends, the machine steps Edit and Premiere without travelling, then opens Build again. After round 2 it returns to Title. HUD line tells you to place traps.
+- **Failed / fixed by hand:** editor compile and a new Dist zip still to confirm. The clip editor and cinema premiere are still not shown.
+
+## Demo cut — Play and Quit, backyard race, heaven TV
+- **Prompt:** one-hour demo. Title shows only Play and Quit. Solo race against NPCs. Play loads the Backyard. Traps and cameras are placed at random. Dying sends you to heaven to watch the race cameras on the TV until the timer, a win, or everyone is out, then the next round. Keep the unused flows in the code. A crowd of angels on the title. A video.
+- **Agent did:** title Host / Join / Settings are collapsed (the buttons and their screens stay). Play still calls `HostSolo`, which now travels to `/Game/Maps/Backyard?demo=1` instead of the Heaven lobby (old travel line left in a comment). Demo spawns 6 bots, skips the build wait, lets each bot place traps and cameras, and runs two 50s races. A fall removes that racer; the human unpossesses onto a sky couch whose screen scene-captures the course cameras. Round 2 ends back on Title. Forty `SK_Angel` actors spawn in front of the title camera. `-autodemo` clicks Play after 2s for a capture.
+- **Failed / fixed by hand:** not compiled or recorded in this step. Bots still use the existing route; if `TTARoute` markers are missing they stand still and then count as out.
+
+## Backyard fall-through (rotation)
+Floor slabs called `Rotator(roll, pitch, yaw)` positionally. The editor reads that as pitch, yaw, roll, so a 90° roll became a 90° pitch and the slabs stood on edge. `spawn_fitted` now passes roll/pitch/yaw by name, solid roles use BlockAll plus double-sided complex collision, and water/markers stay non-blocking. `package_win64.bat` no longer deletes an existing Title map. Rebuild with `rebuild_maps.py` in the open editor (not `setup_content.ps1`, not `full`).
+
+## Textured traps, backyard script restored
+- **Prompt:** use the textured traps, and put the backyard builder back to the committed map script (the later one had been overwritten in the working tree).
+- **Agent did:** restored `Scripts/build_backyard_map.py`, `Scripts/layout_spawn.py`, and `Scripts/tests/test_fit_units_axes.py` to HEAD (same blob as `64c443b`). Imported `models/SM_Trap_*` and `SM_Cam_*` with their materials into `/Game/Art/Traps` and `/Game/Art/Cams` (`TTA_IMPORT=traps`). `DefaultGame.ini` ItemMeshes now point at those. The trap actor copies that mesh onto its body (lawnmower blade too) and hides the build marker for the run. Hammer came in at 28 x 50 x 98 cm.
+- **Failed / fixed by hand:** the saved Backyard map was not rebuilt. In the editor: `py C:/Users/kevbe/take-two-afterlife/Scripts/build_backyard_map.py` then save. The editor was closed so the import and compile could run.

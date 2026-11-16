@@ -34,6 +34,7 @@ int32 TrapCount() { return BuildTraps().Num(); }
 int32 TTABuildItem::Count() { return TrapCount() + 1; } // traps, then the one placeable camera
 bool TTABuildItem::IsCamera(int32 Item) { return Item >= TrapCount(); }
 tta::TrapType TTABuildItem::Trap(int32 Item) { return BuildTraps()[Item]; }
+int32 TTABuildItem::IndexOfTrap(tta::TrapType Type) { return BuildTraps().IndexOfByKey(Type); }
 tta::CameraType TTABuildItem::Camera(int32 Item) { return Item == TrapCount() ? tta::kPlaceableCamera : static_cast<tta::CameraType>(Item - TrapCount()); }
 
 FString TTABuildItem::Label(int32 Item)

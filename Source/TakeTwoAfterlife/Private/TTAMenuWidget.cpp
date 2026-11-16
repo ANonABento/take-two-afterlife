@@ -348,7 +348,28 @@ void UTTAMenuWidget::NativeOnInitialized()
 	SetPlayerCards({});
 	RefreshLook();
 	RefreshSettings();
+	HideUnreachableTitleEntries();
 	Switcher->SetActiveWidgetIndex(SlotOf(Flow.current()));
+}
+
+void UTTAMenuWidget::HideUnreachableTitleEntries()
+{
+	USizeBox* Screen = Cast<USizeBox>(Switcher->GetChildAt(static_cast<int32>(tta::MenuScreen::Title)));
+	UVerticalBox* Title = Cast<UVerticalBox>(Screen ? Screen->GetContent() : nullptr);
+	if (!Title) return;
+	for (int32 i = 0; i < Title->GetChildrenCount(); ++i)
+	{
+		USizeBox* ButtonBox = Cast<USizeBox>(Title->GetChildAt(i));
+		UButton* Button = Cast<UButton>(ButtonBox ? ButtonBox->GetContent() : nullptr);
+		UTextBlock* Text = Cast<UTextBlock>(Button ? Button->GetContent() : nullptr);
+		if (!Text) continue;
+		const FString Label = Text->GetText().ToString();
+		if (Label == TEXT("PLAY SOLO")) Text->SetText(FText::FromString(TEXT("PLAY")));
+		if (Label == TEXT("HOST GAME") || Label.StartsWith(TEXT("JOIN")) || Label == TEXT("SETTINGS"))
+		{
+			ButtonBox->SetVisibility(ESlateVisibility::Collapsed);
+		}
+	}
 }
 
 int32 UTTAMenuWidget::GetVisibleIndex() const

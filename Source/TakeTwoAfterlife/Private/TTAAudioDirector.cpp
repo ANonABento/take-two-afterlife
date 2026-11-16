@@ -59,11 +59,22 @@ void UTTAAudioDirector::Deinitialize()
 void UTTAAudioDirector::OnWorldBeginPlay(UWorld& InWorld)
 {
 	Super::OnWorldBeginPlay(InWorld);
-	if (ATTAGameState* State = InWorld.GetGameState<ATTAGameState>())
+	if (InWorld.GetGameState())
 	{
-		State->OnPhaseChangedNative.AddUObject(this, &UTTAAudioDirector::OnPhaseChanged);
-		PlayPhase(State->GetPhase());
+		BindToGameState(InWorld.GetGameState());
 	}
+	else
+	{
+		InWorld.GameStateSetEvent.AddUObject(this, &UTTAAudioDirector::BindToGameState);
+	}
+}
+
+void UTTAAudioDirector::BindToGameState(AGameStateBase* GameState)
+{
+	ATTAGameState* State = Cast<ATTAGameState>(GameState);
+	if (!State || State->OnPhaseChangedNative.IsBoundToObject(this)) return;
+	State->OnPhaseChangedNative.AddUObject(this, &UTTAAudioDirector::OnPhaseChanged);
+	PlayPhase(State->GetPhase());
 }
 
 void UTTAAudioDirector::OnPhaseChanged(ETTAPhase Phase, int32 Round)
@@ -79,6 +90,7 @@ void UTTAAudioDirector::PlayPhase(ETTAPhase Phase)
 		if (Music) Music->FadeOut(MusicFadeSeconds, 0.f);
 		Music = UGameplayStatics::CreateSound2D(this, Track, 1.f, 1.f, 0.f, nullptr, true);
 		if (Music) Music->FadeIn(MusicFadeSeconds);
+		UE_LOG(LogTTAAudio, Log, TEXT("Music %s (component %s)"), *Track->GetName(), Music ? TEXT("ok") : TEXT("null"));
 	}
 	PlayEvent(tta::phaseEvent(CorePhase));
 }

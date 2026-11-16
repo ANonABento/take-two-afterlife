@@ -614,3 +614,13 @@ Scored 1-5 by judges on: ambition/innovation, theme, fun, gameplay, visuals, lev
 - Done: `Core/include/tta/PunchArm.h` + `Core/src/PunchArm.cpp` (`PunchArmConfig`, `punchArmPose`, `punchPhaseSeconds`), wrapper `CoreLib/Core_PunchArm.cpp`, tests `Core/tests/PunchArmTests.cpp`. `UTTARunnerAnimInstance`. Pawn: `UPROPERTY(Replicated) uint8 PunchPhaseRep` set on the server after `AdvancePunch`; `UpdatePunchArm` (every Tick, all machines) times each phase locally and writes bone names, rotations and alpha; one warning if the AnimBP isn't the new class. `WindUpScale`/`WindUpLeft`/`UpdateWindUpPose` gone; `MulticastWindUp` now only plays the whoosh. StopStun unchanged. Test: `Scripts/tests/test_punch_arm.py`.
 - Left: in the editor reparent ABP_Angel to `TTARunnerAnimInstance`; after the locomotion pose add Transform (Modify) Bone on `UpperArm_R` and `ForeArm_R` (Rotation: Add to Existing, Bone Space), rotation from `UpperArmRotation`/`ForearmRotation`, alpha `PunchArmAlpha`. PIE host/client: check the axes match SK_Angel's bone frames (flip signs in `PunchArmConfig` if the arm swings the wrong way).
 - Surprises: phase timing on clients restarts when the replicated phase arrives, so a client lags the server by its ping; fine for a visual. Rotations assume UE (pitch, yaw, roll) bone-space axes; unverified on SK_Angel here.
+
+### Demo build handoff
+- Done: demo settings are 2 rounds, 40s build, 50s run. StartPlay enters Build only. EndDemoRound clears the course, steps Edit then Premiere with no map travel, then RequestPhase(Build). Round 2 still returns to Title. Build HUD has a one-line place-traps hint.
+- Left: editor playtest (fly, place, timer starts the race, death TV, second build). Recook Dist before re-uploading. Edit screen and cinema premiere are still skipped.
+- Surprises: bots refuse a second BuildTraps until StartRun clears `bBuiltThisRound`, which the race already does.
+
+### Demo cut handoff: Play / Quit, backyard race, heaven TV
+- Done: Title collapses Host, Join and Settings (code remains). Play travels to Backyard `?demo=1` with 6 bots, bot-placed traps and cameras, two 50s races. Death parks the human on a sky couch; the TV scene-captures course cameras until someone finishes, the timer ends, or everyone is out. Then round 2, then Title. Forty angels spawn on the title. `-autodemo` presses Play after 2s.
+- Left: editor compile, then play Title → Play. Confirm bots run the stones, a fall opens the TV, and round 2 starts. Record with the game launched `-autodemo` if a capture is still needed.
+- Surprises: `ATTACinema` retints the whole world, so the watch set is a separate actor. Bots that fall stay down instead of respawning, demo only.

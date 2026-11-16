@@ -1,4 +1,5 @@
 #include "TTABuildHUD.h"
+#include "TTAGameMode.h"
 
 #include "Engine/Canvas.h"
 #include "Engine/Font.h"
@@ -116,6 +117,7 @@ void ATTABuildHUD::DrawHUD()
 
 	const ATTAGameState* State = GetWorld()->GetGameState<ATTAGameState>();
 	if (!State) return;
+	const ATTAGameMode* Mode = GetWorld()->GetAuthGameMode<ATTAGameMode>();
 	const ETTAPhase Phase = State->GetPhase();
 	if (Phase == ETTAPhase::Podium)
 	{
@@ -125,7 +127,7 @@ void ATTABuildHUD::DrawHUD()
 	if (Phase == ETTAPhase::Premiere) DrawScoreBoard();
 
 	// Phase + round, top left.
-	const FString PhaseName = UEnum::GetDisplayValueAsText(Phase).ToString().ToUpper();
+	const FString PhaseName = (Mode && Mode->IsWatching()) ? FString(TEXT("HEAVEN")) : UEnum::GetDisplayValueAsText(Phase).ToString().ToUpper();
 	const FString RoundText = FString::Printf(TEXT("ROUND %d"), State->GetRound());
 	const float PhaseW = FMath::Max(MeasureText(PhaseName, UTTAUIStyle::kH2, true), MeasureText(RoundText, UTTAUIStyle::kSmall, false));
 	DrawCard(Left, Top, PhaseW + 2 * kPad, kBarH, tta::kPurple);
@@ -148,9 +150,20 @@ void ATTABuildHUD::DrawHUD()
 		DrawCard(Left, ReadyY, MeasureText(Ready, UTTAUIStyle::kH2, true) + 2 * kPad, kBarH, tta::kGrass);
 		DrawStyledText(Ready, tta::kInk, Left + kPad, ReadyY + kPad * 0.5f, UTTAUIStyle::kH2, true);
 	}
-	if (Phase == ETTAPhase::Run)
+	if (Phase == ETTAPhase::Run && !(Mode && Mode->IsDemo()))
 	{
 		DrawStyledText(TEXT("[RMB] hold to film"), tta::kBone, Left, Y, UTTAUIStyle::kSmall, false);
+	}
+	if (Phase == ETTAPhase::Build && Mode && Mode->IsDemo())
+	{
+		DrawStyledText(TEXT("Fly the course and place your traps. The race starts when the timer ends."),
+			tta::kBone, Left, Y, UTTAUIStyle::kSmall, false);
+		Y += kLineH;
+	}
+	if (Mode && Mode->IsWatching())
+	{
+		DrawStyledText(TEXT("Watch the TV. When this race ends you place traps again, unless the match is over."),
+			tta::kBone, Left, Y, UTTAUIStyle::kSmall, false);
 	}
 
 	const ATTABuildPawn* Pawn = Cast<ATTABuildPawn>(GetOwningPawn());

@@ -3,6 +3,7 @@
 # The plan branch has no Assets/ folder. Course, heaven dressing and backyard props live under models/;
 # the synth pack lives under Audio/SFX/. Meshes import in centimetres (unit conversion, scale 1) with
 # collision. Each wav replaces the silent SoundWave of the matching cue id.
+import os
 import sys
 from pathlib import Path
 
@@ -32,6 +33,8 @@ def mesh_sources():
         ("SM_Course_", "/Game/Art/Course"),
         ("SM_Heaven_", "/Game/Art/Heaven"),
         ("SM_Backyard_", "/Game/Art/Props"),
+        ("SM_Trap_", "/Game/Art/Traps"),
+        ("SM_Cam_", "/Game/Art/Cams"),
     )
     # Cloud, couch and screen are already in /Game/Art/Heaven at the cinema's scale.
     keep = {"SM_Heaven_Cloud", "SM_Heaven_Couch", "SM_Heaven_Screen"}
@@ -54,13 +57,14 @@ def mesh_sources():
     return found
 
 
-def fbx_options(scale):
+def fbx_options(scale, textured=False):
     ui = unreal.FbxImportUI()
     ui.import_mesh = True
     ui.import_as_skeletal = False
     ui.import_animations = False
-    ui.import_materials = False
-    ui.import_textures = False
+    # Traps and cameras ship with their own materials. Course and props stay on the toon swap.
+    ui.import_materials = textured
+    ui.import_textures = textured
     ui.mesh_type_to_import = unreal.FBXImportType.FBXIT_STATIC_MESH
     data = ui.static_mesh_import_data
     data.combine_meshes = True
@@ -83,7 +87,8 @@ def import_meshes(scale):
         task.replace_existing = True
         task.save = True
         if src.suffix.lower() == ".fbx":
-            task.options = fbx_options(scale)
+            textured = src.stem.startswith(("SM_Trap_", "SM_Cam_"))
+            task.options = fbx_options(scale, textured)
         tasks.append(task)
     if not tasks:
         raise RuntimeError("no course/heaven/prop meshes to import")
@@ -148,7 +153,40 @@ def import_sfx():
     return len(hooked)
 
 
+def import_textured_only():
+    """SM_Trap_* and SM_Cam_* with their materials. Does not touch the course or the synth SFX."""
+    global_sources = mesh_sources
+    wanted = [pair for pair in mesh_sources() if pair[0].stem.startswith(("SM_Trap_", "SM_Cam_"))]
+    if not wanted:
+        raise RuntimeError("no SM_Trap_ or SM_Cam_ fbx under models/")
+
+    def only_these():
+        return wanted
+
+    # import_meshes walks mesh_sources(); narrow it for this pass.
+    globals()["mesh_sources"] = only_these
+    try:
+        count = import_meshes(1.0)
+        size = mesh_size("/Game/Art/Traps/SM_Trap_Hammer")
+        unreal.log(f"SM_Trap_Hammer size cm: {size.x:.1f} {size.y:.1f} {size.z:.1f}")
+        if max(size.x, size.y, size.z) < 5.0:
+            unreal.log_warning("traps imported in metres; reimporting at centimetre scale")
+            count = import_meshes(100.0)
+            size = mesh_size("/Game/Art/Traps/SM_Trap_Hammer")
+            unreal.log(f"SM_Trap_Hammer size cm after rescale: {size.x:.1f} {size.y:.1f} {size.z:.1f}")
+        for src, dest in wanted:
+            ensure_collision(f"{dest}/{src.stem}")
+        for folder in ("/Game/Art/Traps", "/Game/Art/Cams"):
+            EAL.save_directory(folder, only_if_is_dirty=False, recursive=True)
+        unreal.log(f"imported {count} textured traps and cameras")
+    finally:
+        globals()["mesh_sources"] = global_sources
+
+
 def main():
+    if os.environ.get("TTA_IMPORT") == "traps" or (len(sys.argv) > 1 and sys.argv[1] == "traps"):
+        import_textured_only()
+        return
     count = import_meshes(1.0)
     size = mesh_size("/Game/Art/Course/SM_Course_Straight")
     unreal.log(f"SM_Course_Straight size cm: {size.x:.1f} {size.y:.1f} {size.z:.1f}")

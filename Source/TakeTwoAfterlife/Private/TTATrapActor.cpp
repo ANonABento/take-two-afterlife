@@ -3,6 +3,7 @@
 
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Engine/StaticMesh.h"
 #include "EngineUtils.h"
 #include "GameFramework/GameStateBase.h"
 #include "TTARunDirector.h"
@@ -59,6 +60,21 @@ void ATTATrapActor::InitFromPlacement(const tta::Placement& InPlacement)
 	// Core decides the mower's hits; its hitbox overlap stays off so there is one hit path.
 	Hitbox->SetGenerateOverlapEvents(!bMower);
 	Blade->SetVisibility(bMower);
+	const int32 Item = TTABuildItem::IndexOfTrap(Placement.trap);
+	if (Item != INDEX_NONE)
+	{
+		if (UStaticMesh* Mesh = GetDefault<ATTAPlacementMarker>()->MeshForItem(Item))
+		{
+			Body->SetStaticMesh(Mesh);
+		}
+	}
+	if (bMower)
+	{
+		if (UStaticMesh* BladeMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Game/Art/Traps/SM_Trap_LawnmowerBlade.SM_Trap_LawnmowerBlade")))
+		{
+			Blade->SetStaticMesh(BladeMesh);
+		}
+	}
 	SetActorTransform(ATTAPlacementMarker::WorldTransform(FTTAPlacementRep::FromCore(Placement)));
 	ApplyPoseAt(0.0);
 }

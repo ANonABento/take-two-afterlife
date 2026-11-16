@@ -193,7 +193,9 @@ void UTTASessionSubsystem::HostDirect()
 
 void UTTASessionSubsystem::HostSolo(int32 Bots)
 {
-	GetWorld()->ServerTravel(LobbyMap + FString::Printf(TEXT("?bots=%d"), Bots));
+	// Demo race: backyard, random traps, bots. The lobby hop is still here and unused.
+	// GetWorld()->ServerTravel(LobbyMap + FString::Printf(TEXT("?bots=%d"), Bots));
+	GetWorld()->ServerTravel(FString::Printf(TEXT("/Game/Maps/Backyard?demo=1&bots=%d"), Bots));
 }
 
 bool UTTASessionSubsystem::JoinDirect(const FString& TypedAddress)

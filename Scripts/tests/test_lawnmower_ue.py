@@ -15,7 +15,7 @@ class LawnmowerUE(unittest.TestCase):
     def test_build_item_mesh_is_not_the_cannon_barrel(self):
         ini = (ROOT / "Config" / "DefaultGame.ini").read_text(encoding="utf-8-sig")
         meshes = re.findall(r"^\+ItemMeshes=(\S+)", ini, re.M)
-        self.assertEqual(meshes[5], "/Game/ThirdParty/KayKitPrototypeBits/Pallet_Small.Pallet_Small")
+        self.assertEqual(meshes[5], "/Game/Art/Traps/SM_Trap_Lawnmower.SM_Trap_Lawnmower")
         self.assertNotIn("Barrel_A", ini)
 
     def test_actor_steps_core_mower_each_tick(self):

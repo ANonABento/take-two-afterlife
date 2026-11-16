@@ -123,10 +123,10 @@ def fit_component(comp, mesh, prop):
     """Child component (the gate Arch): scale + relative offset, bottom-centre on the actor origin."""
     box = mesh.get_bounding_box()
     lo, hi = (box.min.x, box.min.y, box.min.z), (box.max.x, box.max.y, box.max.z)
-    scale, rot, _ = S.fit_mesh([h - l for h, l in zip(hi, lo)], target_fit(prop))
-    rlo, rhi = S.rotated_box(lo, hi, scale, rot)
+    scale, fit_rot, _ = S.fit_mesh([h - l for h, l in zip(hi, lo)], target_fit(prop))
+    rlo, rhi = S.rotated_box(lo, hi, scale, fit_rot)
     off = S.placement((0.0, 0.0, 0.0), 0.0, rlo, rhi, (1.0, 1.0, 1.0))
-    comp.set_relative_rotation(unreal.Rotator(float(rot[0]), float(rot[1]), 0.0), False, False)
+    comp.set_relative_rotation(unreal.Rotator(float(fit_rot[0]), float(fit_rot[1]), 0.0), False, False)
     comp.set_relative_scale3d(unreal.Vector(*scale))
     comp.set_relative_rotation(rot(yaw=float(prop.yaw)), False, False)
     comp.set_relative_location(unreal.Vector(*S.placement((0.0, 0.0, 0.0), prop.yaw, lo, hi, scale)), False, False)

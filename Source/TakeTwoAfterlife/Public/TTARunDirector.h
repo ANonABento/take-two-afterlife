@@ -26,11 +26,15 @@ public:
 	void StartRun(const TArray<ATTARunnerPawn*>& InRunners, float RunSeconds, int32 InAbsentOwners = 0);
 	void AdvanceRun(float DeltaSeconds);
 	void MarkFinished(ATTARunnerPawn* Runner);
+	// Out of the race (fell). Not a finish. Smite skips them.
+	void MarkEliminated(ATTARunnerPawn* Runner);
+	bool AllOut() const;
 	void RecordHit(const tta::Placement& Trap, ATTARunnerPawn* Victim);
 
 	bool IsRunning() const { return Recorder.IsValid(); }
 	bool IsTimedOut() const { return IsRunning() && Recorder->timedOut(); }
 	bool AllFinished() const { return IsRunning() && Finished.Num() == Runners.Num(); }
+	bool AnyoneFinished() const { return IsRunning() && Finished.Num() > 0; }
 	// This round for Core scoring, in replay ids (runner indices). Valid only after StartRun.
 	tta::RoundInput GetRoundInput() const;
 	bool HasFinished(const ATTARunnerPawn* Runner) const { return Finished.Contains(Runner); }
@@ -52,5 +56,6 @@ private:
 	int32 AbsentOwners = 0;
 	UPROPERTY() TArray<TObjectPtr<ATTARunnerPawn>> Runners;
 	UPROPERTY() TArray<TObjectPtr<ATTARunnerPawn>> Finished;
+	UPROPERTY() TArray<TObjectPtr<ATTARunnerPawn>> Eliminated;
 	UPROPERTY() TObjectPtr<ACameraActor> HeavenCam;
 };

@@ -28,6 +28,7 @@ void ATTARunDirector::StartRun(const TArray<ATTARunnerPawn*>& InRunners, float R
 	Runners.Reset();
 	Finished.Reset();
 	HeavenCam = nullptr;
+	Eliminated.Reset();
 	std::vector<int> Ids;
 	for (ATTARunnerPawn* Runner : InRunners)
 	{
@@ -62,7 +63,7 @@ void ATTARunDirector::AdvanceRun(float DeltaSeconds)
 	std::vector<int> Unfinished;
 	for (int32 i = 0; i < Runners.Num(); ++i)
 	{
-		if (!Finished.Contains(Runners[i])) Unfinished.push_back(i);
+		if (!Finished.Contains(Runners[i]) && !Eliminated.Contains(Runners[i])) Unfinished.push_back(i);
 	}
 	for (const int Victim : Recorder->takeSmites(Unfinished))
 	{
@@ -102,6 +103,22 @@ void ATTARunDirector::MarkFinished(ATTARunnerPawn* Runner)
 	if (!Runners.Contains(Runner) || Finished.Contains(Runner)) return;
 	Finished.Add(Runner);
 	GetWorld()->GetSubsystem<UTTAAudioDirector>()->PlayEvent(tta::AudioEvent::GateReached);
+}
+
+void ATTARunDirector::MarkEliminated(ATTARunnerPawn* Runner)
+{
+	if (!Runners.Contains(Runner) || Eliminated.Contains(Runner) || Finished.Contains(Runner)) return;
+	Eliminated.Add(Runner);
+}
+
+bool ATTARunDirector::AllOut() const
+{
+	if (!IsRunning() || Runners.Num() == 0) return false;
+	for (const ATTARunnerPawn* Runner : Runners)
+	{
+		if (!Finished.Contains(Runner) && !Eliminated.Contains(Runner)) return false;
+	}
+	return true;
 }
 
 void ATTARunDirector::RecordHit(const tta::Placement& Trap, ATTARunnerPawn* Victim)

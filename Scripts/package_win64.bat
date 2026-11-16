@@ -10,7 +10,11 @@ set "PROJECT=%ROOT%\TakeTwoAfterlife.uproject"
 
 python "%ROOT%\Scripts\release_checks.py" || exit /b 1
 
-"%UE%\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" "%PROJECT%" -run=pythonscript -script="%ROOT%\Scripts\create_title_map.py" -unattended -nop4 || exit /b 1
+rem Title already in Content is the one to cook. create_title_map deletes that map, and headless
+rem actor spawn has been crashing UnrealEditor-Cmd. Only build Title when it is missing.
+if not exist "%ROOT%\Content\Maps\Title.umap" (
+    "%UE%\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" "%PROJECT%" -run=pythonscript -script="%ROOT%\Scripts\create_title_map.py" -unattended -nop4 || exit /b 1
+)
 
 call "%UE%\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun -project="%PROJECT%" -platform=Win64 -clientconfig=Shipping -build -cook -stage -pak -iostore -compressed -prereqs -archive -archivedirectory="%ROOT%\Dist" -unattended -utf8output || exit /b 1
 

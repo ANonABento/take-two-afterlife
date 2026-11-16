@@ -24,6 +24,7 @@ namespace TTABuildItem
 	TAKETWOAFTERLIFE_API int32 Count();
 	TAKETWOAFTERLIFE_API bool IsCamera(int32 Item);
 	TAKETWOAFTERLIFE_API tta::TrapType Trap(int32 Item);
+	TAKETWOAFTERLIFE_API int32 IndexOfTrap(tta::TrapType Type);
 	TAKETWOAFTERLIFE_API tta::CameraType Camera(int32 Item);
 	TAKETWOAFTERLIFE_API FString Label(int32 Item);
 }

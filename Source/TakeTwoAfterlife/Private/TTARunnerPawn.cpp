@@ -19,6 +19,7 @@
 #include "Net/VoiceConfig.h"
 #include "Sound/SoundAttenuation.h"
 #include "TTAAudioDirector.h"
+#include "TTAGameMode.h"
 #include "TTAMicRecorder.h"
 #include "TTACosmetics.h"
 #include "TTAPlayerState.h"
@@ -403,6 +404,10 @@ void ATTARunnerPawn::StartRagdoll()
 
 void ATTARunnerPawn::Respawn()
 {
+	if (ATTAGameMode* Mode = GetWorld()->GetAuthGameMode<ATTAGameMode>())
+	{
+		if (Mode->TryHeaven(this)) return; // demo: stay down; the human watches from heaven
+	}
 	RestoreBody();
 	SetActorLocation(StartLocation, false, nullptr, ETeleportType::TeleportPhysics);
 }

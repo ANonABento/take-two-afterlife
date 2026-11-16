@@ -70,14 +70,15 @@ class BuildItemMeshes(unittest.TestCase):
         for m in meshes:
             self.assertFalse(m.startswith("/Engine/"), m)
 
-    def test_meshes_exist_in_kaykit(self):
-        kit = ROOT / "Content" / "ThirdParty" / "KayKitPrototypeBits"
+    def test_meshes_are_textured_traps_and_cams(self):
+        content = ROOT / "Content"
         for m in item_meshes():
             pkg, _, obj = m.partition(".")
-            self.assertTrue(pkg.startswith("/Game/ThirdParty/KayKitPrototypeBits/"), m)
+            self.assertTrue(pkg.startswith("/Game/Art/Traps/") or pkg.startswith("/Game/Art/Cams/"), m)
             name = pkg.rsplit("/", 1)[1]
             self.assertEqual(name, obj, m)
-            self.assertTrue((kit / f"{name}.uasset").is_file(), m)
+            rel = pkg.removeprefix("/Game/")
+            self.assertTrue((content / f"{rel}.uasset").is_file(), m)
 
 
 class DevlogSoloCheck(unittest.TestCase):

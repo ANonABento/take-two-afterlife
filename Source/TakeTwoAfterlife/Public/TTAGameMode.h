@@ -20,6 +20,7 @@
 class ATTABotController;
 class ATTABuildPawn;
 class ATTACinema;
+class ATTAHeavenWatch;
 class ATTARunDirector;
 class ATTARunnerPawn;
 class ATTATrapActor;
@@ -37,6 +38,11 @@ protected:
 	// The Title menu leaves the viewport in UIOnly with a cursor, and that survives the travel
 	// to the match map; the match controller puts the game back in charge.
 	virtual void BeginPlay() override;
+	virtual void PlayerTick(float DeltaTime) override;
+
+private:
+	bool bAutoDemo = false;
+	float AutoDemoTime = 0.f;
 };
 
 // Server-side owner of the match state machine; mirrors each accepted phase
@@ -107,6 +113,13 @@ public:
 	// Play Solo: `?bots=N` on the map URL (0-MaxBots) adds that many bots at StartPlay.
 	virtual void StartPlay() override;
 	static constexpr int32 MaxBots = 3;
+	// Solo demo (?demo=1): more racers than a normal lobby. MaxBots still caps online solo.
+	static constexpr int32 DemoBotCount = 6;
+	bool IsDemo() const { return bDemo; }
+	bool IsWatching() const { return bWatching; }
+	// Demo death: the human goes to the heaven TV, a bot stays down. False outside the demo
+	// (normal hits still respawn). True means the caller must not teleport the pawn home.
+	bool TryHeaven(ATTARunnerPawn* Runner);
 	// Spawns bots with fixed ids (ATTABotController::FirstBotId + n) and lobby runners.
 	void AddBots(int32 Count);
 	int32 GetBotCount() const { return BotCount; }
@@ -135,6 +148,11 @@ private:
 	void EnterBuild();
 	void EnterRun();
 	void SpawnTraps();
+	void BeginDemoRound();
+	void EndDemoRound();
+	void ClearPlacements();
+	void OpenHeaven(APlayerController* PC);
+	TArray<FTransform> CollectDemoViews() const;
 	// Floor trace + capsule test under the chosen PlayerStart, then the others (tta::pickSpawn).
 	bool FindSafeSpawn(AController* Controller, FTransform& Out);
 	void EndRun();
@@ -164,6 +182,10 @@ private:
 	std::vector<int> RunPlayerIds;
 	int32 RunnerCount = 0;
 	int32 BotCount = 0;
+	bool bDemo = false;
+	bool bWatching = false;
+	bool bDemoClosing = false;
+	UPROPERTY() TObjectPtr<ATTAHeavenWatch> HeavenWatch;
 	tta::HeavenGate Gate;
 	bool bGateTravelled = false;
 	float TimedOutFor = 0.f;

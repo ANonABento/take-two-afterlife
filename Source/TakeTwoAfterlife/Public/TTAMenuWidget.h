@@ -151,6 +151,9 @@ private:
 	void RefreshVideo();
 	void RefreshLook();
 	void RefreshSettings();
+	// Title keeps every button in the tree. Host, Join and Settings are collapsed so
+	// only Play and Quit can be clicked. Build, edit, ratings and premiere are not on this menu.
+	void HideUnreachableTitleEntries();
 
 	UFUNCTION() void OnHostClicked() { Host(); }
 	UFUNCTION() void OnPlaySoloClicked() { PlaySolo(); }
