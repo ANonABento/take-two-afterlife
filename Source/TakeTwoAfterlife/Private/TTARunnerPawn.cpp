@@ -6,6 +6,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "CollisionQueryParams.h"
+#include "Engine/HitResult.h"
 #include "Engine/OverlapResult.h"
 #include "Engine/World.h"
 #include "Components/InputComponent.h"
@@ -376,12 +377,25 @@ void ATTARunnerPawn::Respawn()
 
 void ATTARunnerPawn::StopStun()
 {
-	// Read the pelvis before the mesh snaps back onto the capsule.
+	// Every machine reaches GetUp on its own timer, but each ragdoll lands somewhere slightly
+	// different. Only the server picks the spot; everyone else stays ragdolled until it arrives.
+	if (!HasAuthority()) return;
 	const FVector Pelvis = GetMesh()->GetBoneLocation(PelvisBone);
+	FHitResult Floor;
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(TTAGetUp), false, this);
+	const float HalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+	const bool bFloor = GetWorld()->LineTraceSingleByChannel(Floor, Pelvis + FVector(0.f, 0.f, HalfHeight),
+		Pelvis - FVector(0.f, 0.f, GetUpTraceDepth), ECC_Visibility, Params);
+	const FVector Ground = bFloor ? Floor.ImpactPoint : Pelvis - FVector(0.f, 0.f, HalfHeight);
+	MulticastGetUp(Ground + FVector(0.f, 0.f, HalfHeight));
+}
+
+void ATTARunnerPawn::MulticastGetUp_Implementation(FVector_NetQuantize Landing)
+{
+	// Mesh back on the capsule, then move the capsule to the server's landing spot (teleport, no
+	// sweep: a sweep from the pre-ragdoll capsule gets blocked and leaves the runner where they stood).
 	RestoreBody();
-	// Sweep (not teleport) so a ragdoll that ended against a wall doesn't stand up inside it.
-	const FVector Target = Pelvis + FVector(0.f, 0.f, GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
-	SetActorLocation(Target, true, nullptr, ETeleportType::TeleportPhysics);
+	SetActorLocation(Landing, false, nullptr, ETeleportType::TeleportPhysics);
 }
 
 void ATTARunnerPawn::RestoreBody()

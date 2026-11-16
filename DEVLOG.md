@@ -401,3 +401,7 @@ Title now sits top-left inside the safe area: logo, then a five-button stack all
 
 ## UI redo task 5: lobby player cards
 Lobby text lines replaced by code pill, 4-slot player card row (avatar, name, ready tick) and Customize/Start bottom row; `SetPlayerCards` + structure test. Untested in editor.
+
+
+## Get up where you landed
+StopStun ran on every machine with its own pelvis read and a sweep from the pre-ragdoll capsule, so the sweep got blocked and replication pulled runners back to where they stood. Now the server traces the pelvis to the floor and sends the spot through MulticastGetUp; everyone restores the mesh and teleports the capsule there. Trap path untouched. Static test: Scripts/tests/test_get_up_landing.py. Needs an editor compile and a host+client check.

@@ -605,3 +605,8 @@ Scored 1-5 by judges on: ambition/innovation, theme, fun, gameplay, visuals, lev
 - Done: timer and budget colour rules moved to Core (`tta::hudTimerFill`, `tta::hudBudgetFill`, `kTimerWarnSeconds` = 10 in MenuFlow.h, constexpr, no new .cpp so no wrapper), doctest cases in MenuFlowTests.cpp. `ATTABuildHUD` uses them (timer Ink -> Red at <= 10 s, budget Grass -> Red when spent; phase card stays Purple top-left). New `DrawBuildTiles`: one equal 96 px square per `TTABuildItem` under the phase card, selected tile Yellow, camera tiles show the normalised camera icon, trap tiles their number; the text panel moves below the row. Results and Podium headings use `MakeBanner`. Test: `Scripts/tests/test_hud_layout.py`.
 - Left: editor compile + look check vs mock-hud.png (untested here, no editor). Trap tiles have no icon art yet. The HUD is Canvas-drawn, so "square icon buttons" are the square tiles; there are no clickable icon buttons on these screens.
 - Surprises: the timer Red switch and Purple/Grass cards already existed; the threshold was a local HUD constant with no test.
+
+### Handoff: get up where you landed
+- Done: server-only StopStun traces pelvis to floor, MulticastGetUp(Landing) restores body and teleports capsule on all machines; static test added; test_punch_net updated (it asserted the old sweep).
+- Left: UE compile; host+client check on PC that a punched runner stands where the ragdoll landed.
+- Surprises: the old sweep from the pre-ragdoll capsule was itself the snap.
