@@ -40,6 +40,13 @@ private:
 	void Rotate();
 	void NextItem();
 	void PrevItem();
+	// Number keys 1-5 jump straight to that build tile; out-of-range keys do nothing.
+	void SelectItem(int32 Item);
+	void SelectItem1() { SelectItem(0); }
+	void SelectItem2() { SelectItem(1); }
+	void SelectItem3() { SelectItem(2); }
+	void SelectItem4() { SelectItem(3); }
+	void SelectItem5() { SelectItem(4); }
 	void AdjustSetting(int32 Index, int32 Delta);
 	void Setting1Down() { AdjustSetting(0, -1); }
 	void Setting1Up() { AdjustSetting(0, 1); }
