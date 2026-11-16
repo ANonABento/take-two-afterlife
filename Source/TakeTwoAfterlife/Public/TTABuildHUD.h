@@ -1,16 +1,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Blueprint/UserWidget.h"
 #include "GameFramework/HUD.h"
 #include "TTABuildHUD.generated.h"
 
-class UBorder;
-class USizeBox;
-class UHorizontalBox;
-class UTextBlock;
-class UVerticalBox;
-class ATTAGameState;
+class UFont;
 class UTTAPodiumWidget;
 class UTTAResultsWidget;
 
@@ -35,12 +29,11 @@ private:
 	// Equal square tiles, one per build item (selected = Yellow); returns the row's bottom Y.
 	float DrawBuildTiles(float X, float Y, int32 Selected);
 	void ShowResults();
-	// Creates Overlay on first use and fills it from the game state and pawn.
-	void UpdateOverlay(const ATTAGameState& State);
-	// Now-showing card, and Kahoot-style bars during each cut's Reveal (ATTACinema::GetScoreBoard).
-	void UpdatePremiere(bool bPremiere);
+	// Kahoot-style bars during each cut's Reveal (ATTACinema::GetScoreBoard).
+	void DrawScoreBoard();
 
-	UPROPERTY() TObjectPtr<UTTABuildHUDWidget> Overlay;
+	UPROPERTY() TObjectPtr<UFont> DisplayFont;
+	UPROPERTY() TObjectPtr<UFont> BodyFont;
 	UPROPERTY() TObjectPtr<UTTAResultsWidget> Results;
 	UPROPERTY() TObjectPtr<UTTAPodiumWidget> PodiumWidget;
 };

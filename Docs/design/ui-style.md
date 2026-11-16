@@ -95,7 +95,6 @@ All take the widget tree first; the caller adds the result to its parent.
 | `MakeIconCount` | Icon + count label row |
 | `MakeBanner` | Timer banner whose content is an H2 label |
 | `MakeSlider` | Slider with bar + knob art |
-| `MakeAngel` | Image of the angel placeholder (`/Game/Characters/Angel/Face`), panel brush fallback |
 | `MakeTextField` | Editable text box with frame art, Body font |
 
 ## Component rules

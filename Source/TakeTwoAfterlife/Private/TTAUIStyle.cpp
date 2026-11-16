@@ -27,7 +27,6 @@ DEFINE_LOG_CATEGORY_STATIC(LogTTAUIStyle, Log, All);
 namespace
 {
 const TCHAR* const kGeneratedDir = TEXT("/Game/UI/Generated/");
-const TCHAR* const kAngelTexture = TEXT("/Game/Characters/Angel/Face.Face");
 constexpr float kSpaceScale[] = {0.f, 4.f, 8.f, 16.f, 24.f, 32.f};
 
 // Written by Scripts/build_ui_chrome.py: measured 9-slice margins in px per texture.
@@ -244,19 +243,6 @@ UEditableTextBox* UTTAUIStyle::MakeTextField(UWidgetTree* Tree)
 	Field->WidgetStyle.TextStyle.SetFont(Font(ETTAFont::Body));
 	Field->WidgetStyle.SetForegroundColor(FSlateColor(Color(ETTAColor::Ink)));
 	return Field;
-}
-
-UImage* UTTAUIStyle::MakeAngel(UWidgetTree* Tree)
-{
-	UImage* Image = Tree->ConstructWidget<UImage>();
-	if (UTexture2D* Texture = Cast<UTexture2D>(FSoftObjectPath(kAngelTexture).TryLoad()))
-	{
-		Image->SetBrushFromTexture(Texture, true);
-		return Image;
-	}
-	UE_LOG(LogTTAUIStyle, Warning, TEXT("Angel texture %s missing or not a texture; using the panel brush"), kAngelTexture);
-	Image->SetBrush(Brush(ETTAAsset::Panel));
-	return Image;
 }
 
 FLinearColor UTTAUIStyle::Colour(int32 PaletteIndex)

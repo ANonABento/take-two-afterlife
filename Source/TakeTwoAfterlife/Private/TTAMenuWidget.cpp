@@ -19,6 +19,7 @@
 #include "Components/VerticalBoxSlot.h"
 #include "Components/WidgetSwitcher.h"
 #include "Components/WidgetSwitcherSlot.h"
+#include "Brushes/SlateRoundedBoxBrush.h"
 #include "Engine/Texture2D.h"
 #include "GameFramework/GameUserSettings.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -35,12 +36,11 @@ namespace
 constexpr int32 kCode = 160;
 // Layout: screens are a centred 520 px column (two of them for Lobby / How to play).
 constexpr float kScreenW = 520.f, kWideW = 2 * kScreenW + 40.f;
-constexpr float kButtonW = 480.f, kButtonH = 72.f;
-constexpr float kRowLabelW = 180.f, kRowControlW = 280.f;  // fits inside a panel (520 - 2 * 32)
-constexpr float kJoinW = 160.f;
-constexpr float kLobbyW = 420.f;  // lobby panel hugs the left edge so Heaven stays visible
+constexpr float kButtonW = 480.f, kButtonH = 72.f, kGap = 12.f, kCorner = 18.f;
+constexpr float kRowLabelW = 180.f, kRowControlW = 280.f;  // fits inside a Card (520 - 2 * 30)
 constexpr float kTitleTilt = -4.f, kSkyOpacity = 0.5f;
-const float kGap = UTTAUIStyle::Space(3);
+constexpr float kHoverDarken = 0.25f, kPressedDarken = 0.45f;  // lerp toward Ink
+
 
 // Puts a gap after the child along its box's direction.
 void GapAfter(UPanelSlot* Slot)
@@ -51,9 +51,6 @@ void GapAfter(UPanelSlot* Slot)
 
 // Switcher slot per screen, in tta::MenuScreen order.
 constexpr int32 SlotOf(tta::MenuScreen Screen) { return static_cast<int32>(Screen); }
-
-// tta palette index -> colour token (ETTAColor is in palette order).
-ETTAColor Token(int32 PaletteIndex) { return static_cast<ETTAColor>(PaletteIndex); }
 }
 
 FLinearColor UTTAMenuWidget::Palette(int32 Index)
@@ -61,27 +58,27 @@ FLinearColor UTTAMenuWidget::Palette(int32 Index)
 	return UTTAUIStyle::Colour(Index);
 }
 
-UBorder* UTTAMenuWidget::Card(UPanelWidget* Parent, ETTAColor Fill)
+UBorder* UTTAMenuWidget::Card(UPanelWidget* Parent, int32 Fill)
 {
-	UBorder* Panel = UTTAUIStyle::MakePanel(WidgetTree, ETTAPanelKind::Panel);
-	if (Fill != ETTAColor::Bone) Panel->SetBrushColor(UTTAUIStyle::Color(Fill));
-	GapAfter(Parent->AddChild(Panel));
-	return Panel;
+	return UTTAUIStyle::AddCard(WidgetTree, Parent, Fill);
 }
 
-UTextBlock* UTTAMenuWidget::Label(UPanelWidget* Parent, const FString& Text, ETTAFont Size, ETTAColor Colour)
+UTextBlock* UTTAMenuWidget::Label(UPanelWidget* Parent, const FString& Text, int32 Size, bool bDisplay)
 {
-	UTextBlock* Block = UTTAUIStyle::MakeLabel(WidgetTree, FText::FromString(Text), Size, Colour);
+	UTextBlock* Block = WidgetTree->ConstructWidget<UTextBlock>();
+	Block->SetText(FText::FromString(Text));
+	Block->SetFont(UTTAUIStyle::MakeFont(bDisplay ? DisplayFont : BodyFont, bDisplay, Size));
+	Block->SetColorAndOpacity(FSlateColor(bDisplay ? Palette(tta::kBone) : Palette(tta::kInk)));
 	Parent->AddChild(Block);
 	return Block;
 }
 
-UButton* UTTAMenuWidget::MenuButton(UPanelWidget* Parent, const FString& Text, ETTAButtonKind Kind)
+UButton* UTTAMenuWidget::MenuButton(UPanelWidget* Parent, const FString& Text, int32 Fill)
 {
-	return MenuButton(Parent, Text, Kind, kButtonW);
+	return MenuButton(Parent, Text, Fill, kButtonW);
 }
 
-UButton* UTTAMenuWidget::MenuButton(UPanelWidget* Parent, const FString& Text, ETTAButtonKind Kind, float Width)
+UButton* UTTAMenuWidget::MenuButton(UPanelWidget* Parent, const FString& Text, int32 Fill, float Width)
 {
 	const FLinearColor Base = Palette(Fill);
 	const FLinearColor Ink = Palette(tta::kInk);
@@ -179,6 +176,9 @@ void UTTAMenuWidget::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
+	DisplayFont = UTTAUIStyle::Get().LoadFont(true);
+	BodyFont = UTTAUIStyle::Get().LoadFont(false);
+
 	// Overlay root: half-opacity Sky so a 3D backdrop shows through, screens on top.
 	UOverlay* Root = WidgetTree->ConstructWidget<UOverlay>();
 	WidgetTree->RootWidget = Root;
@@ -218,8 +218,7 @@ void UTTAMenuWidget::NativeOnInitialized()
 	// Join: one centred panel, heading to Back.
 	{
 		UVerticalBox* Box = ScreenPanel(kScreenW);
-		Label(Box, TEXT("PLAY"), ETTAFont::H1, ETTAColor::Bone)->SetJustification(ETextJustify::Center);
-		JoinCard = Card(Box);
+		JoinCard = Card(Box, tta::kBone);
 		UVerticalBox* Inner = WidgetTree->ConstructWidget<UVerticalBox>();
 		JoinCard->SetContent(Inner);
 		Label(Inner, TEXT("JOIN A GAME"), UTTAUIStyle::kH2);
@@ -298,8 +297,7 @@ void UTTAMenuWidget::NativeOnInitialized()
 	// Settings
 	{
 		UVerticalBox* Box = ScreenPanel(kScreenW);
-		Label(Box, TEXT("SETTINGS"), ETTAFont::H1, ETTAColor::Bone)->SetJustification(ETextJustify::Center);
-		UBorder* Face = Card(Box);
+		UBorder* Face = Card(Box, tta::kBone);
 		UVerticalBox* Inner = WidgetTree->ConstructWidget<UVerticalBox>();
 		Face->SetContent(Inner);
 		SettingSlider(Inner, TEXT("Master"), Settings.master / kVolumeSliderMax)->OnValueChanged.AddDynamic(this, &UTTAMenuWidget::OnMasterChanged);
@@ -314,7 +312,7 @@ void UTTAMenuWidget::NativeOnInitialized()
 		ResolutionBox->OnSelectionChanged.AddDynamic(this, &UTTAMenuWidget::OnResolutionChanged);
 		// Video options fill in when Settings opens: Initialize must not need GameUserSettings/RHI.
 		MicMeter = WidgetTree->ConstructWidget<UProgressBar>();
-		MicMeter->SetFillColorAndOpacity(UTTAUIStyle::Color(ETTAColor::Grass));
+		MicMeter->SetFillColorAndOpacity(Palette(tta::kGrass));
 		SettingRow(Inner, TEXT("Mic test"), MicMeter);
 		MenuButton(Box, TEXT("BACK"), tta::kInk)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnBackClicked);
 	}
@@ -327,7 +325,7 @@ void UTTAMenuWidget::NativeOnInitialized()
 		Panel->SetContent(PanelBox);
 		Label(PanelBox, TEXT("HOW TO PLAY"), UTTAUIStyle::kH2);
 		UHorizontalBox* Cards = WidgetTree->ConstructWidget<UHorizontalBox>();
-		const ETTAColor Fills[] = {ETTAColor::Orange, ETTAColor::Red, ETTAColor::Teal, ETTAColor::Purple};
+		const int32 Fills[] = {tta::kOrange, tta::kRed, tta::kTeal, tta::kPurple};
 		for (size_t i = 0; i < tta::kHowToPlay.size(); ++i)
 		{
 			UVerticalBox* Inner = WidgetTree->ConstructWidget<UVerticalBox>();
@@ -344,7 +342,7 @@ void UTTAMenuWidget::NativeOnInitialized()
 		Label(Box, TEXT("REELS"), UTTAUIStyle::kTitle, true);
 		ReelList = WidgetTree->ConstructWidget<UVerticalBox>();
 		Box->AddChild(ReelList);
-		MenuButton(Box, TEXT("BACK"), ETTAButtonKind::Secondary)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnBackClicked);
+		MenuButton(Box, TEXT("BACK"), tta::kInk)->OnClicked.AddDynamic(this, &UTTAMenuWidget::OnBackClicked);
 	}
 
 	SetPlayerCards({});
@@ -368,7 +366,7 @@ bool UTTAMenuWidget::Open(tta::MenuScreen Screen)
 	if (Screen == tta::MenuScreen::Reels) RefreshReels();
 	if (Screen == tta::MenuScreen::Join)
 	{
-		JoinCard->SetBrush(UTTAUIStyle::Brush(ETTAAsset::Panel));  // clears the error tint
+		JoinCard->SetBrushColor(Palette(tta::kBone));
 		JoinError->SetText(FText::GetEmpty());
 	}
 	if (Screen == tta::MenuScreen::Settings) RefreshVideo();
@@ -403,8 +401,8 @@ bool UTTAMenuWidget::SubmitJoinCode(const FString& Typed)
 	const std::optional<std::string> Code = tta::normalizeJoinCode(TCHAR_TO_UTF8(*Typed));
 	if (!Code)
 	{
-		JoinCard->SetBrushColor(UTTAUIStyle::Color(ETTAColor::Red));
-		JoinError->SetText(FText::FromString(TEXT("Not a code (6 letters, no I or O) or an IP")));
+		JoinCard->SetBrushColor(Palette(tta::kRed));
+		JoinError->SetText(FText::FromString(TEXT("That's not a code - 6 letters, no I or O")));
 		return false;
 	}
 	bHost = false;
@@ -413,20 +411,9 @@ bool UTTAMenuWidget::SubmitJoinCode(const FString& Typed)
 	return true;
 }
 
-void UTTAMenuWidget::SubmitCodeOrAddress(const FString& Typed)
-{
-	const FString Trimmed = Typed.TrimStartAndEnd();
-	if (Trimmed.Contains(TEXT(".")) || Trimmed.Contains(TEXT(":")))
-	{
-		OnJoinDirect.ExecuteIfBound(Trimmed);
-		return;
-	}
-	SubmitJoinCode(Trimmed);
-}
-
 void UTTAMenuWidget::OnCodeCommitted(const FText& Text, ETextCommit::Type Method)
 {
-	if (Method == ETextCommit::OnEnter) SubmitCodeOrAddress(Text.ToString());
+	if (Method == ETextCommit::OnEnter) SubmitJoinCode(Text.ToString());
 }
 
 void UTTAMenuWidget::SetRoomCode(const FString& Code, bool bIsHost)
@@ -616,7 +603,7 @@ void UTTAMenuWidget::RefreshReels()
 	ReelList->ClearChildren();
 	for (const FString& Path : Reels)
 	{
-		MenuButton(ReelList, FPaths::GetBaseFilename(Path), ETTAButtonKind::Secondary);
+		MenuButton(ReelList, FPaths::GetBaseFilename(Path), tta::kTeal);
 	}
 	if (Reels.IsEmpty()) Label(ReelList, TEXT("No reels yet - go make a film!"), UTTAUIStyle::kBody);
 }

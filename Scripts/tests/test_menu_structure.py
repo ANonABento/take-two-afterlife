@@ -4,11 +4,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "Source" / "TakeTwoAfterlife"
-TITLE_BUTTONS = ["PLAY", "SETTINGS", "REELS", "QUIT"]
-LOBBY_BUTTONS = ["COLOUR >", "HAT >", "FACE >", "START", "SETTINGS", "LEAVE"]
-PLAY_BUTTONS = ["HOST", "PLAY SOLO", "JOIN", "BACK"]
+TITLE_BUTTONS = ["PLAY SOLO", "HOST GAME", "JOIN (CODE OR IP)", "SETTINGS", "QUIT"]
 ART_SLOTS = ["MenuBackground", "MenuLogo", "ButtonNormal", "ButtonHovered", "ButtonPressed"]
-BUTTON = re.compile(r'MenuButton\(\w+, TEXT\("([^"]+)"\)[^;]*?(?:->OnClicked\.AddDynamic\(this, &UTTAMenuWidget::(\w+)\))?;')
+BUTTON = re.compile(r'MenuButton\(Box, TEXT\("([^"]+)"\)[^;]*?(?:->OnClicked\.AddDynamic\(this, &UTTAMenuWidget::(\w+)\))?;')
 
 
 def section(cpp, name, next_name):
@@ -17,7 +15,7 @@ def section(cpp, name, next_name):
 
 
 class MenuStructureTests(unittest.TestCase):
-    """Title is Play / Settings / Reels / Quit; PLAY opens the Play page (Host / Solo / Join / Back)."""
+    """Title menu is Play Solo / Host / Join / Settings / Quit, art drops in via TTAUIStyle."""
 
     def setUp(self):
         cpp = (SRC / "Private" / "TTAMenuWidget.cpp").read_text()
@@ -60,7 +58,7 @@ class MenuStructureTests(unittest.TestCase):
             self.assertNotIn("SetRenderTranslation", section(self.cpp, screen, nxt), screen)
 
     def test_every_title_button_has_a_declared_handler(self):
-        for label, handler in BUTTON.findall(self.title + self.play + self.lobby.replace("StartButton = MenuButton", "StartButton = ")):
+        for label, handler in BUTTON.findall(self.title):
             self.assertTrue(handler, f"{label} has no OnClicked handler")
             self.assertRegex(self.header, rf"UFUNCTION\(\) void {handler}\(", label)
 
@@ -72,8 +70,10 @@ class MenuStructureTests(unittest.TestCase):
             self.assertRegex(style, rf"UPROPERTY\(Config\) FSoftObjectPath {slot};", slot)
             self.assertRegex(section, rf"\n{slot}=", slot)
 
-    def test_menu_reads_logo_slot(self):
-        self.assertIn(".MenuLogo)", self.cpp)
+    def test_menu_reads_logo_and_button_slots(self):
+        cpp = (SRC / "Private" / "TTAMenuWidget.cpp").read_text()
+        for slot in ART_SLOTS[1:]:
+            self.assertIn(f"UIStyle.{slot}" if slot.startswith("Button") else f".{slot})", cpp, slot)
 
 
 if __name__ == "__main__":

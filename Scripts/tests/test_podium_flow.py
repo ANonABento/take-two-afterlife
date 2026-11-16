@@ -37,7 +37,7 @@ class PodiumFlow(unittest.TestCase):
         cinema = (SRC / "Private" / "TTACinema.cpp").read_text(encoding="utf-8-sig")
         self.assertIn("tta::scoreBoard(", body(cinema, "void ATTACinema::EnterStep("))
         hud = (SRC / "Private" / "TTABuildHUD.cpp").read_text(encoding="utf-8-sig")
-        self.assertIn("tta::scoreBarAt(", body(hud, "void ATTABuildHUD::UpdatePremiere("))
+        self.assertIn("tta::scoreBarAt(", body(hud, "void ATTABuildHUD::DrawScoreBoard("))
 
 
 if __name__ == "__main__":

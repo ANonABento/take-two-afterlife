@@ -3,7 +3,6 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/EditableTextBox.h"
-#include "TTAUIStyle.h"
 #include "tta/MenuFlow.h"
 #include "TTAMenuWidget.generated.h"
 
@@ -22,11 +21,12 @@ class UWidgetSwitcher;
 DECLARE_DELEGATE(FTTAMenuAction);
 DECLARE_DELEGATE_OneParam(FTTAMenuCode, const FString&);
 
-// Front-end menus: Title (Play / Settings / Reels / Quit, angel placeholder), Play page on
-// the Join slot (Host, Play Solo, code-or-IP field + Join, Back), Lobby (colour / hat / face,
-// room code, START gate), Settings (audio, sensitivity, window mode, resolution, mic test),
-// How to play, Reels. Screen rules live in Core tta::MenuFlow; the tree is built in C++ from
-// UTTAUIStyle builders only (docs/design/ui-style.md).
+// Front-end menus (plan task 24): Title (Play Solo / Host / Join / Settings / Quit;
+// logo, background and button art come from UTTAUIStyle slots), Join (code or IP), Lobby (colour / hat / face, room
+// code, START gate), Settings (audio, sensitivity, window mode, resolution, mic test,
+// accessibility), How to play,
+// Reels. Screen rules live in Core tta::MenuFlow; this widget builds the tree in C++ and
+// skins it per choomfie ref ui-party-games (sticker cards, Ink outlines, palette colours).
 // The owner binds the delegates to UTTASessionSubsystem / the cut player.
 // One lobby card: avatar tint, name, ready tick.
 struct FTTALobbyPlayer
@@ -48,7 +48,7 @@ public:
 	FTTAMenuAction OnStart;
 	FTTAMenuAction OnQuit;
 	FTTAMenuCode OnJoinCode;
-	// Direct IP (Play page): fires with the typed address as-is when it is not a code.
+	// Direct-IP dev fallback (Join screen): fires with the typed address as-is.
 	FTTAMenuCode OnJoinDirect;
 
 	tta::MenuScreen GetScreen() const { return Flow.current(); }
@@ -61,8 +61,6 @@ public:
 	// Normalizes the typed code; on success fires OnJoinCode and opens the Lobby.
 	// On failure the card turns Red, shows why, and the screen stays on Join.
 	bool SubmitJoinCode(const FString& Typed);
-	// Play page JOIN: a host:port / dotted address goes to OnJoinDirect, anything else to SubmitJoinCode.
-	void SubmitCodeOrAddress(const FString& Typed);
 
 	// Lobby
 	void SetRoomCode(const FString& Code, bool bIsHost);
@@ -113,6 +111,7 @@ private:
 	UPROPERTY() TObjectPtr<UBorder> JoinCard;
 	UPROPERTY() TObjectPtr<UEditableTextBox> CodeBox;
 	UPROPERTY() TObjectPtr<UTextBlock> JoinError;
+	UPROPERTY() TObjectPtr<UEditableTextBox> IpBox;
 	UPROPERTY() TObjectPtr<UTextBlock> RoomCodeText;
 	UPROPERTY() TObjectPtr<UTextBlock> WaitingText;
 	// Card row, kMaxLobbyCards slots built once; SetPlayerCards fills and shows them.
@@ -131,6 +130,9 @@ private:
 	UPROPERTY() TObjectPtr<UComboBoxString> WindowModeBox;
 	UPROPERTY() TObjectPtr<UComboBoxString> ResolutionBox;
 	UPROPERTY() TObjectPtr<UVerticalBox> ReelList;
+	// Lilita One (display) / Nunito (body) from /Game/UI/Fonts; null = engine font.
+	UPROPERTY() TObjectPtr<UObject> DisplayFont;
+	UPROPERTY() TObjectPtr<UObject> BodyFont;
 
 	UBorder* Card(UPanelWidget* Parent, int32 Fill);
 	UTextBlock* Label(UPanelWidget* Parent, const FString& Text, int32 Size, bool bDisplay = false);
@@ -151,9 +153,7 @@ private:
 
 	UFUNCTION() void OnHostClicked() { Host(); }
 	UFUNCTION() void OnPlaySoloClicked() { PlaySolo(); }
-	UFUNCTION() void OnPlayClicked() { Open(tta::MenuScreen::Join); }
-	UFUNCTION() void OnJoinClicked() { SubmitCodeOrAddress(CodeBox->GetText().ToString()); }
-	UFUNCTION() void OnReelsClicked() { Open(tta::MenuScreen::Reels); }
+	UFUNCTION() void OnJoinClicked() { Open(tta::MenuScreen::Join); }
 	UFUNCTION() void OnSettingsClicked() { Open(tta::MenuScreen::Settings); }
 	UFUNCTION() void OnQuitClicked() { OnQuit.ExecuteIfBound(); }
 	UFUNCTION() void OnBackClicked() { Back(); }
