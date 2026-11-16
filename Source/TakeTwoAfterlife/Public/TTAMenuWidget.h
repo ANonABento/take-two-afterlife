@@ -4,6 +4,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Components/EditableTextBox.h"
 #include "tta/MenuFlow.h"
+#include "TTAUIStyle.h"
 #include "TTAMenuWidget.generated.h"
 
 class UImage;
