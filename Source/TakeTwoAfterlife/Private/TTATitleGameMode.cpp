@@ -21,6 +21,7 @@
 #include "TimerManager.h"
 #include "TTACosmetics.h"
 #include "TTAGameMode.h"
+#include "TTARunnerPawn.h"
 #include "TTAMenuWidget.h"
 #include "TTASessionSubsystem.h"
 
@@ -41,7 +42,6 @@ void DressAngel(ASkeletalMeshActor* Angel, const UDataTable* Table, const TArray
 	UStaticMeshComponent* Hat = NewObject<UStaticMeshComponent>(Angel);
 	Hat->SetMobility(EComponentMobility::Movable);
 	Hat->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	Hat->SetStaticMesh(HatRow->HatMesh.LoadSynchronous());
 	const bool bSocket = Body->DoesSocketExist(HatSocket);
 	if (!bSocket)
 	{
@@ -52,9 +52,8 @@ void DressAngel(ASkeletalMeshActor* Angel, const UDataTable* Table, const TArray
 			UE_LOG(LogTemp, Warning, TEXT("Title choir: SK_Angel has no 'head' socket; hats sit on the mesh origin"));
 		}
 	}
-	Hat->SetupAttachment(Body, bSocket ? HatSocket : NAME_None);
-	Hat->SetRelativeTransform(FTransform(HatRow->Rotation, HatRow->SocketOffset, HatRow->Scale));
 	Hat->RegisterComponent();
+	ATTARunnerPawn::DressHat(Hat, Body, bSocket ? HatSocket : NAME_None, *HatRow);
 
 	UTexture2D* Face = FaceRow->FaceTexture.LoadSynchronous();
 	const FLinearColor FaceDrop(0.f, TTAFaceDropV, 0.f, 1.f);

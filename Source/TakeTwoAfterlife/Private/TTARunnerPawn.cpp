@@ -26,6 +26,7 @@
 #include "Engine/DataTable.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/Texture2D.h"
+#include "Materials/MaterialInterface.h"
 #include "tta/MenuFlow.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Animation/AnimInstance.h"
@@ -126,6 +127,30 @@ void ATTARunnerPawn::BeginPlay()
 	}
 }
 
+void ATTARunnerPawn::DressHat(UStaticMeshComponent* HatComp, USceneComponent* Body, FName Socket, const FTTACosmeticRow& Row)
+{
+	if (!HatComp || !Body) return;
+	HatComp->SetStaticMesh(Row.HatMesh.LoadSynchronous());
+	HatComp->AttachToComponent(Body, FAttachmentTransformRules::KeepRelativeTransform, Socket);
+	// World scale, not the head bone's scale. A relative scale inherits that and the hat fills the screen.
+	HatComp->SetUsingAbsoluteScale(true);
+	HatComp->SetRelativeTransform(FTransform(Row.Rotation, Row.SocketOffset, Row.Scale));
+	HatComp->SetWorldScale3D(Row.Scale);
+	const UStaticMesh* Mesh = HatComp->GetStaticMesh();
+	if (!Mesh) return;
+	const FString MatName = Mesh->GetName().Replace(TEXT("SM_Hat_"), TEXT("MI_Hat_"));
+	UMaterialInterface* Painted = LoadObject<UMaterialInterface>(nullptr, *FString::Printf(TEXT("/Game/Characters/Hats/%s.%s"), *MatName, *MatName));
+	if (!Painted)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("DressHat: no painted material %s"), *MatName);
+		return;
+	}
+	for (int32 Slot = 0; Slot < HatComp->GetNumMaterials(); ++Slot)
+	{
+		HatComp->SetMaterial(Slot, Painted);
+	}
+}
+
 void ATTARunnerPawn::ApplyLook(int32 HatIndex, int32 FaceIndex)
 {
 	const UDataTable* Table = CosmeticsTable.LoadSynchronous();
@@ -142,18 +167,7 @@ void ATTARunnerPawn::ApplyLook(int32 HatIndex, int32 FaceIndex)
 		UE_LOG(LogTemp, Warning, TEXT("ATTARunnerPawn: no cosmetic row for hat %d / face %d (%d rows)"), HatIndex, FaceIndex, Rows.Num());
 		return;
 	}
-	Hat->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, HatSocket);
-	Hat->SetStaticMesh(HatRow->HatMesh.LoadSynchronous());
-	Hat->SetUsingAbsoluteScale(true);
-    Hat->SetRelativeTransform(FTransform(HatRow->Rotation, HatRow->SocketOffset, HatRow->Scale));
-    Hat->SetWorldScale3D(HatRow->Scale);
-	if (tta::kPaletteHex.size() > static_cast<size_t>(HatRow->PaletteIndex) && HatRow->PaletteIndex >= 0)
-	{
-		if (UMaterialInstanceDynamic* HatMid = Hat->GetNumMaterials() > 0 && Hat->GetMaterial(0) ? Hat->CreateAndSetMaterialInstanceDynamic(0) : nullptr)
-		{
-			HatMid->SetVectorParameterValue(TintParam, FLinearColor(FColor::FromHex(UTF8_TO_TCHAR(tta::kPaletteHex[HatRow->PaletteIndex]))));
-		}
-	}
+	DressHat(Hat, GetMesh(), HatSocket, *HatRow);
 	UTexture2D* Face = FaceRow->FaceTexture.LoadSynchronous();
 	const FLinearColor FaceDrop(0.f, TTAFaceDropV, 0.f, 1.f);
 	for (UMaterialInstanceDynamic* Material : FlashMaterials)
