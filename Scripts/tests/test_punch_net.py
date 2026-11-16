@@ -39,7 +39,6 @@ class PunchNetTest(unittest.TestCase):
         self.assertRegex(H, r"UFUNCTION\(NetMulticast, Unreliable\)\s*void MulticastWindUp\(\);")
         self.assertIn("MulticastWindUp();", body("void ATTARunnerPawn::ServerPunch_Implementation()"))
         self.assertIn("tta::AudioEvent::PunchWindUp", body("void ATTARunnerPawn::MulticastWindUp_Implementation()"))
-        self.assertIn("SetRelativeScale3D", body("void ATTARunnerPawn::UpdateWindUpPose"))
         b = body("void ATTARunnerPawn::MulticastPunched_Implementation")
         self.assertIn("tta::AudioEvent::PunchHit", b)
         self.assertIn("ClientStartCameraShake(ImpactShake)", b)

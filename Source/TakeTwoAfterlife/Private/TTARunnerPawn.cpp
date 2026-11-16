@@ -28,6 +28,9 @@
 #include "tta/MenuFlow.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Animation/AnimInstance.h"
+#include "Net/UnrealNetwork.h"
+#include "TTARunnerAnimInstance.h"
+#include "tta/PunchArm.h"
 
 namespace
 {
@@ -220,18 +223,46 @@ void ATTARunnerPawn::ServerPunch_Implementation()
 
 void ATTARunnerPawn::MulticastWindUp_Implementation()
 {
-	WindUpLeft = static_cast<float>(tta::kPunchWindUpSeconds);
 	GetWorld()->GetSubsystem<UTTAAudioDirector>()->PlayEvent(tta::AudioEvent::PunchWindUp);
 }
 
-void ATTARunnerPawn::UpdateWindUpPose(float WorldDeltaSeconds)
+void ATTARunnerPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	if (WindUpLeft <= 0.f) return;
-	WindUpLeft = FMath::Max(0.f, WindUpLeft - WorldDeltaSeconds);
-	const bool bShow = WindUpLeft > 0.f && Life.state() == tta::LifeState::Alive;
-	if (!bShow) WindUpLeft = 0.f;
-	const float Alpha = bShow ? 1.f - WindUpLeft / static_cast<float>(tta::kPunchWindUpSeconds) : 0.f;
-	GetMesh()->SetRelativeScale3D(MeshRelative.GetScale3D() * FMath::Lerp(1.f, WindUpScale, Alpha));
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ATTARunnerPawn, PunchPhaseRep);
+}
+
+void ATTARunnerPawn::UpdatePunchArm(float WorldDeltaSeconds)
+{
+	const tta::PunchPhase Phase = Life.state() == tta::LifeState::Alive
+		? static_cast<tta::PunchPhase>(PunchPhaseRep) : tta::PunchPhase::Idle;
+	if (Phase != ArmPhase)
+	{
+		ArmPhase = Phase;
+		ArmPhaseTime = 0.f;
+	}
+	else
+	{
+		ArmPhaseTime += WorldDeltaSeconds;
+	}
+	UTTARunnerAnimInstance* Anim = Cast<UTTARunnerAnimInstance>(GetMesh()->GetAnimInstance());
+	if (!Anim)
+	{
+		if (!bWarnedAnimClass)
+		{
+			bWarnedAnimClass = true;
+			UE_LOG(LogTemp, Warning, TEXT("ATTARunnerPawn: %s AnimBP is not a UTTARunnerAnimInstance; punch arm pose disabled"), *GetName());
+		}
+		return;
+	}
+	const tta::PunchArmConfig Config;
+	const double Length = tta::punchPhaseSeconds(Phase);
+	const tta::PunchArmPose Pose = tta::punchArmPose(Phase, Length > 0.0 ? ArmPhaseTime / Length : 0.0, Config);
+	Anim->UpperArmBone = FName(Config.upperArmBone);
+	Anim->ForearmBone = FName(Config.forearmBone);
+	Anim->UpperArmRotation = FRotator(Pose.upperArm.pitch, Pose.upperArm.yaw, Pose.upperArm.roll);
+	Anim->ForearmRotation = FRotator(Pose.forearm.pitch, Pose.forearm.yaw, Pose.forearm.roll);
+	Anim->PunchArmAlpha = static_cast<float>(Pose.alpha);
 }
 
 void ATTARunnerPawn::AdvancePunch(float WorldDeltaSeconds)
@@ -322,11 +353,12 @@ void ATTARunnerPawn::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	// DeltaSeconds is scaled by CustomTimeDilation (0 while frozen); timers need world time.
 	AdvanceLife(GetWorld()->GetDeltaSeconds());
-	UpdateWindUpPose(GetWorld()->GetDeltaSeconds());
 	if (HasAuthority())
 	{
 		AdvancePunch(GetWorld()->GetDeltaSeconds());
+		PunchPhaseRep = static_cast<uint8>(PunchState.phase());
 	}
+	UpdatePunchArm(GetWorld()->GetDeltaSeconds());
 }
 
 void ATTARunnerPawn::AdvanceLife(float WorldDeltaSeconds)

@@ -405,3 +405,8 @@ Lobby text lines replaced by code pill, 4-slot player card row (avatar, name, re
 
 ## Get up where you landed
 StopStun ran on every machine with its own pelvis read and a sweep from the pre-ragdoll capsule, so the sweep got blocked and replication pulled runners back to where they stood. Now the server traces the pelvis to the floor and sends the spot through MulticastGetUp; everyone restores the mesh and teleports the capsule there. Trap path untouched. Static test: Scripts/tests/test_get_up_landing.py. Needs an editor compile and a host+client check.
+
+## Punch arm motion (redo)
+- **Prompt:** replace the wind-up scale stand-in with real bone motion on the right arm, keep the StopStun landing fix.
+- **Agent did:** Core `tta::PunchArmConfig` (UpperArm_R / ForeArm_R; wind-up ends at upper arm (-55, 25, 0) + forearm yaw -120, punch ends at (-80, -10, 0) with a straight forearm, recovery eases to 0) and `punchArmPose(phase, t)` (smoothstep wind-up/recovery, ease-out cubic punch), doctest at start/middle/end of each phase. New `UTTARunnerAnimInstance` (UpperArmRotation, ForearmRotation, PunchArmAlpha); the server mirrors the punch phase into replicated `PunchPhaseRep` and every machine writes the pose each tick. `WindUpScale` and all scale code removed. Static check `Scripts/tests/test_punch_arm.py`.
+- **Failed / fixed by hand:** needs ABP_Angel reparented to `TTARunnerAnimInstance` plus two Transform (Modify) Bone nodes; until then the pawn logs one warning and the arm stays still. Editor compile pending.
