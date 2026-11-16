@@ -6,6 +6,7 @@
 #include "TTACinema.h"
 #include "TTAFinishGate.h"
 #include "TTARunnerPawn.h"
+#include "tta/Premiere.h"
 #include "CollisionQueryParams.h"
 #include "Engine/HitResult.h"
 
@@ -98,7 +99,9 @@ void ATTABotController::DriveRunner(float DeltaSeconds)
 
 void ATTABotController::FillCut(const tta::Replay& Replay)
 {
+	check(Brain);
 	Cut = tta::autoEdit(Replay, {HeavenCam}, HeavenCam);
+	CutCredits = tta::cutCredits(Brain->playerId(), Brain->playerId(), Replay);
 }
 
 bool ATTABotController::RateCurrent(ATTACinema* Cinema)

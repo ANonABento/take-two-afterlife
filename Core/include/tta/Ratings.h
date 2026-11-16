@@ -8,6 +8,8 @@ namespace tta {
 constexpr int kMinRating = 1;
 constexpr int kMaxRating = 5;
 
+constexpr int kNoBuilder = -1; // Cut::builder when no trap got the victim: nobody earns Evil
+
 // One premiered cut: Funny ratings score its editor, Evil ratings its builder.
 struct Cut {
     int editor = 0;
@@ -22,7 +24,7 @@ public:
     // a rater who is the cut's editor or builder (self-rating), or a repeat rating.
     void rate(int cutId, int rater, int funny, int evil);
     // Per player: sum over their cuts of the average Funny (as editor) and
-    // average Evil (as builder). Unrated cuts add nothing. Feeds RoundInput::ratingPoints.
+    // average Evil (as builder, skipped for kNoBuilder). Unrated cuts add nothing. Feeds RoundInput::ratingPoints.
     std::map<int, double> ratingPoints() const;
     // One cut's score reveal: average Funny / Evil, 0 when nobody rated.
     // Throws std::invalid_argument on an unknown cut.

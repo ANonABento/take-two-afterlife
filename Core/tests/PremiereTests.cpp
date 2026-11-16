@@ -87,3 +87,34 @@ TEST_CASE("custom timings change the premiere step lengths") {
     p.advance(1);
     CHECK(p.step() == PremiereStep::Done);
 }
+
+TEST_CASE("cut builder is the owner of the trap that wiped out the victim, not the editor") {
+    Replay replay({0, 1, 2});
+    replay.addEvent({ReplayEventType::Hit, 1000, 1, 4, 0});
+    replay.addEvent({ReplayEventType::Wipeout, 1200, 1, 7, 2});
+    const Cut cut = cutCredits(0, 1, replay);
+    CHECK(cut.editor == 0);
+    CHECK(cut.builder == 2);
+
+    RatingBook book;
+    book.openCut(1, cut);
+    book.rate(1, 1, 3, 5);
+    const auto points = book.ratingPoints();
+    CHECK(points.at(0) == doctest::Approx(3.0)); // editor: Funny only
+    CHECK(points.at(2) == doctest::Approx(5.0)); // trap owner: Evil
+}
+
+TEST_CASE("no trap death means no builder and no Evil points") {
+    Replay replay({0, 1, 2});
+    CHECK(cutCredits(0, 1, replay).builder == kNoBuilder);
+    replay.addEvent({ReplayEventType::Smite, 900, 1});
+    const Cut cut = cutCredits(0, 1, replay);
+    CHECK(cut.builder == kNoBuilder);
+
+    RatingBook book;
+    book.openCut(1, cut);
+    book.rate(1, 2, 4, 5);
+    const auto points = book.ratingPoints();
+    CHECK(points.size() == 1);
+    CHECK(points.at(0) == doctest::Approx(4.0));
+}

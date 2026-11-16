@@ -6,6 +6,8 @@
 #include "tta/BotRoute.h"
 #include "tta/EditList.h"
 #include "tta/PawnLife.h"
+#include "tta/Ratings.h"
+#include "tta/Replay.h"
 
 #include <memory>
 #include <optional>
@@ -43,7 +45,8 @@ public:
 	void StopRun();
 	// One steering step for the possessed runner; Tick calls this.
 	void DriveRunner(float DeltaSeconds);
-	// Auto-edit of this Run's replay becomes the bot's cut.
+	// Auto-edit of this Run's replay becomes the bot's cut; credits go to this bot (editor)
+	// and the owner of the trap that wiped it out (builder, tta::kNoBuilder if none).
 	void FillCut(const tta::Replay& Replay);
 	// Votes on the cinema's current cut during its rating screen. False outside Rating or on own cuts.
 	bool RateCurrent(ATTACinema* Cinema);
@@ -53,6 +56,7 @@ public:
 
 	bool IsRunning() const { return Route != nullptr; }
 	const tta::EditList* GetCut() const { return Cut ? &*Cut : nullptr; }
+	const tta::Cut& GetCutCredits() const { return CutCredits; }
 	const tta::RunnerPlan& GetPlan() const { return Plan; }
 
 	virtual void Tick(float DeltaSeconds) override;
@@ -64,6 +68,7 @@ private:
 	std::unique_ptr<tta::BotBrain> Brain;
 	std::unique_ptr<tta::BotRoute> Route;
 	std::optional<tta::EditList> Cut;
+	tta::Cut CutCredits;
 	tta::RunnerPlan Plan;
 	bool bBuiltThisRound = false;
 	bool bWasGroundAhead = true;

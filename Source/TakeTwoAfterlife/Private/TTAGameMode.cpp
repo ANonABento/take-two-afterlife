@@ -384,8 +384,8 @@ void ATTAGameMode::BeginPremiere()
 		const int32 Id = It->PlayerState->GetPlayerId();
 		FTTACinemaCut& C = Cuts.AddDefaulted_GetRef();
 		C.CutId = Cuts.Num();
-		// A bot's cut is its own run; the trap builder isn't tracked per cut yet.
-		C.Cut = tta::Cut{Id, Id};
+		// A bot's cut is its own run: it edits, the trap that got it builds.
+		C.Cut = It->GetCutCredits();
 		C.Victim = Id;
 		C.Edit = *Edit;
 	}

@@ -42,7 +42,7 @@ std::map<int, double> RatingBook::ratingPoints() const {
     for (const auto& [id, e] : cuts_) {
         if (e.funny.empty()) continue;
         points[e.cut.editor] += average(e.funny);
-        points[e.cut.builder] += average(e.evil);
+        if (e.cut.builder != kNoBuilder) points[e.cut.builder] += average(e.evil);
     }
     return points;
 }
