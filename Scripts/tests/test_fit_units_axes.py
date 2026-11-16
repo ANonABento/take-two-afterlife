@@ -75,14 +75,24 @@ class FakeUnreal:
         self.Vector = lambda *a: a
         self.Rotator = lambda *a: a
         self.Name = str
+        self.CollisionEnabled = SimpleNamespace(QUERY_AND_PHYSICS="all", NO_COLLISION="none")
 
     def log_warning(self, msg):
         self.warnings.append(msg)
 
 
+class Component:
+    def __init__(self):
+        self.props = {}
+
+    def __getattr__(self, name):
+        return lambda *a, **k: self.props.setdefault(name, a)
+
+
 class Spawned:
     def __init__(self):
         self.props = {}
+        self.static_mesh_component = Component()
 
     def __getattr__(self, name):
         return lambda *a, **k: self.props.setdefault(name, a)
@@ -99,7 +109,11 @@ class FakeSubsystem:
 
 
 def mesh(size):
-    return SimpleNamespace(get_bounding_box=lambda: SimpleNamespace(min=vec(0, 0, 0), max=vec(*size)))
+    # One box already on the body setup, so spawn_fitted's collision pass leaves the mesh alone.
+    agg = SimpleNamespace(get_editor_property=lambda prop: [object()] if prop == "box_elems" else [])
+    body = SimpleNamespace(get_editor_property=lambda prop: agg)
+    return SimpleNamespace(get_bounding_box=lambda: SimpleNamespace(min=vec(0, 0, 0), max=vec(*size)),
+                           get_editor_property=lambda prop: body)
 
 
 class SkipBadProp(unittest.TestCase):

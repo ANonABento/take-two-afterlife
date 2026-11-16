@@ -165,6 +165,10 @@ def main():
     screen.set_world_location(origin.transform_location(SCREEN), False, False)
     for comp, colour in ((cloud, "Bone"), (couch, "Pink"), (screen, "Ink")):
         paint(comp, colour, toon)
+    # ATTACinema's C++ gives the screen (the TV) NoCollision, and import_mac_assets keeps the hand-made couch and
+    # screen meshes out of its ensure_collision pass, so runners walked through the TV. Make both block.
+    for comp in (couch, screen):
+        S.make_blocking(unreal, comp)
 
     for piece in pieces:
         spawn_mesh(subsystem, piece, toon, origin)
