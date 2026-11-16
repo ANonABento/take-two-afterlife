@@ -165,6 +165,37 @@ def tag(unreal, actor, *extra):
     actor.set_editor_property("tags", [unreal.Name(LAYOUT_TAG)] + [unreal.Name(t) for t in extra])
 
 
+def simple_collision_count(mesh):
+    """Simple shapes (box/sphere/capsule/convex) on a StaticMesh's body setup. Characters only collide with these."""
+    body = mesh.get_editor_property("body_setup")
+    if body is None:
+        return 0
+    agg = body.get_editor_property("agg_geom")
+    count = 0
+    for prop in ("box_elems", "sphere_elems", "sphyl_elems", "convex_elems"):
+        try:
+            count += len(agg.get_editor_property(prop))
+        except Exception:
+            pass
+    return count
+
+
+def ensure_simple_collision(unreal, mesh):
+    """A kit/hand-made mesh with no simple collision lets runners walk through it: give it a box."""
+    if simple_collision_count(mesh) == 0:
+        unreal.EditorStaticMeshLibrary.add_simple_collisions(mesh, unreal.ScriptingCollisionShapeType.BOX)
+        unreal.EditorAssetLibrary.save_loaded_asset(mesh)
+
+
+def make_blocking(unreal, comp, mesh=None):
+    """Static mesh component that blocks runners: BlockAll profile plus a simple collision body on its mesh."""
+    if mesh is None:
+        mesh = comp.get_editor_property("static_mesh")
+    ensure_simple_collision(unreal, mesh)
+    comp.set_collision_profile_name("BlockAll")
+    comp.set_collision_enabled(unreal.CollisionEnabled.QUERY_AND_PHYSICS)
+
+
 def spawn_fitted(unreal, subsystem, label, mesh, fit, target, yaw, extra_tags=(), collide=True):
     """StaticMeshActor of `mesh` fitted to `fit` with its bottom-centre at `target` (cm), tagged TTA_Layout.
 
@@ -178,7 +209,9 @@ def spawn_fitted(unreal, subsystem, label, mesh, fit, target, yaw, extra_tags=()
     actor.set_actor_label(label)
     actor.set_actor_scale3d(unreal.Vector(*scale))
     actor.set_actor_location(unreal.Vector(*loc), False, False)
-    if not collide:
+    if collide:
+        make_blocking(unreal, actor.static_mesh_component, mesh)
+    else:
         actor.static_mesh_component.set_collision_enabled(unreal.CollisionEnabled.NO_COLLISION)
     tag(unreal, actor, *extra_tags)
     return actor, tuple(h - l for h, l in zip(rhi, rlo))

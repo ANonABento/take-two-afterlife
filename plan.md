@@ -614,3 +614,8 @@ Scored 1-5 by judges on: ambition/innovation, theme, fun, gameplay, visuals, lev
 - Done: `Core/include/tta/PunchArm.h` + `Core/src/PunchArm.cpp` (`PunchArmConfig`, `punchArmPose`, `punchPhaseSeconds`), wrapper `CoreLib/Core_PunchArm.cpp`, tests `Core/tests/PunchArmTests.cpp`. `UTTARunnerAnimInstance`. Pawn: `UPROPERTY(Replicated) uint8 PunchPhaseRep` set on the server after `AdvancePunch`; `UpdatePunchArm` (every Tick, all machines) times each phase locally and writes bone names, rotations and alpha; one warning if the AnimBP isn't the new class. `WindUpScale`/`WindUpLeft`/`UpdateWindUpPose` gone; `MulticastWindUp` now only plays the whoosh. StopStun unchanged. Test: `Scripts/tests/test_punch_arm.py`.
 - Left: in the editor reparent ABP_Angel to `TTARunnerAnimInstance`; after the locomotion pose add Transform (Modify) Bone on `UpperArm_R` and `ForeArm_R` (Rotation: Add to Existing, Bone Space), rotation from `UpperArmRotation`/`ForearmRotation`, alpha `PunchArmAlpha`. PIE host/client: check the axes match SK_Angel's bone frames (flip signs in `PunchArmConfig` if the arm swings the wrong way).
 - Surprises: phase timing on clients restarts when the replicated phase arrives, so a client lags the server by its ping; fine for a visual. Rotations assume UE (pitch, yaw, roll) bone-space axes; unverified on SK_Angel here.
+
+### Handoff: Heaven TV/fence collision
+- Done: screen + couch made blocking in dress_heaven.py; colliding layout props get BlockAll and a simple box if their mesh has none; new collision test.
+- Left: rerun dress_heaven.py in UE 5.5 and check in PIE.
+- Surprises: the TV is not a layout prop at all; it is ATTACinema's Screen component, NoCollision in C++.
